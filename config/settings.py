@@ -13,6 +13,7 @@ APP_VERSION = os.getenv('APP_VERSION', '5.0.0')
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = getenv_bool('DEBUG')
 D_PPRINT = getenv_bool('D_PPRINT', False)
+SITE_ID = int(os.getenv('SITE_ID', '1'))
 
 
 # Django base config
@@ -57,6 +58,7 @@ INSTALLED_APPS = (
     'infrastructure.box.apps.BoxConfig',
     'infrastructure.assign.apps.AssingConfig',
     'infrastructure.talk.apps.TalkConfig',
+    'presentation',
 )
 
 
