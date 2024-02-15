@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-from config.utils import getenv_bool, getenv_list
+from config.utils import getenv_bool, getenv_db, getenv_list
 
 load_dotenv()
 
@@ -12,7 +12,6 @@ ADMINS = (('Yeeko Report', 'ricardo@yeeko.org'), )
 APP_VERSION = os.getenv('APP_VERSION', '5.0.0')
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = getenv_bool('DEBUG')
-D_PPRINT = getenv_bool('D_PPRINT', False)
 SITE_ID = int(os.getenv('SITE_ID', '1'))
 
 
@@ -73,26 +72,10 @@ USE_TZ = getenv_bool('USE_TZ')
 
 # ----------------------------------Data Base---------------------------------
 POSTRGRESQL_DB = getenv_bool('POSTRGRESQL_DB', False)
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'db.sqlite3')
 
-if POSTRGRESQL_DB:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': DATABASE_NAME,
-            'USER': os.getenv('DATABASE_USER'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-            'HOST': os.getenv('DATABASE_HOST'),
-            'PORT': 5432,
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / DATABASE_NAME
-        }
-    }
+DATABASES = {
+    'default': getenv_db(is_postgres=POSTRGRESQL_DB, base_dir=BASE_DIR)
+}
 # ---------------------------------/Data Base---------------------------------
 
 
@@ -142,16 +125,20 @@ TEMPLATES = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME':
+        'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
