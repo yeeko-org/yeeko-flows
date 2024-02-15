@@ -39,6 +39,8 @@ class Migration(migrations.Migration):
                 ('public_name', models.CharField(blank=True, max_length=50, null=True)),
                 ('has_dashboard_access', models.BooleanField(default=False)),
                 ('can_moderate', models.BooleanField(default=False)),
+                ('can_admin', models.BooleanField(default=False)),
+                ('can_edit', models.BooleanField(default=False)),
                 ('is_tester', models.BooleanField(default=False)),
                 ('is_default', models.BooleanField(default=False)),
                 ('order', models.IntegerField(blank=True, null=True, verbose_name='Orden de prioridad del rol')),

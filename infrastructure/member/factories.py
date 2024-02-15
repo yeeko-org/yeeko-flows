@@ -12,7 +12,6 @@ from infrastructure.users.factories import UserFactory
 from utilities.factory_util import optional_sub_factory, safe_pydict
 
 
-
 class RoleFactory(DjangoModelFactory):
     class Meta:
         model = Role
@@ -21,6 +20,8 @@ class RoleFactory(DjangoModelFactory):
     public_name = factory.Faker('word')
     has_dashboard_access = factory.Faker('boolean')
     can_moderate = factory.Faker('boolean')
+    can_admin = factory.Faker('boolean')
+    can_edit = factory.Faker('boolean')
     is_tester = factory.Faker('boolean')
     is_default = factory.Faker('boolean')
     order = factory.Faker('random_int', min=1, max=100)

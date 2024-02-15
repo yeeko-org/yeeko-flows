@@ -20,8 +20,10 @@ class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
     public_name = models.CharField(max_length=50, blank=True, null=True)
     has_dashboard_access = models.BooleanField(default=False)
-    can_moderate = models.BooleanField(default=False)
     is_tester = models.BooleanField(default=False)
+    can_moderate = models.BooleanField(default=False)
+    can_admin = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
     is_default = models.BooleanField(default=False)
     order = models.IntegerField(
         blank=True, null=True, verbose_name="Orden de prioridad del rol"
