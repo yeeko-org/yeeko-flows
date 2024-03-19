@@ -12,7 +12,6 @@ class AccountAdmin(admin.ModelAdmin):
     list_filter = ('active', 'init_text_response',
                    'text_response', 'payload_response', 'notif_enabled')
     raw_id_fields = ('space', 'platform')
-    readonly_fields = ('pid',)
 
     fieldsets = (
         ('General', {
