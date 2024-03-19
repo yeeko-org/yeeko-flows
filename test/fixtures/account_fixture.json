@@ -1,0 +1,38 @@
+[
+    {
+        "model": "service.platform",
+        "pk": "whatsapp",
+        "fields": {
+            "name": "whatsapp",
+            "with_users": true,
+            "internal": false,
+            "config_by_member": false
+        }
+    },
+    {
+        "model": "place.space",
+        "pk": "1",
+        "fields": {
+            "title": "Nombre del Espacio",
+            "bot_name": "Xico",
+            "image": "path/a/imagen.jpg",
+            "test": false
+        }
+    },
+    {
+        "model": "place.account",
+        "pk": "103571329211620",
+        "fields": {
+            "pid": "103571329211620",
+            "space": "1",
+            "platform": "whatsapp",
+            "title": "Some Title",
+            "token": "EAAYaIDXd8t4BO4Hjjt2QdBIQyZBZA9ePmHuX7ZC9ZBkIgn2LvMqoDgscNitBqFq4wt0fcQTy1U1HvsFl9RP97R8I8GdH4ZAbmWEGTUD5SJRXm6zAyRYPILvkYCjgWTicUZBRoJOeb9qvvI2rpjZAUzmb42wwM60NdyrlZCxN3ZBTFz3gOCJ5Byhv7tiwKSZARW9D61PKNE4K5NOHQZBNqfVNRkf",
+            "active": true,
+            "init_text_response": true,
+            "text_response": true,
+            "payload_response": true,
+            "notif_enabled": true
+        }
+    }
+]
