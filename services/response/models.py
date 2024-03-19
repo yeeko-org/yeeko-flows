@@ -5,7 +5,7 @@ from typing import List, Optional
 class Button(BaseModel):
     title: str
     payload: str
-    desciption: Optional[str] = None
+    description: Optional[str] = None
 
 
 class Header(BaseModel):
@@ -19,14 +19,14 @@ class Message(BaseModel):
     footer: Optional[str] = None
 
 
-class ReplayMessage(Message):
+class ReplyMessage(Message):
     buttons: List[Button] = []
-    button_text: Optional[str] = "Select an option"
+    button_text: str = "Seleccionar ⏬"
 
 
 class Section(BaseModel):
     title: str
-    buttons: List[Button]
+    buttons: List[Button] = []
 
 
 class SectionsMessage(Message):

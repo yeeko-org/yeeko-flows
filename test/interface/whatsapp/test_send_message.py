@@ -6,7 +6,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.place.models import Account
 from interface.whatsapp.response import WhatsAppResponse
 from infrastructure.service.models import ApiRequest
-from services.response.models import SectionsMessage, Section, Button, ReplayMessage
+from services.response.models import SectionsMessage, Section, Button, ReplyMessage
 
 
 class WhatsAppResponseTest(TestCase):
@@ -14,12 +14,12 @@ class WhatsAppResponseTest(TestCase):
     # fixtures = ["test/fixtures/account_fixture.json"]
 
     def setUp(self):
-        self.sender_uid = "525513375592"
+        self.sender_uid = "525549468438"
         self.token = (
-            "EAAYaIDXd8t4BOxoU2sjFxuccrFNDmZBBHJZBmB3ZChovPTossx74SsPGaF7HVdW"
-            "U7g5VEXlFzZCcbavocrdEZCMljjV1Ls5JVKyYH5K4dPaxqunetvyZBVuT15aZBRNY"
-            "InSXF12nSdWzIR3bbpAafTTbjXq2eZBEkHpg9iSYw22TtFzBI0ZBg1YqwZAZCRrR5"
-            "ddATCYnBASbtlAzivGnVgt4p0ZD"
+            "EAAYaIDXd8t4BO5YrWCpLPYySbxsVt2sW8FlljMO7BT5LxeYJFOdaCVwNjSwga5"
+            "vwMM7iP6WRqS8HsQnJn3Ek6ZALocULi03L86rtfDMZCiYBWfNtkrukB35S6iVc"
+            "GF5LeGIssILfZBxxXEWMpdWkimS2nd1yDU0OIGKIXazzMdrpWPuGjWOU5zdXr4D9"
+            "0zXljGla3Gg4w31mrzKup1UvFs0s4BJPhLKJgZDZD"
         )
 
         self.account = Account()
@@ -57,7 +57,7 @@ class WhatsAppResponseTest(TestCase):
             "image", "Test caption"
         )
         whatsapp_response.message_few_buttons(
-            ReplayMessage(
+            ReplyMessage(
                 body="¿Cuál es tu preferencia de contacto?",
                 header="https://static.wikia.nocookie.net/eswarhammer40k/images/e/e3/Portada_Codex_Adepta_Sororitas_6%C2%AA_Edici%C3%B3n.jpg",
                 footer="Gracias por tu preferencia",
@@ -71,7 +71,7 @@ class WhatsAppResponseTest(TestCase):
             )
         )
         whatsapp_response.message_many_buttons(
-            ReplayMessage(
+            ReplyMessage(
                 header="https://pbs.twimg.com/media/FtPjDhKaIAAeRSd.jpg",
                 body="¿Cuál es tu preferencia de contacto?",
                 footer="Gracias por tu preferencia",
@@ -87,6 +87,13 @@ class WhatsAppResponseTest(TestCase):
             )
         )
 
+        first_section = Section(title="sección 1")
+        first_section.buttons += [
+            Button(payload="laptops", title="Laptops"),
+            Button(payload="accesorios", title="Accesorios"),
+            Button(payload="smartphones", title="Smartphones"),
+        ]
+
         whatsapp_response.message_sections(
             SectionsMessage(
                 header="https://static.wikia.nocookie.net/darkestdungeon_gamepedia/images/5/58/Pdskin1.png",
@@ -94,8 +101,9 @@ class WhatsAppResponseTest(TestCase):
                 button_text="Seleccionar Categoría",
                 footer="Gracias por tu preferencia",
                 sections=[
+                    first_section,
                     Section(
-                        title="seccion 1",
+                        title="Sección 2",
                         buttons=[
                             Button(payload="smartphones", title="Smartphones"),
                             Button(payload="laptops", title="Laptops"),
@@ -103,15 +111,7 @@ class WhatsAppResponseTest(TestCase):
                         ]
                     ),
                     Section(
-                        title="Seccion 2",
-                        buttons=[
-                            Button(payload="smartphones", title="Smartphones"),
-                            Button(payload="laptops", title="Laptops"),
-                            Button(payload="accesorios", title="Accesorios"),
-                        ]
-                    ),
-                    Section(
-                        title="seccion 3",
+                        title="sección 3",
                         buttons=[
                             Button(payload="smartphones", title="Smartphones"),
                             Button(payload="laptops", title="Laptops"),

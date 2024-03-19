@@ -8,7 +8,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRequest
 from typing import List, Optional
 
-from services.response.models import SectionsMessage, ReplayMessage
+from services.response.models import SectionsMessage, ReplyMessage
 
 from typing import Callable
 
@@ -47,12 +47,12 @@ class ResponseAbc(ABC, BaseModel):
         self._add_message(message_data)
 
     @exception_handler
-    def message_few_buttons(self, message: ReplayMessage):
+    def message_few_buttons(self, message: ReplyMessage):
         message_data = self.few_buttons_to_data(message)
         self._add_message(message_data)
 
     @exception_handler
-    def message_many_buttons(self, message: ReplayMessage):
+    def message_many_buttons(self, message: ReplyMessage):
         message_data = self.many_buttons_to_data(message)
         self._add_message(message_data)
 
@@ -80,11 +80,11 @@ class ResponseAbc(ABC, BaseModel):
         raise NotImplementedError
 
     @abstractmethod
-    def few_buttons_to_data(self, message: ReplayMessage) -> dict:
+    def few_buttons_to_data(self, message: ReplyMessage) -> dict:
         raise NotImplementedError
 
     @abstractmethod
-    def many_buttons_to_data(self, message: ReplayMessage) -> dict:
+    def many_buttons_to_data(self, message: ReplyMessage) -> dict:
         raise NotImplementedError
 
     @abstractmethod

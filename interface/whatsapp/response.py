@@ -5,7 +5,7 @@ from infrastructure.service.models import ApiRequest
 from services.response import ResponseAbc
 import requests
 
-from services.response.models import Message, Section, SectionsMessage, ReplayMessage
+from services.response.models import Message, Section, SectionsMessage, ReplyMessage
 
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
 
@@ -75,7 +75,7 @@ class WhatsAppResponse(ResponseAbc):
             data["footer"] = {"text": message.footer}
         return data
 
-    def few_buttons_to_data(self, message: ReplayMessage) -> dict:
+    def few_buttons_to_data(self, message: ReplyMessage) -> dict:
         buttons = [
             {
                 "type": "reply",
@@ -123,13 +123,13 @@ class WhatsAppResponse(ResponseAbc):
         })
         return self._base_data("interactive", interactive)
 
-    def many_buttons_to_data(self, message: ReplayMessage) -> dict:
+    def many_buttons_to_data(self, message: ReplyMessage) -> dict:
 
         interactive = self._message_to_data(message)
         interactive.update({
             "type": "list",
             "action": {
-                "button": (message.button_text or "Select an option")[:20],
+                "button": message.button_text[:20],
                 "sections": [
                     self._section_to_data(
                         Section(title="buttons", buttons=message.buttons)
