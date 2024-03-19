@@ -189,3 +189,10 @@ REST_FRAMEWORK = {
     )
 }
 # ---------------------------DJANGO REST FRAMEWORK----------------------------
+
+
+# -----------------------------------Meta-------------------------------------
+WEBHOOK_TOKEN_WHATSAPP = os.getenv('WEBHOOK_TOKEN_WHATSAPP', 'whatsapp')
+# -----------------------------------Meta-------------------------------------
+
+CREATE_USER_PRIVATE_HASH = os.getenv('CREATE_USER_PRIVATE_HASH', 'yeeko')
