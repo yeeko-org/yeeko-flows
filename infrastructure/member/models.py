@@ -58,7 +58,8 @@ class StatusAttendance(models.Model):
 
 class Member(models.Model):
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="members")
     active = models.BooleanField(default=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -86,6 +87,12 @@ class MemberAccount(models.Model):
         StatusAttendance, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name="Status de Atención"
     )
+
+    @property
+    def is_staff(self):
+        if not hasattr(self, "member_is_staff"):
+            self.member_is_staff = self.member.user.is_staff
+        return self.member_is_staff
 
     def __str__(self):
         return f"{self.member} - {self.account}"
