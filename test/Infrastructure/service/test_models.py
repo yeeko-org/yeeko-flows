@@ -1,7 +1,7 @@
 from django.test import TestCase
-from infrastructure.service.models import Platform, InteractionType, ApiRequest
+from infrastructure.service.models import Platform, InteractionType, ApiRecord
 from infrastructure.service.factories import (
-    PlatformFactory, InteractionTypeFactory, ApiRequestFactory
+    PlatformFactory, InteractionTypeFactory, ApiRecordFactory
 )
 
 
@@ -17,7 +17,7 @@ class TestInteractionTypeFactory(TestCase):
         self.assertIsInstance(interaction_type, InteractionType)
 
 
-class TestApiRequestFactory(TestCase):
+class TestApiRecordFactory(TestCase):
     def test_api_request_creation(self):
-        api_request = ApiRequestFactory()
-        self.assertIsInstance(api_request, ApiRequest)
+        api_request = ApiRecordFactory()
+        self.assertIsInstance(api_request, ApiRecord)

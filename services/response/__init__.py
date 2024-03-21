@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from infrastructure.member.models import MemberAccount
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 from typing import List, Optional
 
 from services.response.models import SectionsMessage, ReplyMessage
@@ -24,9 +24,9 @@ def exception_handler(func: Callable) -> Callable:
 
 class ResponseAbc(ABC, BaseModel):
     sender: MemberAccount
-    message_list: List[tuple[dict, Optional[ApiRequest]]] = []
+    message_list: List[tuple[dict, Optional[ApiRecord]]] = []
     errors: list = []
-    api_request: Optional[ApiRequest] = None
+    api_request: Optional[ApiRecord] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -99,7 +99,7 @@ class ResponseAbc(ABC, BaseModel):
 
     def save_interaction(
         self, response: dict, message_data: dict,
-        api_request: Optional[ApiRequest] = None
+        api_request: Optional[ApiRecord] = None
     ) -> None:
         pprint(response)
 

@@ -1,7 +1,7 @@
 
 import json
 from django.test import TestCase
-from infrastructure.service.models import ApiRequest, Platform
+from infrastructure.service.models import ApiRecord, Platform
 
 from services.request import RequestAbc
 
@@ -82,6 +82,6 @@ class RequestAbcTest(TestCase):  # replace with your actual class name
         self.assertEqual(instance.api_request.platform.name, self.platform)
         self.assertEqual(instance.api_request.body, self.raw_data)
 
-        self.assertTrue(ApiRequest.objects.filter(
+        self.assertTrue(ApiRecord.objects.filter(
             pk=instance.api_request.pk).exists()
         )

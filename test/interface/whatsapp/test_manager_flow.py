@@ -1,7 +1,7 @@
 from test.fixtures.whatsapp_started_data import started_data
 from services.request.message_model import TextMessage
 from interface.whatsapp.request import WhatsAppRequest
-from infrastructure.service.models import ApiRequest, Platform
+from infrastructure.service.models import ApiRecord, Platform
 from django.test import TestCase
 import json
 from interface.whatsapp.response import WhatsAppResponse

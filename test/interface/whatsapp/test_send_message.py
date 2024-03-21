@@ -5,7 +5,7 @@ from django.test import TestCase
 from infrastructure.member.models import MemberAccount
 from infrastructure.place.models import Account
 from interface.whatsapp.response import WhatsAppResponse
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 from services.response.models import SectionsMessage, Section, Button, ReplyMessage
 
 

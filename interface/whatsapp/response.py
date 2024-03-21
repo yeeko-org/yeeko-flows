@@ -1,7 +1,7 @@
 
 from typing import Any, Dict, Optional
 from django.conf import settings
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 from services.response import ResponseAbc
 import requests
 
@@ -140,7 +140,7 @@ class WhatsAppResponse(ResponseAbc):
         return self._base_data("interactive", interactive)
 
     def send_message(
-        self, message_data: dict, api_request: Optional[ApiRequest] = None
+        self, message_data: dict, api_request: Optional[ApiRecord] = None
     ):
 
         url = f"{self.base_url}/{self.sender.account.pid}/messages"

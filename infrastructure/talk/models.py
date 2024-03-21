@@ -3,7 +3,7 @@ import uuid as uuid_lib
 from django.db.models import JSONField
 
 from infrastructure.assign.models import ApplyBehavior
-from infrastructure.service.models import InteractionType, ApiRequest
+from infrastructure.service.models import InteractionType, ApiRecord
 from infrastructure.box.models import MessageLink, Reply
 from infrastructure.xtra.models import Extra
 from infrastructure.member.models import MemberAccount, Member
@@ -94,7 +94,8 @@ class Interaction(models.Model):
     trigger = models.OneToOneField(
         Trigger, on_delete=models.CASCADE,
         blank=True, null=True, related_name='interaction')
-    api_requests = models.ManyToManyField(ApiRequest, blank=True)
+    api_record_in = models.ManyToManyField(ApiRecord, blank=True)
+    api_record_out = models.OneToOneField(ApiRecord, on_delete=models.CASCADE)
     persona = models.ForeignKey(
         MemberAccount, on_delete=models.CASCADE,
         blank=True, null=True, related_name='persona')
@@ -154,7 +155,7 @@ class Event(models.Model):
     event_name = models.CharField(
         max_length=20, choices=EVENT_NAME_CHOICES)
     api_request = models.ForeignKey(
-        ApiRequest, on_delete=models.CASCADE, blank=True, null=True)
+        ApiRecord, on_delete=models.CASCADE, blank=True, null=True)
     timestamp = models.IntegerField(blank=True, null=True)
     emoji = models.CharField(max_length=10, blank=True, null=True)
     interaction = models.ForeignKey(
@@ -199,7 +200,7 @@ class ExtraValue(models.Model):
 #     interaction = models.ForeignKey(
 #         Interaction, on_delete=models.CASCADE, blank=True, null=True)
 #     api_request = models.ForeignKey(
-#         ApiRequest, on_delete=models.CASCADE, blank=True, null=True)
+#         ApiRecord, on_delete=models.CASCADE, blank=True, null=True)
 #     text = models.TextField(blank=True, null=True)
 #     errors = JSONField(blank=True, null=True)
 #

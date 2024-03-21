@@ -3,7 +3,7 @@ import re
 # from bot_message.models import Message
 # from bot_user.models import MsgSend, Answer
 from infrastructure.member.models import MemberAccount
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 # from scripts.common import has_admin
 # from proposals.models import Proposal
 # from bot_core.models import BotError
@@ -17,7 +17,7 @@ from services.response import ResponseAbc
 
 class TextMessageProcessor(Processor):
     sender: MemberAccount
-    api_request: ApiRequest
+    api_request: ApiRecord
     request_message_id: str
     message: TextMessage
     response: ResponseAbc
@@ -49,18 +49,10 @@ class TextMessageProcessor(Processor):
         elif not self.can_response():
             return
 
-        statusMess = ["get_started", "OPEN_ASK",
-                      "IS_MANDATORY", "POTENTIAL_TRACKING", "YKS"]
-
         try:
-            # if "Envía este mensaje para" in self.message.text:
-            #     self.handle_topic_message(self.message.text)
-            #     return
 
             if self.message.text.startswith("/"):
                 self.handle_commands()
-            # elif self.sender.statusMess in statusMess:
-            #     self.handle_status(self.sender, self.message.text)
 
             self.handle_text_message()
             # else:
@@ -128,41 +120,6 @@ class TextMessageProcessor(Processor):
         #     self.sender.send_simple_message(
         #         "este mensaje (%s) no ha sido creado" % self.message.text[1:])
 
-    # def handle_topic_message(self):
-
-    #     all_topics = [
-    #         {"short_name": "jovenes", "large_name": "Oportunidades a los jóvenes"},
-    #         {"short_name": "democracia", "large_name": "Proteger la democracia"},
-    #         {"short_name": "trabajo", "large_name": "Mejores trabajos para tu desarrollo"},
-    #         {"short_name": "salud", "large_name": "Salud digna para tod@s"},
-    #         {"short_name": "medioambiente", "large_name": "Medioambiente sano"},
-    #         {"short_name": "educacion", "large_name": "Educación de calidad para tod@s"},
-    #         {"short_name": "pobreza", "large_name": "Combate a la pobreza"},
-    #         {"short_name": "mujeres", "large_name": "Igualdad sustantiva de género"},
-    #         {"short_name": "seguridad", "large_name": "Seguridad"},
-    #         {"short_name": "corrupcion", "large_name": "Combate a la corrupción"}
-    #     ]
-    #     msg_name = ""
-    #     if "seguir participando en el tema:" in self.message.text:
-    #         msg_name = "simplificada2"
-    #     elif "comenzar a participar en el tema:" in self.message.text:
-    #         msg_name = "simplificada1"
-    #     for topic in all_topics:
-    #         if topic["large_name"].lower() in self.message.text.lower():
-    #             msg_name += "_" + topic["short_name"]
-    #             payload = 'Msg {"name": "%s"}' % msg_name
-    #             payload_intro = 'Msg {"name": "presentacion_simplificada"}'
-    #             self.message.member_account.add_user_extra(
-    #                 data={"selected_topic": topic["large_name"]},
-    #                 cumulative=False, data_type="auxiliar")
-    #             countdown = DespachadorPayload(self.message.member_account, payload_intro)
-    #             UserMessengerCommit.objects.create(
-    #                 userMessenger=self.message.member_account,
-    #                 typeCommit="link_qr",
-    #                 self.api_request=payload)
-    #             return DespachadorPayload(
-    #                 self.message.member_account, payload, countdown=countdown)
-
     def handle_commands(self):
         pass
         # if self.message.text == "/restart" or self.message.text == "/reanudar":
@@ -173,39 +130,12 @@ class TextMessageProcessor(Processor):
         #     HelpCommands(self.message.member_account)
         # elif self.message.text == "/status":
         #     self.message.member_account.send_status_message()
-        # elif self.message.text == "/por el poder de yeeko!雷":
-        #     UserStaffPower(self.message.member_account)
         # elif self.message.text == "/request meta_data user":
         #     SenderStatusFull(self.message.member_account)
         # elif self.message.text == "/request meta_data":
         #     SenderStatusFull(self.message.member_account, variables={"user": False})
         # elif self.message.text == "/test" or self.message.text == "/probar":
         #     self.message.member_account.set_tester_config()
-        # elif self.message.text.startswith("/link account"):
-        #     self.message.member_account.link_account_with_code(self.message.text[13:])
-        # elif "/demo " in self.message.text.lower():
-        #     self.message.member_account.add_demo(self.message.text.replace("/demo ", "").strip())
-        # elif self.message.text == "/yeekos":
-        #     self.message.member_account.status()
-        #     Yeekos(self.message.member_account)
-        # elif re.match('/yeeko [0-9]+', self.message.text):
-        #     self.message.member_account.status()
-        #     yeeko_id = int(filter(str.isdigit, str(self.message.text)))
-        #     DetallesYeeko(self.message.member_account, {"yeeko_id": yeeko_id})
-        # elif re.match('/propuesta [0-9]+', self.message.text):
-        #     proposal_id = int(filter(str.isdigit, str(self.message.text)))
-        #     DetallesPropuesta(self.message.member_account, [proposal_id])
-
-    # def handle_status(self, self.sender, self.message.text):
-    #     statusMess = self.sender.statusMess
-    #     if statusMess == "OTHERS":
-    #         # Handle status "OTHERS"
-    #         pass
-    #     elif re.match('COMMENT [0-9]+', statusMess):
-    #         # Handle comment status
-    #         pass
-    #     else:
-    #         self.sender.send_simple_message("No entendí el mensaje")
 
     def handle_text_message(self):
         # comprovarcontexto del mensaje

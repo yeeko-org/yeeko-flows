@@ -5,7 +5,7 @@ from typing import Any, Optional
 from django.conf import settings
 
 from infrastructure.place.models import Account
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import Interaction
 
 
@@ -55,7 +55,7 @@ class WhatsappMessage:
     def parse_request_body(self, request):
         self.req_body = json.loads(request.body)
         self.timestamp_server = int(time.time())
-        self.api_request = ApiRequest(
+        self.api_request = ApiRecord(
             platform_id=self.platform_name,
             body=self.req_body,
             is_incoming=True,

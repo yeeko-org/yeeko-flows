@@ -79,7 +79,11 @@ class InteractionType(models.Model):
         verbose_name_plural = 'Tipos de interacción'
 
 
-class ApiRequest(models.Model):
+class ApiRecord(models.Model):
+    """
+    IN this model (ApiRecord) we save all the calls (incoming and outgoing)
+    from the API of third party platforms
+    """
     platform = models.ForeignKey(
         Platform, on_delete=models.CASCADE
     )

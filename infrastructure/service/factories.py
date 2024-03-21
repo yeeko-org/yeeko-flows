@@ -1,10 +1,10 @@
 from factory.django import DjangoModelFactory
 import factory
 
-from infrastructure.service.models import ApiRequest, InteractionType, Platform
+from infrastructure.service.models import ApiRecord, InteractionType, Platform
 from utilities.factory_util import optional_sub_factory, safe_pydict
 
-from .models import Platform, InteractionType, ApiRequest
+from .models import Platform, InteractionType, ApiRecord
 
 
 class PlatformFactory(DjangoModelFactory):
@@ -40,9 +40,9 @@ class InteractionTypeFactory(DjangoModelFactory):
     )
 
 
-class ApiRequestFactory(DjangoModelFactory):
+class ApiRecordFactory(DjangoModelFactory):
     class Meta:
-        model = ApiRequest
+        model = ApiRecord
 
     platform = factory.SubFactory(PlatformFactory)
     body = safe_pydict()
@@ -51,7 +51,7 @@ class ApiRequestFactory(DjangoModelFactory):
     response_status = factory.Faker('random_int', min=100, max=599)
     response_body = safe_pydict()
     repeated = factory.LazyAttribute(
-        lambda _: optional_sub_factory(ApiRequestFactory, lazy=True)
+        lambda _: optional_sub_factory(ApiRecordFactory, lazy=True)
     )
     error_text = factory.Faker('text')
     errors = safe_pydict()

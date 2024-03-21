@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 from infrastructure.member.models import MemberAccount
-from infrastructure.service.models import ApiRequest
+from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import BuiltReply
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 class MessageBase(BaseModel):
     message_id: str
     timestamp: int
-    api_request: Optional[ApiRequest] = None
+    api_request: Optional[ApiRecord] = None
 
     class Config:
         arbitrary_types_allowed = True

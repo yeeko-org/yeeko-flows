@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from infrastructure.service.models import ApiRequest, InteractionType, Platform
+from infrastructure.service.models import ApiRecord, InteractionType, Platform
 
 
 @admin.register(Platform)
@@ -46,8 +46,8 @@ class InteractionTypeAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Tipos de interacción'
 
 
-@admin.register(ApiRequest)
-class ApiRequestAdmin(admin.ModelAdmin):
+@admin.register(ApiRecord)
+class ApiRecordAdmin(admin.ModelAdmin):
     list_display = ('platform', 'interaction_type',
                     'is_incoming', 'success', 'created')
     list_filter = ('platform', 'interaction_type', 'is_incoming', 'success')
