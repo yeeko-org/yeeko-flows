@@ -15,10 +15,10 @@ class WhatsAppRequestTest(TestCase):
     def test_record_request(self):
         instance = WhatsAppRequest(self.raw_data)
         self.assertFalse(instance.errors)
-        self.assertEqual(len(instance.accounts), 1)
-        self.assertEqual(len(instance.accounts[0].members), 1)
-        self.assertEqual(len(instance.accounts[0].members[0].messages), 1)
-        message = instance.accounts[0].members[0].messages[0]
+        self.assertEqual(len(instance.input_accounts), 1)
+        self.assertEqual(len(instance.input_accounts[0].members), 1)
+        self.assertEqual(len(instance.input_accounts[0].members[0].messages), 1)
+        message = instance.input_accounts[0].members[0].messages[0]
         self.assertEqual(type(message), TextMessage)
 
         self.assertEqual(message.text, "started")  # type: ignore

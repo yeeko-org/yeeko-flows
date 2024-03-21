@@ -1,5 +1,5 @@
 from typing import List
-from services.request import RequestAbc
+from services.request import InputAccount, InputSender, RequestAbc
 from services.request.message_model import (
     InteractiveMessage, EventMessage, TextMessage
 )
@@ -12,41 +12,62 @@ class WhatsAppRequest(RequestAbc):
 
     def __init__(self, raw_data: dict) -> None:
         super().__init__(raw_data, platform="whatsapp")
+        self._contacs_data = {}
+
+    def _get_request_account(self, change: dict) -> InputAccount:
+        value = change.get("value", {})
+        metadata = value.get("metadata", {})
+        pid = metadata.get("phone_number_id")
+        return self.get_input_account(pid)
+
+    def _full_contact(self, change: dict) -> None:
+        value = change.get("value", {})
+        contacts = value.get("contacts", [])
+        for contac in contacts:
+            profile = contac.get("profile")
+            sender_id = contac.get("wa_id")
+            profile["phone"] = contac.get("wa_id")
+            profile["user_field_filter"] = "phone"
+            self._contacs_data.setdefault(
+                sender_id, {
+                    "sender_id": sender_id,
+                    "contact": profile
+                }
+            )
+
+    def _set_messages(
+        self, change: dict, input_account: InputAccount
+    ) -> None:
+        value = change.get("value", {})
+        mesages = value.get("messages", [])
+        for message in mesages:
+            sender_id = message.get("from")
+            try:
+                member_message = self.get_input_sender(
+                    sender_id, input_account=input_account
+                )
+            except Exception as e:
+                self.errors.append(
+                    ("Error getting input sender", {"error": str(e)})
+                )
+                continue
+
+            member_message.messages.append(self.data_to_class(message))
 
     def sort_data(self):
         entry = self.raw_data.get("entry", [])
         for current_entry in entry:
-            pid = current_entry.get("id")
-            self.data.setdefault(pid, {})
-            full_contacs = {}
 
             for change in current_entry.get("changes", []):
-                value = change.get("value", {})
-                metadata = value.get("metadata", {})
-                pid = metadata.get("phone_number_id")
-                self.data.setdefault(pid, {})
-                full_contacs =self.data[pid].get("members", {})
-                mesages = value.get("messages", [])
-                contacts = value.get("contacts", [])
-
-                for contac in contacts:
-                    profile = contac.get("profile")
-                    sender_id = contac.get("wa_id")
-                    profile["phone"] = contac.get("wa_id")
-                    profile["user_field_filter"] = "phone"
-                    full_contacs.setdefault(
-                        sender_id, {
-                            "sender_id": sender_id,
-                            "contact": profile,
-                            "messages": []
-                        }
+                try:
+                    input_account = self._get_request_account(change)
+                except Exception as e:
+                    self.errors.append(
+                        ("Error getting request account", {"error": str(e)})
                     )
-
-                for message in mesages:
-                    sender_id = message.get("from")
-                    full_contacs[sender_id]["messages"].append(message)
-
-                self.data[pid]["members"] = list(full_contacs.values())
+                    continue
+                self._full_contact(change)
+                self._set_messages(change, input_account)
 
     def data_to_class(
         self, data: dict

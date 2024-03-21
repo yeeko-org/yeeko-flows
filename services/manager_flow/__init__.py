@@ -11,7 +11,7 @@ from services.request.message_model import (
 )
 from services.response import ResponseAbc
 
-from services.request import MemberMessages, RequestAbc
+from services.request import InputSender, RequestAbc
 
 
 class ManagerFlow(AbstractManagerFlow):
@@ -32,20 +32,20 @@ class ManagerFlow(AbstractManagerFlow):
     def __call__(
             self
     ) -> None:
-        for account in self.request.accounts:
-            for member in account.members:
+        for input_account in self.request.input_accounts:
+            for member in input_account.members:
                 self.process_messages(member)
 
         for response in self.response_list:
             response.send_messages()
 
-    def process_messages(self, member: MemberMessages) -> None:
+    def process_messages(self, input_sender: InputSender) -> None:
         """
         Se requiere implementar una funcion que limpie y determine el mensaje
         principal o la intencion en caso de recibir varios mensajes.
         """
-        for message in member.messages:
-            response = self._response_class(sender=member.member)
+        for message in input_sender.messages:
+            response = self._response_class(sender=input_sender.member)
             self.response_list.append(response)
             self.process_message(message, response)
 

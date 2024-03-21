@@ -69,7 +69,7 @@ class RequestAbcTest(TestCase):  # replace with your actual class name
         self.assertEqual(instance.raw_data, self.raw_data)
         self.assertEqual(instance.platform, self.platform)
         self.assertEqual(instance.data, {})
-        self.assertEqual(instance.accounts, [])
+        self.assertEqual(instance.input_accounts, [])
         self.assertEqual(instance.errors, [])
 
     def test_record_request(self):
