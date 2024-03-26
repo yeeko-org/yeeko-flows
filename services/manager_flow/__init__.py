@@ -1,17 +1,14 @@
 from typing import Type
-from urllib import response
-from services.processor import text_processor
-
-from services.processor.interactive_processor import InteractiveProcessor
+from infrastructure.service.models import ApiRecord
 from services.manager_flow.manager_flow_abc import AbstractManagerFlow
 from services.processor.state_processor import StateProcessor
 from services.processor.text_processor import TextMessageProcessor
+from services.request import InputSender, RequestAbc
+from services.response import ResponseAbc
+
 from services.request.message_model import (
     InteractiveMessage, EventMessage, TextMessage
 )
-from services.response import ResponseAbc
-
-from services.request import InputSender, RequestAbc
 
 
 class ManagerFlow(AbstractManagerFlow):
@@ -23,29 +20,35 @@ class ManagerFlow(AbstractManagerFlow):
         self.request = request_class(raw_data)
         self._response_class = response_class
 
-        self.text_processor_class = TextMessageProcessor
-        self.interacive_processor = InteractiveProcessor(self)
-        self.state_processor = StateProcessor(self)
-
         self.response_list = []
 
     def __call__(
             self
     ) -> None:
         for input_account in self.request.input_accounts:
-            for member in input_account.members:
-                self.process_messages(member)
+            api_record_in = input_account.api_record
+            api_record_in.add_errors(input_account.errors)
+
+            for input_sender in input_account.members:
+                self.process_messages(input_sender, api_record_in)
+                api_record_in.add_errors(input_sender.errors)
+            api_record_in.save()
 
         for response in self.response_list:
             response.send_messages()
+            response.api_record_in.save()
 
-    def process_messages(self, input_sender: InputSender) -> None:
+    def process_messages(
+            self, input_sender: InputSender, api_record_in: ApiRecord
+    ) -> None:
         """
         Se requiere implementar una funcion que limpie y determine el mensaje
         principal o la intencion en caso de recibir varios mensajes.
         """
         for message in input_sender.messages:
-            response = self._response_class(sender=input_sender.member)
+            response = self._response_class(
+                sender=input_sender.member, api_record_in=api_record_in
+            )
             self.response_list.append(response)
             self.process_message(message, response)
 
@@ -57,8 +60,11 @@ class ManagerFlow(AbstractManagerFlow):
             text_processor = TextMessageProcessor(self, message, response)
             text_processor.process()
         elif isinstance(message, InteractiveMessage):
-            self.interacive_processor.process(message)
+            # interactive_processor = InteractiveProcessor(self, message, response)
+            # interactive_processor.process()
+            pass
         elif isinstance(message, EventMessage):
-            self.state_processor.process(message)
+            event_processor = StateProcessor(self, message, response)
+            event_processor.process()
         else:
             raise ValueError("Message type not supported")
