@@ -2,9 +2,8 @@
 import time
 from typing import Optional
 
-from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
-from infrastructure.talk.models import BuiltReply
+from infrastructure.talk.models import BuiltReply, Interaction
 from pydantic import BaseModel
 
 
@@ -53,7 +52,19 @@ class InteractiveMessage(MessageBase):
 
 
 class EventMessage(MessageBase):
-
-    message_id: Optional[str]
     status: str
-    timestamp: int
+    emoji: Optional[str]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._interaction = Interaction.objects.get(mid=self.message_id)
+
+        """
+        se puede generar el evento desde aqui, pero revisar si no se calcularan algunas otras acciones
+        """
+
+    @property
+    def interaction(self):
+        if not hasattr(self, "_interaction"):
+            self._interaction = Interaction.objects.get(mid=self.message_id)
+        return self._interaction
