@@ -1,3 +1,5 @@
+import traceback
+from typing import Optional
 from django.db import models
 from django.db.models import JSONField
 
@@ -102,3 +104,18 @@ class ApiRecord(models.Model):
     success = models.BooleanField(default=False)
     created = models.DateTimeField(blank=True, null=True)
     datetime = models.IntegerField(blank=True, null=True)
+
+    def add_errors(self, errors: list, e: Optional[BaseException] = None) -> None:
+        if not errors:
+            return
+        if not self.errors:
+            self.errors = []
+        self.errors += errors
+
+    def add_error(self, error: dict, e: Optional[BaseException] = None) -> None:
+        if not self.errors:
+            self.errors = []
+
+        if e:
+            error["traceback"] = traceback.format_exc()
+        self.errors.append(error)
