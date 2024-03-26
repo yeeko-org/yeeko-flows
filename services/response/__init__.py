@@ -8,6 +8,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
 from typing import List, Optional
 
+from infrastructure.talk.models import Interaction
 from services.response.models import SectionsMessage, ReplyMessage
 
 from typing import Callable
@@ -18,56 +19,77 @@ def exception_handler(func: Callable) -> Callable:
         try:
             return func(self, *args, **kwargs)
         except Exception as e:
-            self.errors.append(str(e))
+            self.api_record_in.add_error(
+                {
+                    "error": str(e),
+                    "method": func.__name__,
+                },
+                e=e
+            )
+
     return wrapper
 
 
 class ResponseAbc(ABC, BaseModel):
     sender: MemberAccount
-    message_list: List[tuple[dict, Optional[ApiRecord]]] = []
-    errors: list = []
-    api_request: Optional[ApiRecord] = None
+    api_record_in: ApiRecord
+    message_list: List[dict] = []
+    errors: List[dict] = []
 
     class Config:
         arbitrary_types_allowed = True
 
-    def _add_message(self, message: dict):
-        self.message_list.append((message, self.api_request))
-
     @exception_handler
     def message_text(self, message: str):
         message_data = self.text_to_data(message)
-        self._add_message(message_data)
+        self.message_list.append(message_data)
 
     @exception_handler
     def message_multimedia(
         self, url_media: str, media_type: str, caption: str = ""
     ):
         message_data = self.multimedia_to_data(url_media, media_type, caption)
-        self._add_message(message_data)
+        self.message_list.append(message_data)
 
     @exception_handler
     def message_few_buttons(self, message: ReplyMessage):
         message_data = self.few_buttons_to_data(message)
-        self._add_message(message_data)
+        self.message_list.append(message_data)
 
     @exception_handler
     def message_many_buttons(self, message: ReplyMessage):
         message_data = self.many_buttons_to_data(message)
-        self._add_message(message_data)
+        self.message_list.append(message_data)
 
     @exception_handler
     def message_sections(self, message: SectionsMessage):
         message_data = self.sections_to_data(message)
-        self._add_message(message_data)
+        self.message_list.append(message_data)
 
     def send_messages(self):
-        for message, api_request in self.message_list:
+        for message in self.message_list:
             try:
-                response = self.send_message(message)
-                self.save_interaction(response, message, api_request)
+                api_record_out = self.send_message(message)
             except Exception as e:
-                self.errors.append(str(e))
+                self.api_record_in.add_error(
+                    {
+                        "error": str(e),
+                        "method": "send_message",
+                        "message": message
+                    },
+                    e=e
+                )
+                continue
+            try:
+                self.save_interaction(api_record_out, message)
+            except Exception as e:
+                self.api_record_in.add_error(
+                    {
+                        "error": str(e),
+                        "method": "save_interaction"
+                    },
+                    e=e
+                )
 
     @abstractmethod
     def text_to_data(self, message: str) -> dict:
@@ -94,40 +116,51 @@ class ResponseAbc(ABC, BaseModel):
     @abstractmethod
     def send_message(
         self, message_data: dict
-    ) -> dict:
+    ) -> ApiRecord:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_mid(self, body: Optional[dict]) -> Optional[str]:
         raise NotImplementedError
 
     def save_interaction(
-        self, response: dict, message_data: dict,
-        api_request: Optional[ApiRecord] = None
+        self, api_record_out: ApiRecord, message_data: dict
     ) -> None:
-        pprint(response)
 
+        if api_record_out.response_status != 200:
+            # a quien oertenece el error?
+            self.api_record_in.add_errors(
+                [
+                    {
+                        "error": "Error en la respuesta de salida",
+                        "method": "save_interaction",
+                        "status": api_record_out.response_status,
+                        "body": api_record_out.response_body
+                    }
+                ]
+            )
+            return
+        mid = self.get_mid(api_record_out.response_body)
 
-"""
-posibles mensjaes de whatsapp
-https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages#mensajes-interactivos
+        if not mid:
+            self.api_record_in.add_errors(
+                [
+                    {
+                        "error": "No se pudo obtener el mid",
+                        "method": "save_interaction",
+                        "status": api_record_out.response_status,
+                        "body": api_record_out.response_body
+                    }
+                ]
+            )
+            return
 
-mensajes de productos y multiproductos y catalogos (catalogo de ventas de whatsapp bussines)
-mensajes de flujos
-
-
-mensjae de listas
-mensajes de respuesta
-
-mensaje de plantillas
-
-"""
-
-
-"""
-para los interpretes generales seran:
-
-mensaje simple
-mensaje media
-mensaje de 3 botones
-mensaje de 10 botones
-mensaje de secciones
-
-
-"""
+        interaction = Interaction.objects.create(
+            mid=mid,
+            interaction_type_id="default",
+            is_incoming=False,
+            member_account=self.sender,
+            # api_record_in=self.api_record_in,
+            api_record_out=api_record_out
+        )
+        interaction.api_record_in.add(self.api_record_in)
