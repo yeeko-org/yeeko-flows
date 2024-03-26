@@ -8,7 +8,7 @@ from services.request.message_model import (
 class WhatsAppRequest(RequestAbc):
     raw_data: dict
     data: dict
-    errors: List[tuple[str, dict]]
+    errors: List[dict]
 
     def __init__(self, raw_data: dict) -> None:
         super().__init__(raw_data, platform="whatsapp")
@@ -18,7 +18,7 @@ class WhatsAppRequest(RequestAbc):
         value = change.get("value", {})
         metadata = value.get("metadata", {})
         pid = metadata.get("phone_number_id")
-        return self.get_input_account(pid)
+        return self.get_input_account(pid, raw_data=change)
 
     def _full_contact(self, change: dict) -> None:
         value = change.get("value", {})
@@ -47,8 +47,11 @@ class WhatsAppRequest(RequestAbc):
                     sender_id, input_account=input_account
                 )
             except Exception as e:
-                self.errors.append(
-                    ("Error getting input sender", {"error": str(e)})
+                input_account.errors.append(
+                    {
+                        "error": str(e),
+                        "method": "get_input_sender"
+                    }
                 )
                 continue
 
@@ -63,10 +66,23 @@ class WhatsAppRequest(RequestAbc):
                     input_account = self._get_request_account(change)
                 except Exception as e:
                     self.errors.append(
-                        ("Error getting request account", {"error": str(e)})
+                        {
+                            "error": str(e),
+                            "method": "_get_request_account"
+                        }
                     )
+
                     continue
-                self._full_contact(change)
+                try:
+                    self._full_contact(change)
+                except Exception as e:
+                    input_account.errors.append(
+                        {
+                            "error": str(e),
+                            "method": "_full_contact"
+                        }
+                    )
+
                 self._set_messages(change, input_account)
 
     def data_to_class(
