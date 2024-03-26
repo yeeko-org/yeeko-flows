@@ -16,7 +16,7 @@ from django.utils import timezone
 class InputSender:
     member: MemberAccount
     messages: List[TextMessage | InteractiveMessage | EventMessage]
-    errors: List[tuple[str, dict]]
+    errors: List[dict]
 
     def __init__(self, member: MemberAccount) -> None:
         self.member = member
@@ -27,16 +27,31 @@ class InputSender:
 class InputAccount:
     account: Account
     members: List[InputSender]
-    errors: List[tuple[str, dict]]
+    statuses: List[EventMessage]
+    errors: List[dict]
     raw_data: dict
+    api_record: ApiRecord
 
     def __init__(
-        self, account: Account, raw_data: Optional[dict] = None
+        self, account: Account, raw_data: dict
     ) -> None:
         self.account = account
-        self.raw_data = raw_data or {}
+        self.raw_data = raw_data
         self.members = []
         self.errors = []
+        self.statuses = []
+
+        self.api_record = ApiRecord(
+            platform=account.platform,
+            body=raw_data,
+            is_incoming=True,
+            created=timezone.now(),
+            interaction_type=InteractionType.objects.get(
+                name="default", way="in"
+            ),
+            errors=[]
+        )
+        self.api_record.save()
 
     def get_input_sender(self, sender_id: str) -> Optional[InputSender]:
         for member in self.members:
@@ -49,7 +64,7 @@ class RequestAbc(ABC):
     raw_data: dict
     data: dict
     input_accounts: List[InputAccount]
-    errors: List[tuple[str, dict]]
+    errors: List[dict]
 
     def __init__(
             self, raw_data: dict, platform: Optional[str] = None,
@@ -66,6 +81,10 @@ class RequestAbc(ABC):
         self.record_request()
         self.sort_data()
 
+        if self.errors:
+            self.api_record.errors = self.errors  # type: ignore
+            self.api_record.save()
+
     def get_account(self, pid: str) -> Account:
         try:
             return Account.objects.get(pid=pid)
@@ -73,15 +92,15 @@ class RequestAbc(ABC):
             raise ValueError(f"Account {pid} not found")
 
     def get_input_account(
-        self, pid: str, raw_data: Optional[dict] = None
+        self, pid: str, raw_data: dict
     ) -> InputAccount:
         for input_account in self.input_accounts:
             if input_account.account.pid == pid:
                 return input_account
         input_account = InputAccount(
-            account=self.get_account(pid)
+            account=self.get_account(pid), raw_data=raw_data
         )
-        input_account.raw_data = raw_data or {}
+
         self.input_accounts.append(input_account)
         return input_account
 
@@ -119,14 +138,14 @@ class RequestAbc(ABC):
         self.timestamp_server = int(time.time())
         default_interactiontype, _ = InteractionType.objects.get_or_create(
             name="default", way="in")
-        self.api_request = ApiRecord(
+        self.api_record = ApiRecord(
             platform_id=self.platform,
             body=self.raw_data,
             is_incoming=True,
             created=timezone.now(),
             interaction_type=default_interactiontype
         )
-        self.api_request.save()
+        self.api_record.save()
 
     def message_check_v4(self, message_class):
         return False
