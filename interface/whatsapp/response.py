@@ -139,9 +139,17 @@ class WhatsAppResponse(ResponseAbc):
         })
         return self._base_data("interactive", interactive)
 
+    def get_mid(self, body: Dict | None) -> str | None:
+        if not body:
+            return None
+        messages = body.get("messages") or []
+        if not messages:
+            return None
+        return messages[0].get("id")
+
     def send_message(
         self, message_data: dict, api_request: Optional[ApiRecord] = None
-    ):
+    ) -> ApiRecord:
 
         url = f"{self.base_url}/{self.sender.account.pid}/messages"
         headers = {
@@ -150,4 +158,16 @@ class WhatsAppResponse(ResponseAbc):
         }
 
         response = requests.post(url, headers=headers, json=message_data)
-        return response.json()
+        try:
+            response_body = response.json()
+        except ValueError:
+            response_body = {"body": response.text}
+
+        return ApiRecord.objects.create(
+            platform=self.sender.account.platform,
+            body=message_data,
+            interaction_type_id="default",
+            is_incoming=False,
+            response_status=response.status_code,
+            response_body=response_body,
+        )
