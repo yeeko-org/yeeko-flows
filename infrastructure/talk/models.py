@@ -94,8 +94,12 @@ class Interaction(models.Model):
     trigger = models.OneToOneField(
         Trigger, on_delete=models.CASCADE,
         blank=True, null=True, related_name='interaction')
-    api_record_in = models.ManyToManyField(ApiRecord, blank=True)
-    api_record_out = models.OneToOneField(ApiRecord, on_delete=models.CASCADE)
+    api_record_in = models.ManyToManyField(
+        ApiRecord, blank=True, related_name='api_records_in'
+    )
+    api_record_out = models.OneToOneField(
+        ApiRecord, on_delete=models.CASCADE, related_name='api_records_out'
+    )
     persona = models.ForeignKey(
         MemberAccount, on_delete=models.CASCADE,
         blank=True, null=True, related_name='persona')
