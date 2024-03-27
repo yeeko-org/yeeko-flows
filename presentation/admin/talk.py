@@ -46,7 +46,10 @@ class InteractionAdmin(admin.ModelAdmin):
         'mid', 'interaction_type__name',
         'member_account__member__user__username')
     list_filter = ('interaction_type', 'is_incoming', 'created')
-    raw_id_fields = ('trigger', 'member_account', 'persona', 'api_requests')
+    raw_id_fields = (
+        'trigger', 'member_account', 'persona', 'api_record_in',
+        'api_record_out'
+    )
     inlines = (EventInline,)
 
     class Meta:
