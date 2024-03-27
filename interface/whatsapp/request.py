@@ -8,7 +8,6 @@ from services.request.message_model import (
 class WhatsAppRequest(RequestAbc):
     raw_data: dict
     data: dict
-    errors: List[dict]
 
     def __init__(self, raw_data: dict) -> None:
         super().__init__(raw_data, platform="whatsapp")
@@ -47,43 +46,76 @@ class WhatsAppRequest(RequestAbc):
                     sender_id, input_account=input_account
                 )
             except Exception as e:
-                input_account.errors.append(
+                input_account.api_record.add_error(
                     {
                         "error": str(e),
-                        "method": "get_input_sender"
-                    }
+                        "method": "get_input_sender",
+                        "value.messages.mesage": message
+                    },
+                    e=e
                 )
+
                 continue
 
             member_message.messages.append(self.data_to_class(message))
 
+    def _set_statuses(self, change: dict, input_account: InputAccount) -> None:
+        value = change.get("value", {})
+        statuses = value.get("statuses", [])
+        for status_data in statuses:
+            sender_id = status_data.get("recipient_id")
+            status_data["type"] = "state"
+            try:
+                member_message = self.get_input_sender(
+                    sender_id, input_account=input_account
+                )
+            except Exception as e:
+                input_account.api_record.add_error(
+                    {
+                        "error": str(e),
+                        "method": "get_input_sender",
+                        "status_data": status_data
+                    },
+                    e=e
+                )
+
+                continue
+
+            member_message.messages.append(self.data_to_class(status_data))
+
     def sort_data(self):
         entry = self.raw_data.get("entry", [])
+        self._use_global_api_record = False if len(entry) > 1 else True
         for current_entry in entry:
 
             for change in current_entry.get("changes", []):
                 try:
                     input_account = self._get_request_account(change)
                 except Exception as e:
-                    self.errors.append(
+                    self.api_record.add_error(
                         {
                             "error": str(e),
-                            "method": "_get_request_account"
-                        }
+                            "method": "_get_request_account",
+                            "change": change
+                        },
+                        e=e
                     )
 
                     continue
                 try:
                     self._full_contact(change)
                 except Exception as e:
-                    input_account.errors.append(
+                    self.api_record.add_error(
                         {
                             "error": str(e),
-                            "method": "_full_contact"
-                        }
+                            "method": "_full_contact",
+                            "change": change
+                        },
+                        e=e
                     )
 
                 self._set_messages(change, input_account)
+                self._set_statuses(change, input_account)
 
     def data_to_class(
         self, data: dict
@@ -93,7 +125,7 @@ class WhatsAppRequest(RequestAbc):
             return self._create_text_message(data)
         elif type == "interactive":
             return self._create_interactive_message(data)
-        elif type == "state":
+        elif type in ["state", "reaction"]:
             return self._create_state_notification(data)
         else:
             raise ValueError(f"Message type {type} not supported")
@@ -102,10 +134,29 @@ class WhatsAppRequest(RequestAbc):
         text = data.get("text", {}).get("body")
         message_id = data.get("id", "")
         timestamp = data.get("timestamp", 0)
-        return TextMessage(text=text, message_id=message_id, timestamp=int(timestamp))
+        return TextMessage(
+            text=text,
+            message_id=message_id,
+            timestamp=int(timestamp)
+        )
 
     def _create_interactive_message(self, data: dict) -> InteractiveMessage:
         raise NotImplementedError
 
-    def _create_state_notification(self, data: dict) -> EventMessage:
-        raise NotImplementedError
+    def _create_state_notification(self, status_data: dict) -> EventMessage:
+        message_id = status_data.get("id") or ""
+        type_status = status_data.get("type")
+        if type_status == "reaction":
+            status = "reaction"
+            emoji = status_data.get("reaction", {}).get("emoji")
+        else:
+            status = status_data.get("status") or ""
+            emoji = None
+
+        timestamp = status_data.get("timestamp") or 0
+        return EventMessage(
+            message_id=message_id,
+            timestamp=timestamp,
+            status=status,
+            emoji=emoji
+        )
