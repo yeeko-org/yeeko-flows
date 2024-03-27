@@ -131,17 +131,17 @@ class RequestAbc(ABC):
     def get_input_sender(
             self, sender_id: str, input_account: InputAccount
     ) -> InputSender:
-        member_message = input_account.get_input_sender(sender_id)
-        if member_message:
-            return member_message
+        input_sender = input_account.get_input_sender(sender_id)
+        if input_sender:
+            return input_sender
 
         member_data = self._contacs_data.get(sender_id, {})
         member = self.get_member_account(
             sender_id, input_account.account,  member_data
         )
-        member_message = InputSender(member=member)
-        input_account.members.append(member_message)
-        return member_message
+        input_sender = InputSender(member=member)
+        input_account.members.append(input_sender)
+        return input_sender
 
     def get_member_account(
             self, sender_id: str, account: Account, member_data: dict

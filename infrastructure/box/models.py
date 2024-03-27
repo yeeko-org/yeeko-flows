@@ -142,6 +142,9 @@ class Reply(models.Model):
         ordering = ['order']
 
 
+Reply()
+
+
 class MessageLink(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     link = models.URLField(max_length=255, blank=True, null=True)
