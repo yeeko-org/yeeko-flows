@@ -81,15 +81,14 @@ class TextMessageProcessor(Processor):
 
         if self.has_role_or_admin():
             return True
-
-        self.errors.append((
-            "El usuario no tiene permisos de respuesta",
+        self.response.api_record_in.add_error(
             {
+                "error": "El usuario no tiene permisos de respuesta",
                 "sender_text_response": sender_text_response,
                 "account_text_response": account_text_response,
                 "space_test": space_test
             }
-        ))
+        )
 
     def has_role_or_admin(self):
         pass

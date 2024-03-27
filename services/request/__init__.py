@@ -16,55 +16,54 @@ from django.utils import timezone
 class InputSender:
     member: MemberAccount
     messages: List[TextMessage | InteractiveMessage | EventMessage]
-    errors: List[dict]
 
     def __init__(self, member: MemberAccount) -> None:
         self.member = member
         self.messages = []
-        self.errors = []
 
 
 class InputAccount:
     account: Account
     members: List[InputSender]
     statuses: List[EventMessage]
-    errors: List[dict]
     raw_data: dict
     api_record: ApiRecord
 
     def __init__(
-        self, account: Account, raw_data: dict
+        self, account: Account, raw_data: dict,
+        api_record: Optional[ApiRecord] = None
     ) -> None:
         self.account = account
         self.raw_data = raw_data
         self.members = []
-        self.errors = []
         self.statuses = []
+        if api_record:
+            self.api_record = api_record
+        else:
+            self.api_record = self._create_api_record()
 
-        self.api_record = ApiRecord(
-            platform=account.platform,
-            body=raw_data,
+    def _create_api_record(self) -> ApiRecord:
+        return ApiRecord.objects.create(
+            platform=self.account.platform,
+            body=self.raw_data,
             is_incoming=True,
             created=timezone.now(),
             interaction_type=InteractionType.objects.get(
-                name="default", way="in"
-            ),
-            errors=[]
+                name="default", way="in")
         )
-        self.api_record.save()
 
     def get_input_sender(self, sender_id: str) -> Optional[InputSender]:
-        for member in self.members:
-            if member.member.uid == sender_id:
-                return member
-        return None
+        return next((
+            member for member in self.members
+            if member.member.uid == sender_id
+        ), None)
 
 
 class RequestAbc(ABC):
     raw_data: dict
-    data: dict
     input_accounts: List[InputAccount]
-    errors: List[dict]
+
+    api_record: ApiRecord
 
     def __init__(
             self, raw_data: dict, platform: Optional[str] = None,
@@ -72,18 +71,39 @@ class RequestAbc(ABC):
     ) -> None:
         self.raw_data = raw_data
         self.platform = platform
-        self.data = {}
         self.input_accounts = []
-        self.errors = []
+
         self._contacs_data = {}
+        self._use_global_api_record = False
+
         if not set_messages:
             return
-        self.record_request()
-        self.sort_data()
 
-        if self.errors:
-            self.api_record.errors = self.errors  # type: ignore
-            self.api_record.save()
+        self.record_request()
+        try:
+            self.sort_data()
+        except Exception as e:
+            self.api_record.add_error(
+                {
+                    "error": str(e),
+                    "method": "sort_data"
+                },
+                e=e
+            )
+
+    def record_request(self):
+        self.timestamp_server = int(time.time())
+
+        default_interactiontype, _ = InteractionType.objects.get_or_create(
+            name="default", way="in")
+
+        self.api_record = ApiRecord.objects.create(
+            platform_id=self.platform,
+            body=self.raw_data,
+            is_incoming=True,
+            created=timezone.now(),
+            interaction_type=default_interactiontype
+        )
 
     def get_account(self, pid: str) -> Account:
         try:
@@ -97,27 +117,16 @@ class RequestAbc(ABC):
         for input_account in self.input_accounts:
             if input_account.account.pid == pid:
                 return input_account
+
+        api_record = self.api_record if self._use_global_api_record else None
+
         input_account = InputAccount(
-            account=self.get_account(pid), raw_data=raw_data
+            account=self.get_account(pid), raw_data=raw_data,
+            api_record=api_record
         )
 
         self.input_accounts.append(input_account)
         return input_account
-
-    def get_member_account(
-            self, sender_id: str, account: Account, member_data: dict
-    ) -> MemberAccount:
-        member_manager = MemberAccountManager(
-            account=account,
-            sender_id=sender_id,
-            **member_data.get("contact", {})
-        )
-        try:
-            member_account = member_manager.get_member_account()
-        except Exception as e:
-            raise ValueError(f"MemberAccount {sender_id} problem: {e}")
-
-        return member_account
 
     def get_input_sender(
             self, sender_id: str, input_account: InputAccount
@@ -134,23 +143,20 @@ class RequestAbc(ABC):
         input_account.members.append(member_message)
         return member_message
 
-    def record_request(self):
-        self.timestamp_server = int(time.time())
-        default_interactiontype, _ = InteractionType.objects.get_or_create(
-            name="default", way="in")
-        self.api_record = ApiRecord(
-            platform_id=self.platform,
-            body=self.raw_data,
-            is_incoming=True,
-            created=timezone.now(),
-            interaction_type=default_interactiontype
+    def get_member_account(
+            self, sender_id: str, account: Account, member_data: dict
+    ) -> MemberAccount:
+        member_manager = MemberAccountManager(
+            account=account,
+            sender_id=sender_id,
+            **member_data.get("contact", {})
         )
-        self.api_record.save()
+        try:
+            member_account = member_manager.get_member_account()
+        except Exception as e:
+            raise ValueError(f"MemberAccount {sender_id} problem: {e}")
 
-    def message_check_v4(self, message_class):
-        return False
-        # return UserMessengerCommit.objects\
-        #     .filter(mid=message_class.message_id).exists()
+        return member_account
 
     @abstractmethod
     def sort_data(self):

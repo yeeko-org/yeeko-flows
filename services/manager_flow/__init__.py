@@ -26,17 +26,11 @@ class ManagerFlow(AbstractManagerFlow):
             self
     ) -> None:
         for input_account in self.request.input_accounts:
-            api_record_in = input_account.api_record
-            api_record_in.add_errors(input_account.errors)
-
             for input_sender in input_account.members:
-                self.process_messages(input_sender, api_record_in)
-                api_record_in.add_errors(input_sender.errors)
-            api_record_in.save()
+                self.process_messages(input_sender, input_account.api_record)
 
         for response in self.response_list:
             response.send_messages()
-            response.api_record_in.save()
 
     def process_messages(
             self, input_sender: InputSender, api_record_in: ApiRecord
@@ -46,11 +40,25 @@ class ManagerFlow(AbstractManagerFlow):
         principal o la intencion en caso de recibir varios mensajes.
         """
         for message in input_sender.messages:
+
             response = self._response_class(
-                sender=input_sender.member, api_record_in=api_record_in
+                sender=input_sender.member,
+                api_record_in=api_record_in
             )
+
             self.response_list.append(response)
-            self.process_message(message, response)
+
+            try:
+                self.process_message(message, response)
+            except Exception as e:
+                api_record_in.add_error(
+                    {
+                        "error": str(e),
+                        "method": "process_messages",
+                        "message": message.model_dump(),
+                    },
+                    e=e
+                )
 
     def process_message(
         self, message: TextMessage | InteractiveMessage | EventMessage,
