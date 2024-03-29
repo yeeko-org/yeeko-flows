@@ -144,12 +144,15 @@ class WhatsAppRequest(RequestAbc):
         raise NotImplementedError
 
     def _create_state_notification(self, status_data: dict) -> EventMessage:
-        message_id = status_data.get("id") or ""
         type_status = status_data.get("type")
+
         if type_status == "reaction":
+            reaction_data: dict = status_data.get("reaction", {})
+            message_id = reaction_data.get("message_id")
+            emoji = reaction_data.get("emoji")
             status = "reaction"
-            emoji = status_data.get("reaction", {}).get("emoji")
         else:
+            message_id = status_data.get("id") or ""
             status = status_data.get("status") or ""
             emoji = None
 
