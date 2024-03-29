@@ -13,19 +13,16 @@ FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
 class WhatsAppResponse(ResponseAbc):
     base_url: str = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
 
-    def _base_data(self, type: str, body: Optional[dict] = None) -> dict:
+    def _base_data(self, type_str: str, body: Optional[dict] = None) -> dict:
         uid = self.sender.uid or ""
         if uid.startswith("521"):
             uid = "52" + uid[3:]
-        data = {
+        return {
             "messaging_product": "whatsapp",
             "to": uid,
-            "type": type,
-            type: body,
+            "type": type_str,
+            type_str: body,
         }
-        if body:
-            data[type] = body
-        return data
 
     def text_to_data(self, message: str) -> dict:
         if not isinstance(message, str):

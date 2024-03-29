@@ -22,10 +22,10 @@ class WhatsAppRequest(RequestAbc):
     def _full_contact(self, change: dict) -> None:
         value = change.get("value", {})
         contacts = value.get("contacts", [])
-        for contac in contacts:
-            profile = contac.get("profile")
-            sender_id = contac.get("wa_id")
-            profile["phone"] = contac.get("wa_id")
+        for contact in contacts:
+            profile = contact.get("profile")
+            sender_id = contact.get("wa_id")
+            profile["phone"] = contact.get("wa_id")
             profile["user_field_filter"] = "phone"
             self._contacs_data.setdefault(
                 sender_id, {
@@ -38,11 +38,11 @@ class WhatsAppRequest(RequestAbc):
         self, change: dict, input_account: InputAccount
     ) -> None:
         value = change.get("value", {})
-        mesages = value.get("messages", [])
-        for message in mesages:
+        messages = value.get("messages", [])
+        for message in messages:
             sender_id = message.get("from")
             try:
-                member_message = self.get_input_sender(
+                input_sender = self.get_input_sender(
                     sender_id, input_account=input_account
                 )
             except Exception as e:
@@ -50,14 +50,14 @@ class WhatsAppRequest(RequestAbc):
                     {
                         "error": str(e),
                         "method": "get_input_sender",
-                        "value.messages.mesage": message
+                        "value.messages.message": message
                     },
                     e=e
                 )
 
                 continue
 
-            member_message.messages.append(self.data_to_class(message))
+            input_sender.messages.append(self.data_to_class(message))
 
     def _set_statuses(self, change: dict, input_account: InputAccount) -> None:
         value = change.get("value", {})
@@ -66,7 +66,7 @@ class WhatsAppRequest(RequestAbc):
             sender_id = status_data.get("recipient_id")
             status_data["type"] = "state"
             try:
-                member_message = self.get_input_sender(
+                input_sender = self.get_input_sender(
                     sender_id, input_account=input_account
                 )
             except Exception as e:
@@ -81,7 +81,7 @@ class WhatsAppRequest(RequestAbc):
 
                 continue
 
-            member_message.messages.append(self.data_to_class(status_data))
+            input_sender.messages.append(self.data_to_class(status_data))
 
     def sort_data(self):
         entry = self.raw_data.get("entry", [])

@@ -113,8 +113,6 @@ class ApiRecord(models.Model):
             self.errors = []
         self.errors += errors
 
-        self._added_errors = True
-
     def add_error(self, error: dict, e: Optional[BaseException] = None) -> None:
         if not self.errors:
             self.errors = []
@@ -123,8 +121,6 @@ class ApiRecord(models.Model):
             error["traceback"] = traceback.format_exc()
         self.errors.append(error)
 
-        self._added_errors = True
-
     def __del__(self):
-        if getattr(self, '_added_errors', False):
-            self.save()
+        self.success = not self.errors
+        self.save()

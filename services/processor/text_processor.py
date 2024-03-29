@@ -27,8 +27,6 @@ class TextMessageProcessor(Processor):
     ) -> None:
         self.manager_flow = manager_flow
         self.message = message
-        if not response.sender:
-            raise Exception("Message must have a member_account to process it")
         self.sender = response.sender
 
         self.response = response
