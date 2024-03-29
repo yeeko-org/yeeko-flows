@@ -8,9 +8,6 @@ class Button(BaseModel):
     description: Optional[str] = None
 
 
-button = Button()
-
-
 class Header(BaseModel):
     type: str
     value: str
