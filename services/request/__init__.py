@@ -17,9 +17,29 @@ class InputSender:
     member: MemberAccount
     messages: List[TextMessage | InteractiveMessage | EventMessage]
 
-    def __init__(self, member: MemberAccount) -> None:
-        self.member = member
+    def __init__(
+            self, sender_id: str, account: Account, member_data: Optional[dict]
+    ) -> None:
+        self.member = self.get_member_account(
+            sender_id, account,  member_data or {}
+        )
+
         self.messages = []
+
+    def get_member_account(
+            self, sender_id: str, account: Account, member_data: dict
+    ) -> MemberAccount:
+        member_manager = MemberAccountManager(
+            account=account,
+            sender_id=sender_id,
+            **member_data.get("contact", {})
+        )
+        try:
+            member_account = member_manager.get_member_account()
+        except Exception as e:
+            raise ValueError(f"MemberAccount {sender_id} problem: {e}")
+
+        return member_account
 
 
 class InputAccount:
@@ -52,7 +72,18 @@ class InputAccount:
                 name="default", way="in")
         )
 
-    def get_input_sender(self, sender_id: str) -> Optional[InputSender]:
+    def get_input_sender(
+            self, sender_id: str, meta_dict: dict
+    ) -> InputSender:
+        input_sender = self.find_member(sender_id)
+        if input_sender:
+            return input_sender
+
+        input_sender = InputSender(sender_id, self.account, meta_dict)
+        self.members.append(input_sender)
+        return input_sender
+
+    def find_member(self, sender_id: str) -> Optional[InputSender]:
         return next((
             member for member in self.members
             if member.member.uid == sender_id
@@ -83,13 +114,7 @@ class RequestAbc(ABC):
         try:
             self.sort_data()
         except Exception as e:
-            self.api_record.add_error(
-                {
-                    "error": str(e),
-                    "method": "sort_data"
-                },
-                e=e
-            )
+            self.api_record.add_error({"method": "sort_data"},  e=e)
 
     def record_request(self):
         self.timestamp_server = int(time.time())
@@ -127,36 +152,6 @@ class RequestAbc(ABC):
 
         self.input_accounts.append(input_account)
         return input_account
-
-    def get_input_sender(
-            self, sender_id: str, input_account: InputAccount
-    ) -> InputSender:
-        input_sender = input_account.get_input_sender(sender_id)
-        if input_sender:
-            return input_sender
-
-        member_data = self._contacs_data.get(sender_id, {})
-        member = self.get_member_account(
-            sender_id, input_account.account,  member_data
-        )
-        input_sender = InputSender(member=member)
-        input_account.members.append(input_sender)
-        return input_sender
-
-    def get_member_account(
-            self, sender_id: str, account: Account, member_data: dict
-    ) -> MemberAccount:
-        member_manager = MemberAccountManager(
-            account=account,
-            sender_id=sender_id,
-            **member_data.get("contact", {})
-        )
-        try:
-            member_account = member_manager.get_member_account()
-        except Exception as e:
-            raise ValueError(f"MemberAccount {sender_id} problem: {e}")
-
-        return member_account
 
     @abstractmethod
     def sort_data(self):

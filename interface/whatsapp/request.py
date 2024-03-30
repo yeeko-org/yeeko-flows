@@ -1,5 +1,5 @@
-from typing import List
-from services.request import InputAccount, InputSender, RequestAbc
+from typing import Optional
+from services.request import InputAccount, RequestAbc
 from services.request.message_model import (
     InteractiveMessage, EventMessage, TextMessage
 )
@@ -13,11 +13,28 @@ class WhatsAppRequest(RequestAbc):
         super().__init__(raw_data, platform="whatsapp")
         self._contacs_data = {}
 
-    def _get_request_account(self, change: dict) -> InputAccount:
+    def _get_input_account(self, change: dict) -> Optional[InputAccount]:
         value = change.get("value", {})
         metadata = value.get("metadata", {})
         pid = metadata.get("phone_number_id")
-        return self.get_input_account(pid, raw_data=change)
+
+        try:
+            input_account = self.get_input_account(
+                pid, raw_data=change)
+        except Exception as e:
+            self.api_record.add_error(
+                {"method": "get_input_account", "change": change}, e=e
+            )
+            return
+
+        try:
+            self._full_contact(change)
+        except Exception as e:
+            self.api_record.add_error(
+                {"method": "_full_contact",  "change": change}, e=e
+            )
+
+        return input_account
 
     def _full_contact(self, change: dict) -> None:
         value = change.get("value", {})
@@ -41,20 +58,18 @@ class WhatsAppRequest(RequestAbc):
         messages = value.get("messages", [])
         for message in messages:
             sender_id = message.get("from")
-            try:
-                input_sender = self.get_input_sender(
-                    sender_id, input_account=input_account
-                )
-            except Exception as e:
-                input_account.api_record.add_error(
-                    {
-                        "error": str(e),
-                        "method": "get_input_sender",
-                        "value.messages.message": message
-                    },
-                    e=e
-                )
+            member_data = self._contacs_data.get(sender_id, {})
 
+            try:
+                input_sender = input_account\
+                    .get_input_sender(sender_id, member_data)
+
+            except Exception as e:
+                data_error = {
+                    "method": "get_input_sender",
+                    "value.messages.message": message
+                }
+                input_account.api_record.add_error(data_error, e=e)
                 continue
 
             input_sender.messages.append(self.data_to_class(message))
@@ -65,23 +80,28 @@ class WhatsAppRequest(RequestAbc):
         for status_data in statuses:
             sender_id = status_data.get("recipient_id")
             status_data["type"] = "state"
+            member_data = self._contacs_data.get(sender_id, {})
+            data_error = {"status_data": status_data}
+
             try:
-                input_sender = self.get_input_sender(
-                    sender_id, input_account=input_account
+                input_sender = input_account\
+                    .get_input_sender(sender_id, member_data)
+
+            except Exception as e:
+                input_account.api_record.add_error(
+                    data_error | {"method": "get_input_sender"}, e=e
+                )
+                continue
+
+            try:
+
+                input_sender.messages.append(
+                    self._create_state_notification(status_data)
                 )
             except Exception as e:
                 input_account.api_record.add_error(
-                    {
-                        "error": str(e),
-                        "method": "get_input_sender",
-                        "status_data": status_data
-                    },
-                    e=e
+                    data_error | {"method": "create_state_notification"}, e=e
                 )
-
-                continue
-
-            input_sender.messages.append(self.data_to_class(status_data))
 
     def sort_data(self):
         entry = self.raw_data.get("entry", [])
@@ -89,30 +109,9 @@ class WhatsAppRequest(RequestAbc):
         for current_entry in entry:
 
             for change in current_entry.get("changes", []):
-                try:
-                    input_account = self._get_request_account(change)
-                except Exception as e:
-                    self.api_record.add_error(
-                        {
-                            "error": str(e),
-                            "method": "_get_request_account",
-                            "change": change
-                        },
-                        e=e
-                    )
-
+                input_account = self._get_input_account(change)
+                if not input_account:
                     continue
-                try:
-                    self._full_contact(change)
-                except Exception as e:
-                    self.api_record.add_error(
-                        {
-                            "error": str(e),
-                            "method": "_full_contact",
-                            "change": change
-                        },
-                        e=e
-                    )
 
                 self._set_messages(change, input_account)
                 self._set_statuses(change, input_account)

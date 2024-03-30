@@ -118,6 +118,7 @@ class ApiRecord(models.Model):
             self.errors = []
 
         if e:
+            error["error"] = str(e)
             error["traceback"] = traceback.format_exc()
         self.errors.append(error)
 

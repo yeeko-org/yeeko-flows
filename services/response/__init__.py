@@ -1,17 +1,12 @@
 from abc import ABC, abstractmethod
-from pprint import pprint
-from typing import Optional
+from typing import Callable, List, Optional
 
 from pydantic import BaseModel
 
 from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
-from typing import List, Optional
-
 from infrastructure.talk.models import Interaction
 from services.response.models import SectionsMessage, ReplyMessage
-
-from typing import Callable
 
 
 def exception_handler(func: Callable) -> Callable:
@@ -19,13 +14,7 @@ def exception_handler(func: Callable) -> Callable:
         try:
             return func(self, *args, **kwargs)
         except Exception as e:
-            self.api_record_in.add_error(
-                {
-                    "error": str(e),
-                    "method": func.__name__,
-                },
-                e=e
-            )
+            self.api_record_in.add_error({"method": func.__name__, }, e=e)
 
     return wrapper
 
@@ -71,23 +60,14 @@ class ResponseAbc(ABC, BaseModel):
                 api_record_out = self.send_message(message)
             except Exception as e:
                 self.api_record_in.add_error(
-                    {
-                        "error": str(e),
-                        "method": "send_message",
-                        "message": message
-                    },
-                    e=e
+                    {"method": "send_message",  "message": message}, e=e
                 )
                 continue
             try:
                 self.save_interaction(api_record_out, message)
             except Exception as e:
                 self.api_record_in.add_error(
-                    {
-                        "error": str(e),
-                        "method": "save_interaction"
-                    },
-                    e=e
+                    {"method": "save_interaction"}, e=e
                 )
 
     @abstractmethod

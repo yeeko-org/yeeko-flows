@@ -51,14 +51,11 @@ class ManagerFlow(AbstractManagerFlow):
             try:
                 self.process_message(message, response)
             except Exception as e:
-                api_record_in.add_error(
-                    {
-                        "error": str(e),
-                        "method": "process_messages",
-                        "message": message.model_dump(),
-                    },
-                    e=e
-                )
+                data_error = {
+                    "method": "process_messages",
+                    "message": message.model_dump(),
+                }
+                api_record_in.add_error(data_error, e=e)
 
     def process_message(
         self, message: TextMessage | InteractiveMessage | EventMessage,
