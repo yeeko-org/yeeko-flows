@@ -27,6 +27,12 @@ class CollectionAdmin(admin.ModelAdmin):
         verbose_name = "Colección"
 
 
+class ParameterInline(admin.TabularInline):
+    model = Parameter
+    extra = 0
+    show_change_link = True
+
+
 @admin.register(Behavior)
 class BehaviorAdmin(admin.ModelAdmin):
     list_display = ('name', 'collection', 'can_piece',
@@ -45,6 +51,7 @@ class BehaviorAdmin(admin.ModelAdmin):
             'fields': ('interaction_type',)
         }),
     )
+    inlines = [ParameterInline]
 
     class Meta:
         verbose_name_plural = "Funciones"

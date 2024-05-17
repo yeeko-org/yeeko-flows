@@ -1,4 +1,5 @@
 from django.contrib import admin
+from infrastructure.assign.models import ParamValue
 from infrastructure.box.models import (
     Written, Piece, Fragment, Reply, MessageLink, Destination
 )
@@ -22,6 +23,13 @@ class WrittenAdmin(admin.ModelAdmin):
         verbose_name = "Opción escrita"
 
 
+class FragmentInline(admin.TabularInline):
+    model = Fragment
+    extra = 0
+    show_change_link = True
+    fk_name = 'piece'
+
+
 @admin.register(Piece)
 class PieceAdmin(admin.ModelAdmin):
     list_display = (
@@ -33,9 +41,11 @@ class PieceAdmin(admin.ModelAdmin):
                    'crate', 'behavior', 'default_extra')
     raw_id_fields = ('crate', 'behavior', 'default_extra')
 
+    inlines = [FragmentInline]
+
     fieldsets = (
         ('General', {
-            'fields': ('name', 'crate', 'behavior', 'default_extra',
+            'fields': ('name', 'description', 'crate', 'behavior', 'default_extra',
                        'insistent', 'mandatory', 'order_in_crate', 'deleted')
         }),
         ('Configuration', {
@@ -52,28 +62,53 @@ class PieceAdmin(admin.ModelAdmin):
         ordering = ['order_in_crate']
 
 
+class ParamValueInline(admin.TabularInline):
+    model = ParamValue
+    extra = 0
+    show_change_link = True
+    fk_name = 'fragment'
+    fields = ('parameter', 'value')
+    classes = ['collapse']
+
+
+class ReplyInline(admin.TabularInline):
+    model = Reply
+    extra = 0
+    show_change_link = True
+    fk_name = 'fragment'
+
+
 @admin.register(Fragment)
 class FragmentAdmin(admin.ModelAdmin):
-    list_display = ('piece', 'title', 'behavior', 'order', 'deleted')
-    search_fields = ('piece__name', 'title', 'behavior__name')
+    list_display = ('piece', 'behavior', 'order', 'deleted')
+    search_fields = ('piece__name', 'behavior__name')
     list_filter = ('behavior', 'deleted')
-    raw_id_fields = ('piece', 'behavior',
-                     'destination_header', 'embedded_piece')
+    raw_id_fields = ('piece', 'behavior',  'embedded_piece')
+    inlines = [ReplyInline, ParamValueInline]
 
     fieldsets = (
         ('General', {
-            'fields': ('piece', 'behavior', 'title', 'subtitle', 'text', 'header',
-                       'footer', 'file', 'media_url', 'media_type', 'order',
-                       'reply_title', 'deleted')
+            'fields': ('piece',  'order', 'deleted')
         }),
-        ('Destination Header', {
-            'fields': ('destination_header',)
+
+        ('Message', {
+            'fields': ('header', 'body', 'footer', 'reply_title')
+        }),
+        ('Media', {
+            'fields': ('file', 'media_url', 'media_type'),
+            'classes': ('collapse',)
         }),
         ('Embedded Piece', {
-            'fields': ('embedded_piece',)
+            'fields': ('embedded_piece',),
+            'classes': ('collapse',)
+        }),
+        ('Behavior', {
+            'fields': ('behavior',),
+            'classes': ('collapse',)
         }),
         ('Additional Parameters', {
-            'fields': ('addl_params',)
+            'fields': ('addl_params',),
+            'classes': ('collapse',)
         }),
     )
 

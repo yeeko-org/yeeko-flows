@@ -67,11 +67,19 @@ class AssignAdmin(admin.ModelAdmin):
         verbose_name = "Asignación"
 
 
+class ParamValueInline(admin.TabularInline):
+    model = ParamValue
+    raw_id_fields = ('parameter', 'fragment', 'destination', 'piece', 'reply')
+    extra = 0
+    show_change_link = True
+
+
 @admin.register(ApplyBehavior)
 class ApplyBehaviorAdmin(admin.ModelAdmin):
     list_display = ('behavior', 'space', 'main_piece')
     search_fields = ('behavior__name', 'space__title', 'main_piece__name')
     raw_id_fields = ('behavior', 'space', 'main_piece')
+    inlines = [ParamValueInline]
 
     class Meta:
         verbose_name_plural = "Aplicar Funciones"

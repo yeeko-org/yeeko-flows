@@ -40,6 +40,7 @@ class CrateAdmin(admin.ModelAdmin):
     search_fields = ('name', 'crate_type__name', 'flow__name', 'description')
     list_filter = ('created', 'has_templates')
     raw_id_fields = ('crate_type', 'flow')
+    readonly_fields = ('created',)
 
     fieldsets = (
         ('General', {
