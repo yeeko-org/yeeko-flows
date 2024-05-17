@@ -39,7 +39,7 @@ class ConditionRule(models.Model):
     roles = models.ManyToManyField(Role, blank=True)
 
     def __str__(self):
-        fragment_name = self.fragment.title if self.fragment else ""
+        fragment_name = self.fragment.body if self.fragment else ""
         reply_name = self.reply.title if self.reply else ""
         return f"{fragment_name} - {reply_name}"
 
@@ -78,13 +78,15 @@ class Assign(models.Model):
 
 class ApplyBehavior(models.Model):
     behavior = models.ForeignKey(Behavior, on_delete=models.CASCADE)
-    space = models.ForeignKey(Space, on_delete=models.CASCADE)
+    space = models.ForeignKey(
+        Space, on_delete=models.CASCADE, blank=True, null=True
+    )
     main_piece = models.ForeignKey(
         Piece, on_delete=models.CASCADE, blank=True, null=True,
         related_name='apply_behavior')
 
     def __str__(self):
-        return self.behavior
+        return str(self.behavior)
 
     class Meta:
         verbose_name = 'Aplicar Función'
@@ -94,20 +96,27 @@ class ApplyBehavior(models.Model):
 
 class ParamValue(models.Model):
     parameter = models.ForeignKey("tool.Parameter", on_delete=models.CASCADE)
+    # --------------------------------related--------------------------------
     apply_behavior = models.ForeignKey(
-        ApplyBehavior, on_delete=models.CASCADE, related_name='values',
-        blank=True, null=True)
+        ApplyBehavior, on_delete=models.CASCADE,  blank=True, null=True,
+        related_name='values')
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, blank=True, null=True,
         related_name='values')
     destination = models.ForeignKey(
         Destination, on_delete=models.CASCADE, blank=True, null=True,
         related_name='values')
-    piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True)
-    reply = models.ForeignKey(
-        Reply, on_delete=models.CASCADE, blank=True, null=True)
+    # ------------------------------end related------------------------------
+
+    # ---------------------------------valor---------------------------------
     value = models.CharField(max_length=255, blank=True, null=True)
+    piece = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='values')
+    reply = models.ForeignKey(
+        Reply, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='values')
+    # -------------------------------end valor-------------------------------
 
     def __str__(self):
         return f"{self.parameter} - {self.value or 'Sin valor'}"

@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import JSONField
 
+
 from infrastructure.flow.models import Crate
 from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
@@ -24,6 +25,8 @@ class Written(models.Model):
         blank=True, null=True)
     available = models.BooleanField(
         default=False, verbose_name='Disponible')
+    
+    # destino
 
     def __str__(self):
         return self.extra.name if self.extra else str(self.pk)
@@ -58,6 +61,8 @@ class Piece(models.Model):
     deleted = models.BooleanField(
         default=False, verbose_name='Borrado')
 
+    fragments: models.QuerySet["Fragment"]
+
     def __str__(self):
         return f"{self.name} ({self.crate.name})"
 
@@ -68,43 +73,56 @@ class Piece(models.Model):
 
 
 class Fragment(models.Model):
+    FRAGMENT_TYPES = (
+        ("message", "Mensaje"),
+        ("behavior", "Función Behavior"),
+        ("embedded", "Pieza embebida"),
+    )
+    fragment_type = models.CharField(
+        max_length=20, choices=FRAGMENT_TYPES, blank=True, null=True
+    )
     piece = models.ForeignKey(
         Piece, on_delete=models.CASCADE, related_name='fragments')
+    order = models.SmallIntegerField(default=0)
+
     behavior = models.ForeignKey(
         Behavior, on_delete=models.CASCADE, blank=True, null=True)
-    title = models.CharField(
-        max_length=255, verbose_name='Título', blank=True, null=True)
-    subtitle = models.CharField(
-        max_length=255, verbose_name='Subtítulo', blank=True, null=True)
-    text = models.TextField(
-        verbose_name='Texto', blank=True, null=True)
-    header = models.CharField(
-        max_length=255, verbose_name='Encabezado', blank=True, null=True)
-    footer = models.CharField(
-        max_length=255, verbose_name='Pie de página', blank=True, null=True)
+    addl_params = JSONField(blank=True, null=True)
+    deleted = models.BooleanField(
+        default=False, verbose_name='Borrado')
+
     file = models.FileField(
         upload_to='box', blank=True, null=True,
         verbose_name='Archivo o imagen')
     media_url = models.CharField(
         max_length=255, verbose_name='URL de multimedia', blank=True, null=True)
-    addl_params = JSONField(blank=True, null=True)
     media_type = models.CharField(
         max_length=20, choices=MEDIA_TYPES, blank=True, null=True)
-    destination_header = models.ForeignKey(
-        "Destination", on_delete=models.CASCADE, blank=True, null=True,
-        verbose_name='Encabezado del destino', related_name='headers')
-    embedded_piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True,
-        verbose_name='Pieza embebida')
-    order = models.SmallIntegerField(default=0)
+
+    header = models.CharField(
+        max_length=255, verbose_name='Encabezado', blank=True, null=True)
+    body = models.TextField(
+        verbose_name='Texto', blank=True, null=True)
+    footer = models.CharField(
+        max_length=255, verbose_name='Pie de página', blank=True, null=True)
     reply_title = models.CharField(
         max_length=80, verbose_name='Título de botón de respuesta',
         blank=True, null=True)
-    deleted = models.BooleanField(
-        default=False, verbose_name='Borrado')
+
+    embedded_piece = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        verbose_name='Pieza embebida')
+
+    replies: models.QuerySet["Reply"]
 
     def __str__(self):
-        return f"{self.piece.name} - {self.title}"
+        if self.fragment_type == 'message':
+            return f"{self.piece.name} - {self.body}"
+        elif self.fragment_type == 'behavior' and self.behavior:
+            return f"{self.piece.name} - {self.behavior.name}"
+        elif self.fragment_type == 'embedded' and self.embedded_piece:
+            return f"{self.piece.name} - {self.embedded_piece.name}"
+        return f"{self.piece.name} - {self.pk}"
 
     class Meta:
         verbose_name = 'Fragmento'
@@ -134,7 +152,7 @@ class Reply(models.Model):
     deleted = models.BooleanField(default=False, verbose_name='Borrado')
 
     def __str__(self):
-        return f"{self.fragment.title} - {self.title}"
+        return f"{self.fragment} - {self.title}"
 
     class Meta:
         verbose_name = 'Respuesta (Botón)'
@@ -165,31 +183,36 @@ class Destination(models.Model):
         ('behavior', 'Función Behavior'),
         ('piece', 'Pieza'),
     )
-
-    destination_type = models.CharField(
-        max_length=20, choices=DESTINATION_TYPES,
-        verbose_name='Tipo de destino')
-    piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True,
-        related_name='default_destinations')
-    piece_dest = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True,
-        related_name='origins')
-    behavior = models.ForeignKey(
-        Behavior, on_delete=models.CASCADE, blank=True, null=True,
-        related_name='destinations')
+    # --------------------------------origin--------------------------------
     reply = models.ForeignKey(
         Reply, on_delete=models.CASCADE, blank=True, null=True,
         related_name='destinations')
     written = models.ForeignKey(
         Written, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Opción escrita', related_name='destinations')
+    piece = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='default_destinations') # belong
     message_link = models.ForeignKey(
         MessageLink, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Link con mensaje', related_name='destinations')
-    addl_params = JSONField(blank=True, null=True)
+    # ------------------------------end origin------------------------------
+
+    # -------------------------------destination----------------------------
+    destination_type = models.CharField(
+        max_length=20, choices=DESTINATION_TYPES,
+        verbose_name='Tipo de destino')
+    piece_dest = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='origins')
+    behavior = models.ForeignKey(
+        Behavior, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='destinations')
     url = models.CharField(
         max_length=255, verbose_name='URL', blank=True, null=True)
+    # -----------------------------end destination--------------------------
+    
+    addl_params = JSONField(blank=True, null=True)
     is_default = models.BooleanField(default=True)
     order = models.SmallIntegerField(blank=True, null=True)
     deleted = models.BooleanField(default=False, verbose_name='Borrado')

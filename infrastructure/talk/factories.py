@@ -36,8 +36,7 @@ class InteractionFactory(DjangoModelFactory):
     is_incoming = factory.Faker('boolean')
     member_account = factory.SubFactory(MemberAccountFactory)
     trigger = optional_sub_factory(TriggerFactory)
-    api_requests = factory.RelatedFactoryList(
-        ApiRecordFactory, 'interaction', size=3)
+    api_record_out = factory.SubFactory(ApiRecordFactory)
     persona = optional_sub_factory(MemberAccountFactory)
     created = factory.Faker('date_time_this_year')
     timestamp = factory.Faker('unix_time')

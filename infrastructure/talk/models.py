@@ -4,7 +4,7 @@ from django.db.models import JSONField
 
 from infrastructure.assign.models import ApplyBehavior
 from infrastructure.service.models import InteractionType, ApiRecord
-from infrastructure.box.models import MessageLink, Reply
+from infrastructure.box.models import Fragment, MessageLink, Reply
 from infrastructure.xtra.models import Extra
 from infrastructure.member.models import MemberAccount, Member
 
@@ -121,6 +121,8 @@ class Interaction(models.Model):
     # destination = models.ForeignKey(
     #     Destination, on_delete=models.CASCADE,
     #     blank=True, null=True, related_name='destination')
+    fragment = models.ForeignKey(
+        Fragment, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f"{self.interaction_type.name} - {self.mid}"
@@ -135,17 +137,20 @@ class BuiltReply(models.Model):
     uuid = models.UUIDField(
         primary_key=True, default=uuid_lib.uuid4, editable=False)
     interaction = models.ForeignKey(
-        Interaction, on_delete=models.CASCADE)
+        Interaction, on_delete=models.CASCADE, blank=True, null=True)
+
     # RICK 5: No me acuerdo para qué era este campo, agregué el is_for_write
     is_for_reply = models.BooleanField(default=False)
     is_for_write = models.BooleanField(default=False)
+
     params = JSONField(blank=True, null=True)
+    reply = models.ForeignKey(
+        Reply, on_delete=models.CASCADE, blank=True, null=True)
+
     payload = models.TextField(
         blank=True, null=True, verbose_name='Payload (old)')
     # destination = models.ForeignKey(
     #     Destination, on_delete=models.CASCADE, blank=True, null=True)
-    reply = models.ForeignKey(
-        Reply, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f"{self.interaction} - {self.uuid}"

@@ -43,26 +43,25 @@ class FragmentFactory(DjangoModelFactory):
         model = Fragment
 
     piece = factory.SubFactory(PieceFactory)
+    order = factory.Faker('pyint')
+    deleted = factory.Faker('boolean')
+    addl_params = safe_pydict()
+
     behavior = optional_sub_factory(BehaviorFactory)
-    title = factory.Faker('word')
-    subtitle = factory.Faker('word')
-    text = factory.Faker('text')
+
     header = factory.Faker('word')
+    body = factory.Faker('text')
     footer = factory.Faker('word')
+    reply_title = factory.Faker('word')
+
     file = factory.django.ImageField()
     media_url = factory.Faker('url')
-    addl_params = safe_pydict()
     media_type = factory.Faker(
         'random_element',
         elements=['image', 'video', 'audio', 'file', 'sticker']
     )
-    destination_header = factory.LazyAttribute(
-        lambda _: optional_sub_factory(DestinationFactory, lazy=True)
-    )
+
     embedded_piece = optional_sub_factory(PieceFactory)
-    order = factory.Faker('pyint')
-    reply_title = factory.Faker('word')
-    deleted = factory.Faker('boolean')
 
 
 class ReplyFactory(DjangoModelFactory):
