@@ -1,8 +1,36 @@
 from typing import Optional
+
+from django.conf import settings
+import requests
 from services.request import InputAccount, RequestAbc
 from services.request.message_model import (
     InteractiveMessage, EventMessage, TextMessage
 )
+
+
+def set_status_read(
+    message_id: str,
+    phone_number_id: str,
+    token: Optional[str],
+) -> None:
+    if not token:
+        return
+
+    FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
+    base_url = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
+    url = f"{base_url}/{phone_number_id}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    message_data = {
+        "message_id": message_id,
+        "messaging_product": "whatsapp",
+        "status": "read",
+    }
+    _ = requests.post(url, headers=headers, json=message_data)
 
 
 class WhatsAppRequest(RequestAbc):
@@ -72,7 +100,12 @@ class WhatsAppRequest(RequestAbc):
                 input_account.api_record.add_error(data_error, e=e)
                 continue
 
-            input_sender.messages.append(self.data_to_class(message))
+            message_class = self.data_to_class(message)
+            set_status_read(
+                message_class.message_id, input_account.account.pid,
+                input_account.account.token
+            )
+            input_sender.messages.append(message_class)
 
     def _set_statuses(self, change: dict, input_account: InputAccount) -> None:
         value = change.get("value", {})
@@ -121,13 +154,17 @@ class WhatsAppRequest(RequestAbc):
     ) -> TextMessage | InteractiveMessage | EventMessage:
         type = data.get("type")
         if type == "text":
-            return self._create_text_message(data)
+            message = self._create_text_message(data)
         elif type == "interactive":
-            return self._create_interactive_message(data)
+            message = self._create_interactive_message(data)
         elif type in ["state", "reaction"]:
-            return self._create_state_notification(data)
+            message = self._create_state_notification(data)
         else:
             raise ValueError(f"Message type {type} not supported")
+
+        if context := data.get("context", {}):
+            message.context_id = context.get("id")
+        return message
 
     def _create_text_message(self, data: dict) -> TextMessage:
         text = data.get("text", {}).get("body")
@@ -140,7 +177,16 @@ class WhatsAppRequest(RequestAbc):
         )
 
     def _create_interactive_message(self, data: dict) -> InteractiveMessage:
-        raise NotImplementedError
+        interactive = data.get("interactive", {})
+        button_reply: dict = interactive.get(interactive.get("type"), {})
+        interactive = InteractiveMessage(
+            message_id=data.get("id", ""),
+            timestamp=int(data.get("timestamp", 0)),
+            title=button_reply.get("title"),
+            payload=button_reply.get("id", ""),
+        )
+        interactive.get_built_reply()
+        return interactive
 
     def _create_state_notification(self, status_data: dict) -> EventMessage:
         type_status = status_data.get("type")
