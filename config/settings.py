@@ -144,6 +144,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 MIDDLEWARE = (
+    'config.local_host_middleware.LocalhostMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
