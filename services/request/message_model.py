@@ -11,44 +11,36 @@ class MessageBase(BaseModel):
     message_id: str
     timestamp: int
     api_request: Optional[ApiRecord] = None
+    context_id: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True
 
-    def get_base_info(self, is_status=False):
+    def valid_time_interval(self, is_status=False, raise_exception=True):
         max_time = 60000 if is_status else 30000
         self.datetime = self.timestamp
         timestamp_server = int(time.time())
-        if self.timestamp > timestamp_server + max_time:
+        long_time_interval = self.timestamp > timestamp_server + max_time
+
+        if long_time_interval and raise_exception:
             raise Exception("YA TE PASASTE, ES MUCHO TIEMPO")
+        return long_time_interval
 
 
 class TextMessage(MessageBase):
-
     text: str
-    message_id: str
-    timestamp: int
 
 
 class InteractiveMessage(MessageBase):
-
-    built_reply: Optional[BuiltReply]
-    message_id: str
     payload: str
-    timestamp: int
-    text: Optional[str]
     title: Optional[str]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.get_built_reply()
+    built_reply: Optional[BuiltReply] = None
 
     def get_built_reply(self):
-        if self.payload.isdigit():
-            try:
-                self.built_reply = BuiltReply.objects.get(uuid=self.payload)
-            except BuiltReply.DoesNotExist:
-                self.built_reply = None
+        try:
+            self.built_reply = BuiltReply.objects.get(uuid=self.payload)
+        except BuiltReply.DoesNotExist:
+            self.built_reply = None
 
 
 class EventMessage(MessageBase):

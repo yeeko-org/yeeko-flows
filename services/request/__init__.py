@@ -3,7 +3,7 @@ import time
 from typing import List, Optional
 from infrastructure.member.models import MemberAccount
 from infrastructure.place.models import Account
-from infrastructure.service.models import ApiRecord, InteractionType
+from infrastructure.service.models import ApiRecord, InteractionType, Platform
 
 
 from services.request.message_model import (
@@ -122,8 +122,10 @@ class RequestAbc(ABC):
         default_interactiontype, _ = InteractionType.objects.get_or_create(
             name="default", way="in")
 
+        platform = Platform.objects.get(name=self.platform)
+
         self.api_record = ApiRecord.objects.create(
-            platform_id=self.platform,
+            platform=platform,
             body=self.raw_data,
             is_incoming=True,
             created=timezone.now(),
