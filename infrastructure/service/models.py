@@ -1,3 +1,4 @@
+from pprint import pprint
 import traceback
 from typing import Optional
 from django.db import models
@@ -123,5 +124,11 @@ class ApiRecord(models.Model):
         self.errors.append(error)
 
     def __del__(self):
+        if not getattr(self, "pk", None):
+            return
         self.success = not self.errors
         self.save()
+
+        if self.errors:
+            print("Error in API record: ")
+            pprint(self.errors)
