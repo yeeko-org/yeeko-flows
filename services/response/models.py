@@ -17,6 +17,7 @@ class Message(BaseModel):
     body: str
     header: Optional[str | Header] = None
     footer: Optional[str] = None
+    fragment_id: Optional[int] = None
 
 
 class ReplyMessage(Message):
