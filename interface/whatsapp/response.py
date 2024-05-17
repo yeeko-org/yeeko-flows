@@ -13,7 +13,10 @@ FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
 class WhatsAppResponse(ResponseAbc):
     base_url: str = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
 
-    def _base_data(self, type_str: str, body: Optional[dict] = None) -> dict:
+    def _base_data(
+            self, type_str: str, body: Optional[dict] = None,
+            fragment_id: Optional[int] = None
+    ) -> dict:
         uid = self.sender.uid or ""
         if uid.startswith("521"):
             uid = "52" + uid[3:]
@@ -22,17 +25,21 @@ class WhatsAppResponse(ResponseAbc):
             "to": uid,
             "type": type_str,
             type_str: body,
+            "_fragment_id": fragment_id,
         }
 
-    def text_to_data(self, message: str) -> dict:
+    def text_to_data(
+            self, message: str, fragment_id: Optional[int] = None
+    ) -> dict:
         if not isinstance(message, str):
             raise ValueError(
                 f'Message {message} must be a string, not {type(message)}'
             )
-        return self._base_data("text", {"body": message})
+        return self._base_data("text", {"body": message}, fragment_id)
 
     def multimedia_to_data(
-        self, url_media: str, media_type: str, caption: Optional[str] = None
+        self, url_media: str, media_type: str, caption: Optional[str] = None,
+        fragment_id: Optional[int] = None
     ) -> dict:
         if media_type not in ["image", "video", "audio", "file"]:
             raise ValueError(
@@ -40,7 +47,7 @@ class WhatsAppResponse(ResponseAbc):
                 "['image', 'video', 'audio', 'file']"
             )
         body = {"link": url_media, "caption": caption}
-        return self._base_data(media_type, body)
+        return self._base_data(media_type, body, fragment_id)
 
     def _message_to_data(
             self, message: Message, header_supp_media=False
@@ -90,7 +97,14 @@ class WhatsAppResponse(ResponseAbc):
                 "buttons": buttons
             }
         })
-        return self._base_data("interactive", interactive)
+
+        whatsapp_data_message = self._base_data(
+            "interactive", interactive, fragment_id=message.fragment_id)
+
+        whatsapp_data_message["uuid_list"] = [
+            button.payload for button in message.buttons[:3]]
+
+        return whatsapp_data_message
 
     def _section_to_data(self, section: Section) -> dict:
         return {
@@ -118,7 +132,8 @@ class WhatsAppResponse(ResponseAbc):
                 "sections": sections,
             }
         })
-        return self._base_data("interactive", interactive)
+        return self._base_data(
+            "interactive", interactive, fragment_id=message.fragment_id)
 
     def many_buttons_to_data(self, message: ReplyMessage) -> dict:
 
@@ -134,7 +149,14 @@ class WhatsAppResponse(ResponseAbc):
                 ],
             }
         })
-        return self._base_data("interactive", interactive)
+
+        whatsapp_data_message = self._base_data(
+            "interactive", interactive, fragment_id=message.fragment_id)
+
+        whatsapp_data_message["uuid_list"] = [
+            button.payload for button in message.buttons[:10]]
+
+        return whatsapp_data_message
 
     def get_mid(self, body: Dict | None) -> str | None:
         if not body:
