@@ -53,7 +53,9 @@ class Collection(models.Model):
 
 class Behavior(models.Model):
     name = models.CharField(max_length=80, primary_key=True)
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    collection = models.ForeignKey(
+        Collection, on_delete=models.CASCADE, blank=True, null=True
+    )
     can_piece = models.BooleanField(default=True)
     can_destination = models.BooleanField(default=True)
     in_code = models.BooleanField(default=False)
