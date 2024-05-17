@@ -1,6 +1,7 @@
 from typing import Type
 from infrastructure.service.models import ApiRecord
 from services.manager_flow.manager_flow_abc import AbstractManagerFlow
+from services.processor.interactive_processor import InteractiveProcessor
 from services.processor.state_processor import StateProcessor
 from services.processor.text_processor import TextMessageProcessor
 from services.request import InputSender, RequestAbc
@@ -65,8 +66,8 @@ class ManagerFlow(AbstractManagerFlow):
             text_processor = TextMessageProcessor(self, message, response)
             text_processor.process()
         elif isinstance(message, InteractiveMessage):
-            # interactive_processor = InteractiveProcessor(self, message, response)
-            # interactive_processor.process()
+            interactive_processor = InteractiveProcessor(self, message, response)
+            interactive_processor.process()
             pass
         elif isinstance(message, EventMessage):
             event_processor = StateProcessor(self, message, response)
