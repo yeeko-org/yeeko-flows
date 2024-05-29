@@ -27,7 +27,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 APPEND_SLASH = getenv_bool('APPEND_SLASH', False)
-DATETIME_INPUT_FORMATS = ('%Y-%m-%d %H:%M:%S',)
+DATETIME_INPUT_FORMATS = ('%d-%m-%Y %H:%M:%S',)
 HTTP_X_FORWARDED_HOST = os.getenv('HTTP_X_FORWARDED_HOST', False)
 USE_X_FORWARDED_HOST = getenv_bool('USE_X_FORWARDED_HOST')
 
