@@ -45,7 +45,7 @@ class Format(models.Model):
 
 
 class Extra(models.Model):
-    name = models.CharField(max_length=80, primary_key=True)
+    name = models.CharField(max_length=80)
     classify = models.ForeignKey(ClassifyExtra, on_delete=models.CASCADE)
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
     flow = models.ForeignKey(

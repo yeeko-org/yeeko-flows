@@ -54,8 +54,11 @@ class Assign(models.Model):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE, blank=True, null=True,
         related_name='assignments')
-    extra_value = JSONField(blank=True, null=True)
+    extra_value = models.TextField(blank=True, null=True)
     is_remove = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, verbose_name='Borrado')
+
+    # ---------------------------------Origen---------------------------------
     piece = models.ForeignKey(
         Piece, on_delete=models.CASCADE, blank=True, null=True)
     reply = models.ForeignKey(
@@ -65,7 +68,7 @@ class Assign(models.Model):
         blank=True, null=True, related_name='assignments')
     written = models.ForeignKey(
         Written, on_delete=models.CASCADE, blank=True, null=True)
-    deleted = models.BooleanField(default=False, verbose_name='Borrado')
+    # -------------------------------end Origen-------------------------------
 
     def __str__(self):
         extra_name = self.extra.name if self.extra else self.pk

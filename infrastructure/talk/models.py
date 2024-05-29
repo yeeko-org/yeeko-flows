@@ -194,10 +194,9 @@ class ExtraValue(models.Model):
     list_by = models.ForeignKey(
         'self', on_delete=models.CASCADE, blank=True, null=True,
         related_name='children')
-    value_bool = models.BooleanField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.extra} - {self.value or self.value_bool}"
+        return f"{self.extra} - {self.value or 'True'}"
 
     class Meta:
         verbose_name = 'Valor extra'
