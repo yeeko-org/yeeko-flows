@@ -101,11 +101,14 @@ class WhatsAppRequest(RequestAbc):
                 continue
 
             message_class = self.data_to_class(message)
-            set_status_read(
+            self._set_status_read(
                 message_class.message_id, input_account.account.pid,
                 input_account.account.token
             )
             input_sender.messages.append(message_class)
+
+    def _set_status_read(self, message_id, pid, token) -> None:
+        set_status_read(message_id,  pid, token)
 
     def _set_statuses(self, change: dict, input_account: InputAccount) -> None:
         value = change.get("value", {})
