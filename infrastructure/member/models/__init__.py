@@ -1,7 +1,8 @@
 from django.db import models
 from django.db.models import JSONField
 
-from infrastructure.place.models import Space, Account
+from infrastructure.member.models.member import Member
+from infrastructure.place.models import Account, Space
 from infrastructure.users.models import User
 from infrastructure.service.models import Platform
 
@@ -56,24 +57,6 @@ class StatusAttendance(models.Model):
         verbose_name = "Status de Atención"
 
 
-class Member(models.Model):
-    space = models.ForeignKey(Space, on_delete=models.CASCADE)
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="members")
-    active = models.BooleanField(default=True)
-    role = models.ForeignKey(Role, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    subscribed = models.BooleanField(default=False)
-    deleted = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user} ({self.space})"
-
-    class Meta:
-        verbose_name_plural = "Integrantes"
-        verbose_name = "Integrante"
-
-
 class MemberAccount(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -81,10 +64,10 @@ class MemberAccount(models.Model):
         max_length=191, blank=True, null=True
     )
     token = models.CharField(max_length=255, blank=True, null=True)
-    config = JSONField(blank=True, null=True, default=default_params)
+    config = models.JSONField(blank=True, null=True, default=default_params)
     last_interaction = models.DateTimeField(blank=True, null=True)
     status = models.ForeignKey(
-        StatusAttendance, on_delete=models.CASCADE, blank=True, null=True,
+        "member.StatusAttendance", on_delete=models.CASCADE, blank=True, null=True,
         verbose_name="Status de Atención"
     )
 
