@@ -1,51 +1,13 @@
 from django.db import models
-from django.db.models import JSONField
+
 
 from infrastructure.box.models import (
-    Destination, Fragment, Piece, Reply, Written
-)
-from infrastructure.member.models import Role
+    Destination, Fragment, Piece, Reply, Written)
 from infrastructure.place.models import Space
-from infrastructure.service.models import Platform
 from infrastructure.tool.models import Behavior
 from infrastructure.xtra.models import Extra
 
-
-class ConditionRule(models.Model):
-
-    appear = models.BooleanField(
-        default=True, verbose_name='Aparece/Desaparece')
-    fragment = models.ForeignKey(
-        Fragment, on_delete=models.CASCADE,
-        blank=True, null=True, related_name='rules')
-    reply = models.ForeignKey(
-        Reply, on_delete=models.CASCADE,
-        blank=True, null=True, related_name='rules')
-    destination = models.ForeignKey(
-        Destination, on_delete=models.CASCADE,
-        blank=True, null=True, related_name='rules')
-    platforms = models.ManyToManyField(
-        Platform, blank=True, verbose_name='Plataformas')
-    circles = models.ManyToManyField(
-        Extra, blank=True, related_name='rules_in')
-    extra = models.ForeignKey(
-        Extra, on_delete=models.CASCADE, blank=True, null=True,
-        related_name='rules')
-    extra_values = JSONField(blank=True, null=True)
-    addl_params = JSONField(blank=True, null=True)
-    extra_exits = models.BooleanField(
-        blank=True, null=True, verbose_name='Existe extra')
-    opposite = models.BooleanField(default=False)
-    roles = models.ManyToManyField(Role, blank=True)
-
-    def __str__(self):
-        fragment_name = self.fragment.body if self.fragment else ""
-        reply_name = self.reply.title if self.reply else ""
-        return f"{fragment_name} - {reply_name}"
-
-    class Meta:
-        verbose_name = 'Regla de condición'
-        verbose_name_plural = 'Reglas de condición'
+from .condition_rule import ConditionRule  # noqa
 
 
 class Assign(models.Model):
@@ -60,14 +22,17 @@ class Assign(models.Model):
 
     # ---------------------------------Origen---------------------------------
     piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True)
+        Piece, on_delete=models.CASCADE,
+        blank=True, null=True, related_name='assignments')
     reply = models.ForeignKey(
-        Reply, on_delete=models.CASCADE, blank=True, null=True)
+        Reply, on_delete=models.CASCADE,
+        blank=True, null=True, related_name='assignments')
     destination = models.ForeignKey(
         Destination, on_delete=models.CASCADE,
         blank=True, null=True, related_name='assignments')
     written = models.ForeignKey(
-        Written, on_delete=models.CASCADE, blank=True, null=True)
+        Written, on_delete=models.CASCADE,
+        blank=True, null=True, related_name='assignments')
     # -------------------------------end Origen-------------------------------
 
     def __str__(self):
