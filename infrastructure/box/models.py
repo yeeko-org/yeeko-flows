@@ -16,6 +16,17 @@ MEDIA_TYPES = (
 )
 
 
+class AssingMixin:
+    def __init__(self, *args, **kwargs) -> None:
+        from infrastructure.assign.models import Assign
+        self.assignments: models.QuerySet[Assign]
+        super().__init__(*args, **kwargs)
+
+    def set_assign(self, member, interaction):
+        for assing in self.assignments.filter(deleted=False):
+            assing.to_member(member, interaction)
+
+
 class DestinationMixin:
     destinations: models.QuerySet["Destination"]
 
@@ -23,7 +34,7 @@ class DestinationMixin:
         return self.destinations.filter(deleted=False)
 
 
-class Written(models.Model, DestinationMixin):
+class Written(models.Model, AssingMixin, DestinationMixin):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE,
         blank=True, null=True)
@@ -41,7 +52,7 @@ class Written(models.Model, DestinationMixin):
         verbose_name_plural = 'Opciones escritas'
 
 
-class Piece(models.Model, DestinationMixin):
+class Piece(models.Model, AssingMixin, DestinationMixin):
     crate = models.ForeignKey(
         Crate, on_delete=models.CASCADE, related_name='pieces')
     name = models.CharField(
@@ -135,7 +146,7 @@ class Fragment(models.Model):
         ordering = ['order']
 
 
-class Reply(models.Model, DestinationMixin):
+class Reply(models.Model, AssingMixin, DestinationMixin):
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, related_name='replies')
     destination = models.ForeignKey(
@@ -182,7 +193,7 @@ class MessageLink(models.Model, DestinationMixin):
         verbose_name = "Message Link"
 
 
-class Destination(models.Model):
+class Destination(models.Model, AssingMixin):
     DESTINATION_TYPES = (
         ('url', 'URL'),
         ('behavior', 'Función Behavior'),

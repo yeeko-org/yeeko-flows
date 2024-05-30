@@ -3,6 +3,7 @@ from django.db import models
 
 from infrastructure.box.models import (
     Destination, Fragment, Piece, Reply, Written)
+from infrastructure.member.models.member import Member
 from infrastructure.place.models import Space
 from infrastructure.tool.models import Behavior
 from infrastructure.xtra.models import Extra
@@ -42,6 +43,18 @@ class Assign(models.Model):
     class Meta:
         verbose_name = 'Asignación'
         verbose_name_plural = 'Asignaciones'
+
+    def to_member(self, member: Member, interaction):
+
+        circles = self.circles.all()
+
+        if self.is_remove:
+            member.remove_extras(circles)
+            member.remove_extra(self.extra)
+        else:
+            member.add_circles(circles, interaction, "assing")
+            member.add_extra_value(
+                self.extra, self.extra_value, interaction, "assing")
 
 
 class ApplyBehavior(models.Model):
