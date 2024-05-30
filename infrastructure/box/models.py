@@ -16,7 +16,14 @@ MEDIA_TYPES = (
 )
 
 
-class Written(models.Model):
+class DestinationMixin:
+    destinations: models.QuerySet["Destination"]
+
+    def get_destinations(self):
+        return self.destinations.filter(deleted=False)
+
+
+class Written(models.Model, DestinationMixin):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE,
         blank=True, null=True)
@@ -25,8 +32,6 @@ class Written(models.Model):
         blank=True, null=True)
     available = models.BooleanField(
         default=False, verbose_name='Disponible')
-    
-    # destino
 
     def __str__(self):
         return self.extra.name if self.extra else str(self.pk)
@@ -36,7 +41,7 @@ class Written(models.Model):
         verbose_name_plural = 'Opciones escritas'
 
 
-class Piece(models.Model):
+class Piece(models.Model, DestinationMixin):
     crate = models.ForeignKey(
         Crate, on_delete=models.CASCADE, related_name='pieces')
     name = models.CharField(
@@ -130,7 +135,7 @@ class Fragment(models.Model):
         ordering = ['order']
 
 
-class Reply(models.Model):
+class Reply(models.Model, DestinationMixin):
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, related_name='replies')
     destination = models.ForeignKey(
@@ -160,7 +165,7 @@ class Reply(models.Model):
         ordering = ['order']
 
 
-class MessageLink(models.Model):
+class MessageLink(models.Model, DestinationMixin):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     link = models.URLField(max_length=255, blank=True, null=True)
     message = models.CharField(max_length=140, blank=True, null=True)
@@ -192,7 +197,7 @@ class Destination(models.Model):
         verbose_name='Opción escrita', related_name='destinations')
     piece = models.ForeignKey(
         Piece, on_delete=models.CASCADE, blank=True, null=True,
-        related_name='default_destinations') # belong
+        related_name='destinations')
     message_link = models.ForeignKey(
         MessageLink, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Link con mensaje', related_name='destinations')
@@ -211,7 +216,7 @@ class Destination(models.Model):
     url = models.CharField(
         max_length=255, verbose_name='URL', blank=True, null=True)
     # -----------------------------end destination--------------------------
-    
+
     addl_params = JSONField(blank=True, null=True)
     is_default = models.BooleanField(default=True)
     order = models.SmallIntegerField(blank=True, null=True)
