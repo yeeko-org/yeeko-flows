@@ -3,6 +3,7 @@ from django.db.models import JSONField
 
 
 from infrastructure.flow.models import Crate
+from infrastructure.member.models.member import Member
 from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
 from infrastructure.place.models import Account
@@ -241,3 +242,28 @@ class Destination(models.Model, AssingMixin):
         verbose_name = 'Destino'
         verbose_name_plural = 'Destinos'
         ordering = ['order']
+
+    def evalue_condition_rules(self, member: Member, platform_name: str):
+        from infrastructure.assign.models import ConditionRule
+        condition_rules = ConditionRule.objects.filter(destination=self)
+        match_all = []
+        match_any = []
+        for condition_rule in condition_rules:
+            evalue = condition_rule.evalue(member, platform_name)
+            evalue = evalue if condition_rule.appear else not evalue
+            if condition_rule.match_all_rules:
+                match_all.append(evalue)
+            else:
+                match_any.append(evalue)
+
+        if not match_all and not match_any:
+            return True
+
+        if match_all and match_any:
+            return all(match_all) and any(match_any)
+
+        if match_all:
+            return all(match_all)
+
+        if match_any:
+            return any(match_any)
