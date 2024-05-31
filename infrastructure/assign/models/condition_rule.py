@@ -36,7 +36,7 @@ class ConditionRule(models.Model):
         Extra, on_delete=models.CASCADE, blank=True, null=True,
         related_name='rules')
     extra_values = JSONField(blank=True, null=True)
-    extra_exits = models.BooleanField(  # Puede usarce circle
+    extra_exists = models.BooleanField(
         blank=True, null=True, verbose_name='Existe extra')
 
     roles = models.ManyToManyField("member.Role", blank=True)
@@ -78,7 +78,7 @@ class ConditionRule(models.Model):
         if not self.extra:
             return None
 
-        if self.extra_exits:
+        if self.extra_exists:
             return member.extra_values.filter(
                 extra=self.extra).exists()
         else:

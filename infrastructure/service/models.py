@@ -127,6 +127,8 @@ class ApiRecord(models.Model):
         if not getattr(self, "pk", None):
             return
         self.success = not self.errors
+
+        pprint(self.errors)
         self.save()
 
         if self.errors:

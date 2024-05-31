@@ -7,14 +7,14 @@ from infrastructure.assign.models import (
 @admin.register(ConditionRule)
 class ConditionRuleAdmin(admin.ModelAdmin):
     list_display = (
-        'appear', 'fragment', 'reply', 'destination', 'extra', 'extra_exits',
+        'appear', 'fragment', 'reply', 'destination', 'extra', 'extra_exists',
     )
     search_fields = (
         'fragment__title', 'reply__title', 'destination__piece__name',
         'extra__name'
     )
     list_filter = (
-        'appear', 'extra_exits', 'platforms', 'circles', 'roles'
+        'appear', 'extra_exists', 'platforms', 'circles', 'roles'
     )
     raw_id_fields = (
         'fragment', 'reply', 'destination', 'extra', 'platforms', 'circles',
@@ -25,7 +25,7 @@ class ConditionRuleAdmin(admin.ModelAdmin):
         ('General', {
             'fields': (
                 'appear', 'fragment', 'reply', 'destination', 'extra',
-                'extra_values', 'addl_params', 'extra_exits'
+                'extra_values', 'addl_params', 'extra_exists'
             )
         }),
         ('Relations', {'fields': ('platforms', 'circles', 'roles')}),

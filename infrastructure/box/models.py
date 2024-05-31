@@ -32,7 +32,7 @@ class DestinationMixin:
     destinations: models.QuerySet["Destination"]
 
     def get_destinations(self):
-        return self.destinations.filter(deleted=False)
+        return self.destinations.filter(deleted=False).order_by('order')
 
 
 class Written(models.Model, AssingMixin, DestinationMixin):
@@ -150,9 +150,11 @@ class Fragment(models.Model):
 class Reply(models.Model, AssingMixin, DestinationMixin):
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, related_name='replies')
+
     destination = models.ForeignKey(
         "Destination", on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Destino', related_name='replies')
+
     title = models.CharField(
         max_length=255, verbose_name='text', blank=True, null=True)
     description = models.CharField(
