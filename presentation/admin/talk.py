@@ -32,10 +32,10 @@ class TriggerAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Orígenes'
 
 
-class EventInline(admin.TabularInline):
+class EventInline(admin.StackedInline):
     model = Event
     extra = 0
-    raw_id_fields = ('interaction',)
+    raw_id_fields = ('api_request', 'interaction',)
 
 
 @admin.register(Interaction)
@@ -47,8 +47,14 @@ class InteractionAdmin(admin.ModelAdmin):
         'member_account__member__user__username')
     list_filter = ('interaction_type', 'is_incoming', 'created')
     raw_id_fields = (
-        'trigger', 'member_account', 'persona', 'api_record_in',
-        'api_record_out'
+        "trigger",
+        "api_record_in",
+        "api_record_out",
+        "interaction_type",
+        "member_account",
+        "persona",
+        "apply_behavior",
+        "fragment",
     )
     inlines = (EventInline,)
 
@@ -89,6 +95,8 @@ class ExtraValueAdmin(admin.ModelAdmin):
                     'modified', 'value', 'list_by')
     search_fields = ('extra__name', 'member__user__username')
     list_filter = ('extra', 'member', 'origin', 'modified', 'list_by')
+    filter_horizontal = ('interactions',)
+    raw_id_fields = ('extra', 'member', 'interactions')
 
     class Meta:
         verbose_name = 'Valor extra'

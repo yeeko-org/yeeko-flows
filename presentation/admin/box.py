@@ -5,12 +5,24 @@ from infrastructure.box.models import (
 )
 
 
+class DestinationWriteInline(admin.TabularInline):
+    model = Destination
+    extra = 0
+    show_change_link = True
+    fk_name = 'written'
+    fields = (
+        'destination_type', 'piece_dest', 'behavior', 'reply', 'url',
+        'addl_params', 'is_default', 'order', 'deleted'
+    )
+
+
 @admin.register(Written)
 class WrittenAdmin(admin.ModelAdmin):
     list_display = ('id', 'extra', 'collection', 'available')
     search_fields = ('extra__name', 'collection__name')
     list_filter = ('available', 'extra', 'collection')
     raw_id_fields = ('extra', 'collection')
+    inlines = [DestinationWriteInline]
 
     fieldsets = (
         ('General', {
@@ -118,20 +130,31 @@ class FragmentAdmin(admin.ModelAdmin):
         ordering = ['order']
 
 
-@admin.register(Reply)
+class DestinationReplyInline(admin.TabularInline):
+    model = Destination
+    extra = 0
+    show_change_link = True
+    fk_name = 'reply'
+    fields = (
+        'destination_type',  'piece_dest', 'behavior', 'url',
+        'addl_params', 'is_default', 'order', 'deleted'
+    )
+
+
+@ admin.register(Reply)
 class ReplyAdmin(admin.ModelAdmin):
-    list_display = ('fragment', 'title', 'destination',
-                    'order', 'is_jump', 'deleted')
-    search_fields = ('fragment__title', 'title',
-                     'description', 'destination__title')
-    list_filter = ('is_jump', 'deleted', 'use_piece_config',
-                   'fragment', 'destination')
-    raw_id_fields = ('fragment', 'destination')
+    list_display = ('fragment', 'title', 'order', 'is_jump', 'deleted')
+    search_fields = ('fragment__title', 'title', 'description', )
+    list_filter = ('is_jump', 'deleted', 'use_piece_config', 'fragment')
+    raw_id_fields = ('fragment',)
+    inlines = [DestinationReplyInline]
 
     fieldsets = (
         ('General', {
-            'fields': ('fragment', 'destination', 'title', 'description', 'large_title',
-                       'order', 'is_jump', 'use_piece_config', 'deleted')
+            'fields': (
+                'fragment', 'title', 'is_section', 'description', 'large_title',
+                'order', 'is_jump', 'use_piece_config', 'deleted'
+            )
         }),
         ('Context for chatGPT', {
             'fields': ('context',)
@@ -147,7 +170,7 @@ class ReplyAdmin(admin.ModelAdmin):
         ordering = ['order']
 
 
-@admin.register(MessageLink)
+@ admin.register(MessageLink)
 class MessageLinkAdmin(admin.ModelAdmin):
     list_display = ('account', 'link', 'message')
     search_fields = ('account__space__title',
@@ -168,7 +191,7 @@ class MessageLinkAdmin(admin.ModelAdmin):
         verbose_name = "Message Link"
 
 
-@admin.register(Destination)
+@ admin.register(Destination)
 class DestinationAdmin(admin.ModelAdmin):
     list_display = (
         'destination_type', 'piece', 'behavior', 'reply', 'written',

@@ -151,12 +151,9 @@ class Reply(models.Model, AssingMixin, DestinationMixin):
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, related_name='replies')
 
-    destination = models.ForeignKey(
-        "Destination", on_delete=models.CASCADE, blank=True, null=True,
-        verbose_name='Destino', related_name='replies')
-
     title = models.CharField(
         max_length=255, verbose_name='text', blank=True, null=True)
+    is_section = models.BooleanField(default=False)
     description = models.CharField(
         max_length=255, verbose_name='Descripción', blank=True, null=True)
     large_title = models.CharField(
