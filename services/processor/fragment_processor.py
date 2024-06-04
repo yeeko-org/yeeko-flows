@@ -2,21 +2,17 @@ from typing import List, Optional
 from infrastructure.box.models import Fragment, Reply
 from infrastructure.talk.models import BuiltReply
 from services.response.abstract import ResponseAbc
-from services.response.models import Button, Header, ReplyMessage
+from services.response.models import Button, Header, ReplyMessage, SectionHeader
 from utilities.parameters import replace_parameter, update_parameters
 
 
-def fragment_reply(reply: Reply, parameters: dict = {}) -> Optional[Button]:
-    local_parameters = update_parameters(
-        reply.values, parameters)  # type: ignore
-    if not reply.destination_id:  # type: ignore
-        return None
+def fragment_reply(
+        reply: Reply, parameters: dict = {}
+) -> Button | SectionHeader | None:
+    title = reply.title or f"Opción {reply.order}"
 
-    title = replace_parameter(
-        local_parameters, reply.title or f"Opción {reply.order}")
-
-    description = replace_parameter(
-        local_parameters, reply.description) if reply.description else None
+    if reply.is_section:
+        return SectionHeader(title=title)
 
     built_reply = BuiltReply.objects.create(
         reply=reply,
@@ -26,7 +22,7 @@ def fragment_reply(reply: Reply, parameters: dict = {}) -> Optional[Button]:
     return Button(
         title=title,
         payload=str(built_reply.uuid),
-        description=description
+        description=reply.description
     )
 
 
@@ -82,10 +78,10 @@ class FragmentProcessor:
                 continue
             message.buttons.append(button)
 
-        if len(self.reply_message) <= 3:
-            self.response.message_few_buttons(message)
-        else:
+        if message.has_sections() or len(message.buttons) > 3:
             self.response.message_many_buttons(message)
+        else:
+            self.response.message_few_buttons(message)
 
     def process_media(self):
         url_media = (

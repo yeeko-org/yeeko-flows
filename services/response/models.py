@@ -8,6 +8,10 @@ class Button(BaseModel):
     description: Optional[str] = None
 
 
+class SectionHeader(BaseModel):
+    title: str
+
+
 class Header(BaseModel):
     type: str
     value: str
@@ -21,8 +25,32 @@ class Message(BaseModel):
 
 
 class ReplyMessage(Message):
-    buttons: List[Button] = []
+    buttons: List[Button | SectionHeader] = []
     button_text: str = "Seleccionar ⏬"
+
+    def get_section(self, default_title="Opciones") -> List["Section"]:
+        sections: List["Section"] = []
+        actual_section = None
+
+        for button in self.buttons:
+            if isinstance(button, SectionHeader):
+                if actual_section:
+                    sections.append(actual_section)
+                actual_section = Section(title=button.title)
+            else:
+                if not actual_section:
+                    actual_section = Section(title=default_title)
+                actual_section.buttons.append(button)
+
+        if actual_section:
+            sections.append(actual_section)
+        return sections
+
+    def has_sections(self) -> bool:
+        return any(isinstance(button, SectionHeader) for button in self.buttons)
+
+    def get_only_buttons(self) -> List[Button]:
+        return [button for button in self.buttons if isinstance(button, Button)]
 
 
 class Section(BaseModel):
