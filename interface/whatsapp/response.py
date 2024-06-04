@@ -88,7 +88,7 @@ class WhatsAppResponse(ResponseAbc):
                     "title": button.title,
                 }
             }
-            for button in message.buttons[:3]
+            for button in message.get_only_buttons()[:3]
         ]
         interactive = self._message_to_data(message, header_supp_media=True)
         interactive.update({
@@ -102,7 +102,7 @@ class WhatsAppResponse(ResponseAbc):
             "interactive", interactive, fragment_id=message.fragment_id)
 
         whatsapp_data_message["uuid_list"] = [
-            button.payload for button in message.buttons[:3]]
+            button.payload for button in message.get_only_buttons()[:3]]
 
         return whatsapp_data_message
 
@@ -113,6 +113,7 @@ class WhatsAppResponse(ResponseAbc):
                 {
                     "id": item.payload,
                     "title": item.title,
+                    "description": item.description or "",
                 }
                 for item in section.buttons[:10]
             ]
@@ -138,14 +139,15 @@ class WhatsAppResponse(ResponseAbc):
     def many_buttons_to_data(self, message: ReplyMessage) -> dict:
 
         interactive = self._message_to_data(message)
+
+        sections = message.get_section(default_title="Buttons")
         interactive.update({
             "type": "list",
             "action": {
                 "button": message.button_text[:20],
                 "sections": [
-                    self._section_to_data(
-                        Section(title="buttons", buttons=message.buttons)
-                    )
+                    self._section_to_data(section)
+                    for section in sections[:10]
                 ],
             }
         })
@@ -153,8 +155,11 @@ class WhatsAppResponse(ResponseAbc):
         whatsapp_data_message = self._base_data(
             "interactive", interactive, fragment_id=message.fragment_id)
 
-        whatsapp_data_message["uuid_list"] = [
-            button.payload for button in message.buttons[:10]]
+        whatsapp_data_message["uuid_list"] = []
+
+        for section in sections[:10]:
+            for item in section.buttons[:10]:
+                whatsapp_data_message["uuid_list"].append(item.payload)
 
         return whatsapp_data_message
 
