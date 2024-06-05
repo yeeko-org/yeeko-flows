@@ -11,7 +11,7 @@ def fragment_reply(
 ) -> Button | SectionHeader | None:
     title = reply.title or f"Opción {reply.order}"
 
-    if reply.is_section:
+    if reply.is_header_section:
         return SectionHeader(title=title)
 
     built_reply = BuiltReply.objects.create(

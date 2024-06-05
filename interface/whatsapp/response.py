@@ -140,7 +140,9 @@ class WhatsAppResponse(ResponseAbc):
 
         interactive = self._message_to_data(message)
 
-        sections = message.get_section(default_title="Buttons")
+        sections = message.get_section(
+            default_title="Opciones:", available_button_space=10
+        )
         interactive.update({
             "type": "list",
             "action": {
@@ -158,7 +160,7 @@ class WhatsAppResponse(ResponseAbc):
         whatsapp_data_message["uuid_list"] = []
 
         for section in sections[:10]:
-            for item in section.buttons[:10]:
+            for item in section.buttons:
                 whatsapp_data_message["uuid_list"].append(item.payload)
 
         return whatsapp_data_message

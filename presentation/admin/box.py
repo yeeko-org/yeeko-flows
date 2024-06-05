@@ -152,7 +152,7 @@ class ReplyAdmin(admin.ModelAdmin):
     fieldsets = (
         ('General', {
             'fields': (
-                'fragment', 'title', 'is_section', 'description', 'large_title',
+                'fragment', 'title', 'is_header_section', 'description', 'large_title',
                 'order', 'is_jump', 'use_piece_config', 'deleted'
             )
         }),
