@@ -1,9 +1,8 @@
 from typing import Optional
 from infrastructure.box.models import Destination
 from services.processor.behavior_processor import BehaviorProcessor
-from services.processor.destination_rules import destination_reply
+from services.processor.destination_rules import destination_find
 from services.processor.piece_processor import PieceProcessor
-from services.processor.processor_base import Processor
 from services.request.message_model import InteractiveMessage
 from services.response.abstract import ResponseAbc
 
@@ -28,9 +27,22 @@ class InteractiveProcessor:
         if not built_reply.reply:
             return
 
-        self.destination = destination_reply(built_reply.reply)
+        self.destination = destination_find(
+            built_reply.reply.get_destinations(), self.response.sender.member,
+            "self.response.platform_name", raise_exception=False)
+
+        if (
+            not self.destination and built_reply.interaction
+            and built_reply.interaction.fragment
+        ):
+            print("---------------------destination_find---------------------")
+            self.destination = destination_find(
+                built_reply.interaction.fragment.piece.get_destinations(),
+                self.response.sender.member,
+                "self.response.platform_name", raise_exception=True)
+
         if not self.destination:
-            return
+            self.process_behavior("destination_fail")
 
         elif self.destination.destination_type == "behavior":
             self.process_behavior(

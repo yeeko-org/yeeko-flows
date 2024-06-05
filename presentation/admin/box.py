@@ -42,6 +42,18 @@ class FragmentInline(admin.TabularInline):
     fk_name = 'piece'
 
 
+class DestinationPieceInline(admin.TabularInline):
+    model = Destination
+    extra = 0
+    show_change_link = True
+    fk_name = 'piece'
+    fields = (
+        'destination_type', 'piece_dest', 'url',
+        'addl_params', 'is_default', 'order', 'deleted'
+    )
+    raw_id_fields = ('piece_dest', )
+
+
 @admin.register(Piece)
 class PieceAdmin(admin.ModelAdmin):
     list_display = (
@@ -53,7 +65,7 @@ class PieceAdmin(admin.ModelAdmin):
                    'crate', 'behavior', 'default_extra')
     raw_id_fields = ('crate', 'behavior', 'default_extra')
 
-    inlines = [FragmentInline]
+    inlines = [FragmentInline, DestinationPieceInline]
 
     fieldsets = (
         ('General', {
