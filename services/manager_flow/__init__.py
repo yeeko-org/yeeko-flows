@@ -39,8 +39,12 @@ class ManagerFlow(AbstractManagerFlow):
         """
         Se requiere implementar una funcion que limpie y determine el mensaje
         principal o la intencion en caso de recibir varios mensajes.
+
+        aquellos mensajes que se procesen se les registrara el record_interaction
         """
         for message in input_sender.messages:
+            if type(message) in [TextMessage, InteractiveMessage]:
+                message.record_interaction(api_record_in, input_sender.member) # type: ignore
 
             response = self._response_class(
                 sender=input_sender.member,
