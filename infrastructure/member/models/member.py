@@ -73,4 +73,8 @@ class Member(models.Model):
         ExtraValue.objects.filter(
             extra__in=extras,  member=self
         ).delete()
+
+    def remove_all_extras(self):
+        from infrastructure.talk.models import ExtraValue
+        ExtraValue.objects.filter(member=self).delete()
     # ---------------------------end Extra manager---------------------------

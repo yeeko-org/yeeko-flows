@@ -10,7 +10,7 @@ def destination_find(
 ) -> Destination | None:
 
     destinations_list = list(destinations)
-    if len(destinations_list):
+    if len(destinations_list) == 1:
         return destinations_list[0]
 
     default_destination = None

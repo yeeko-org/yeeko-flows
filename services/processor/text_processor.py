@@ -38,7 +38,7 @@ class TextMessageProcessor(Processor):
         self.context_direct = False
         if self.message.context_id:
             context_piece = Piece.objects.filter(
-                fragments__interaction__id=self.message.context_id).first()
+                fragments__interaction__mid=self.message.context_id).first()
             self.context_direct = True
         else:
             context_interaction = Interaction.objects.filter(

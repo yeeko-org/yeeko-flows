@@ -40,7 +40,6 @@ class WhatsappMessageView(generic.View):
     def post(self, request, *args, **kwargs):
         try:
             incoming_message = json.loads(self.request.body)
-            print("incoming_message", incoming_message)
             manage = ManagerFlow(
                 incoming_message,
                 request_class=WhatsAppRequest,

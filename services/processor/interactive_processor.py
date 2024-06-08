@@ -26,6 +26,9 @@ class InteractiveProcessor:
             return
         if not built_reply.reply:
             return
+        
+        built_reply.reply.set_assign(
+            self.response.sender.member, self.message.interaction)
 
         self.destination = destination_find(
             built_reply.reply.get_destinations(), self.response.sender.member,

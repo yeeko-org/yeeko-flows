@@ -128,7 +128,6 @@ class ApiRecord(models.Model):
             return
         self.success = not self.errors
 
-        pprint(self.errors)
         self.save()
 
         if self.errors:

@@ -52,9 +52,9 @@ class Assign(models.Model):
             member.remove_extras(circles)
             member.remove_extra(self.extra)
         else:
-            member.add_circles(circles, interaction, "assing")
+            member.add_circles(circles, interaction, "assigned")
             member.add_extra_value(
-                self.extra, self.extra_value, interaction, "assing")
+                self.extra, self.extra_value, interaction, "assigned")
 
 
 class ApplyBehavior(models.Model):
