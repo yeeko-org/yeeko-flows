@@ -24,6 +24,7 @@ class ResponseAbc(ABC, BaseModel):
     sender: MemberAccount
     api_record_in: ApiRecord
     message_list: List[dict] = []
+    platform_name: str
 
     class Config:
         arbitrary_types_allowed = True

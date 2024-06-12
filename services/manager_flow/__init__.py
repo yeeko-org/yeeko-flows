@@ -44,11 +44,14 @@ class ManagerFlow(AbstractManagerFlow):
         """
         for message in input_sender.messages:
             if type(message) in [TextMessage, InteractiveMessage]:
-                message.record_interaction(api_record_in, input_sender.member) # type: ignore
+                message.record_interaction(  # type: ignore
+                    api_record_in, input_sender.member)
 
             response = self._response_class(
                 sender=input_sender.member,
-                api_record_in=api_record_in
+                api_record_in=api_record_in,
+                platform_name=self.request.platform_name
+
             )
 
             self.response_list.append(response)
@@ -70,7 +73,7 @@ class ManagerFlow(AbstractManagerFlow):
             text_processor = TextMessageProcessor(self, message, response)
             text_processor.process()
         elif isinstance(message, InteractiveMessage):
-            interactive_processor = InteractiveProcessor(self, message, response)
+            interactive_processor = InteractiveProcessor(message, response)
             interactive_processor.process()
             pass
         elif isinstance(message, EventMessage):

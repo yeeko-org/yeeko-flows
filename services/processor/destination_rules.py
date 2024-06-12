@@ -5,8 +5,8 @@ from infrastructure.member.models.member import Member
 
 
 def destination_find(
-        destinations: QuerySet[Destination], member: Member, platform_name: str,
-        raise_exception: bool = True
+        destinations: QuerySet[Destination], member: Member,
+        platform_name: str, raise_exception: bool = True
 ) -> Destination | None:
 
     destinations_list = list(destinations)

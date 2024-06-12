@@ -36,7 +36,7 @@ class WrittenProcessor:
 
         destination = destination_find(
             self.written.get_destinations(), self.response.sender.member,
-            "self.response.platform_name")
+            self.response.platform_name)
 
         if not destination:
             raise ValueError("Destination not found")

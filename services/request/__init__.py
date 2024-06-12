@@ -93,15 +93,20 @@ class InputAccount:
 class RequestAbc(ABC):
     raw_data: dict
     input_accounts: List[InputAccount]
-
+    platform_name: str
     api_record: ApiRecord
 
     def __init__(
-            self, raw_data: dict, platform: Optional[str] = None,
+            self, raw_data: dict, platform_name: str = "",
             set_messages: bool = True
     ) -> None:
+        """
+        The implementation of the class must be set platform_name by super
+            super().__init__(raw_data, platform_name="whatsapp")
+        Args:
+        """
         self.raw_data = raw_data
-        self.platform = platform
+        self.platform_name = platform_name
         self.input_accounts = []
 
         self._contacs_data = {}
@@ -122,7 +127,7 @@ class RequestAbc(ABC):
         default_interactiontype, _ = InteractionType.objects.get_or_create(
             name="default", way="in")
 
-        platform = Platform.objects.get(name=self.platform)
+        platform = Platform.objects.get(name=self.platform_name)
 
         self.api_record = ApiRecord.objects.create(
             platform=platform,

@@ -38,7 +38,7 @@ class WhatsAppRequest(RequestAbc):
     data: dict
 
     def __init__(self, raw_data: dict) -> None:
-        super().__init__(raw_data, platform="whatsapp")
+        super().__init__(raw_data, platform_name="whatsapp")
         self._contacs_data = {}
 
     def _get_input_account(self, change: dict) -> Optional[InputAccount]:
