@@ -20,6 +20,18 @@ class InteractiveProcessor:
         self.response = response
         self.reply = message.built_reply.reply if message.built_reply else None
 
+    def process(self):
+        if self.process_if_not_built_reply():
+            return
+
+        if not self.reply:
+            return
+
+        self.reply.set_assign(
+            self.response.sender.member, self.message.interaction)
+
+        self.process_destination()
+
     @property
     def piece(self) -> Piece | None:
         if not hasattr(self, "_piece"):
@@ -40,30 +52,35 @@ class InteractiveProcessor:
 
         return fragment.piece
 
-    def process(self):
-        built_reply = self.message.built_reply
-        if not built_reply:
-            self.process_behavior()
-            return
-        if not built_reply.reply:
-            return
-        
-        built_reply.reply.set_assign(
-            self.response.sender.member, self.message.interaction)
+    def process_if_not_built_reply(self):
+        if self.message.built_reply:
+            return False
+
+        self.process_behavior()
+        return True
+
+    def get_destination(self) -> Optional[Destination]:
+        if not self.reply:
+            return None
 
         self.destination = destination_find(
-            built_reply.reply.get_destinations(), self.response.sender.member,
-            "self.response.platform_name", raise_exception=False)
+            self.reply.get_destinations(),
+            self.response.sender.member,
+            self.response.platform_name,
+            raise_exception=False)
 
-        if (
-            not self.destination and built_reply.interaction
-            and built_reply.interaction.fragment
-        ):
-            print("---------------------destination_find---------------------")
-            self.destination = destination_find(
-                built_reply.interaction.fragment.piece.get_destinations(),
-                self.response.sender.member,
-                "self.response.platform_name", raise_exception=True)
+        if not self.piece:
+            return None
+
+        self.destination = destination_find(
+            self.piece.get_destinations(),
+            self.response.sender.member,
+            self.response.platform_name,
+            raise_exception=False)
+
+    def process_destination(self):
+
+        self.get_destination()
 
         if not self.destination:
             self.process_behavior("destination_fail")
