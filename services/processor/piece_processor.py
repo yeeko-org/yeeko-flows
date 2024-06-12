@@ -1,19 +1,12 @@
-from typing import List
-from infrastructure.assign.models import ApplyBehavior, ParamValue
-from infrastructure.box.models import Fragment, Piece, Reply
-from infrastructure.member.models import MemberAccount
-from infrastructure.service.models import ApiRecord
+from infrastructure.box.models import Fragment, Piece
 from services.processor.behavior_processor import BehaviorProcessor
+from services.processor.destination_rules import destination_find
 from services.processor.fragment_processor import FragmentProcessor
-from services.processor.processor_base import Processor
+from services.processor.processor_base import DestinationProcessorMixin
 from services.response import ResponseAbc
 
-from django.db.models import Q
 
-from utilities.parameters import update_parameters
-
-
-class PieceProcessor(Processor):
+class PieceProcessor(DestinationProcessorMixin):
     piece: Piece
     response: ResponseAbc
     parameters: dict
@@ -28,13 +21,23 @@ class PieceProcessor(Processor):
         self.parameters = parameters
 
     def process(self):
-        fragments = self.piece.fragments.order_by('order')
+        if self.piece.piece_type == "destinations":
+            self.process_destination()
+            return
 
+        fragments = self.piece.fragments.order_by('order')
         for fragment in fragments:
             try:
                 self.process_fragment(fragment)
             except Exception as e:
                 self.response.api_record_in.add_error({}, e)
+
+    def get_destination(self):
+        return destination_find(
+            self.piece.get_destinations(),
+            self.response.sender.member,
+            self.response.platform_name,
+            raise_exception=False)
 
     def process_fragment(self, fragment: Fragment):
         if fragment.fragment_type == "message":

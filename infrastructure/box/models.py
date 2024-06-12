@@ -54,6 +54,12 @@ class Written(models.Model, AssingMixin, DestinationMixin):
 
 
 class Piece(models.Model, AssingMixin, DestinationMixin):
+    TYPE_CHOICES = (
+        ("content", "Contenido"),
+        ("destinations", "Para Destinos"),
+    )
+    piece_type = models.CharField(
+        max_length=20, choices=TYPE_CHOICES, default='content')
     crate = models.ForeignKey(
         Crate, on_delete=models.CASCADE, related_name='pieces')
     name = models.CharField(
