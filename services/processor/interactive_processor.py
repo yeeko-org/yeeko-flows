@@ -30,6 +30,8 @@ class InteractiveProcessor:
         self.reply.set_assign(
             self.response.sender.member, self.message.interaction)
 
+        self.set_extra_default_to_member()
+
         self.process_destination()
 
     @property
@@ -95,6 +97,17 @@ class InteractiveProcessor:
             piece_processor = PieceProcessor(
                 response=self.response, piece=self.destination.piece_dest)
             piece_processor.process()
+
+    def set_extra_default_to_member(self):
+        if not self.piece:
+            return
+
+        default_extra = self.piece.default_extra
+        if not default_extra:
+            return
+
+        self.response.sender.member.add_extra_value(
+            default_extra, self.message.payload, self.message.interaction)
 
     def process_behavior(self, behavior_name: Optional[str] = None):
         if not behavior_name:
