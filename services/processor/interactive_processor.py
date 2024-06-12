@@ -1,5 +1,5 @@
 from typing import Optional
-from infrastructure.box.models import Destination
+from infrastructure.box.models import Destination, Piece, Reply
 from services.processor.behavior_processor import BehaviorProcessor
 from services.processor.destination_rules import destination_find
 from services.processor.piece_processor import PieceProcessor
@@ -10,14 +10,35 @@ from services.response.abstract import ResponseAbc
 class InteractiveProcessor:
     message: InteractiveMessage
     response: ResponseAbc
-    destination: Optional[Destination]
+    destination: Optional[Destination] = None
+    reply: Optional[Reply]
 
     def __init__(
-        self, manager_flow, message: InteractiveMessage, response: ResponseAbc
+        self, message: InteractiveMessage, response: ResponseAbc
     ) -> None:
         self.message = message
         self.response = response
-        self.destination = None
+        self.reply = message.built_reply.reply if message.built_reply else None
+
+    @property
+    def piece(self) -> Piece | None:
+        if not hasattr(self, "_piece"):
+            self._piece = self.get_piece()
+        return self._piece
+
+    def get_piece(self) -> Piece | None:
+        if not self.message.built_reply:
+            return None
+
+        replay_interaction = self.message.built_reply.interaction
+        if not replay_interaction:
+            return None
+
+        fragment = replay_interaction.fragment
+        if not fragment:
+            return None
+
+        return fragment.piece
 
     def process(self):
         built_reply = self.message.built_reply
