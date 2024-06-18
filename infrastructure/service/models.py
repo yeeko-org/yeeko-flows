@@ -4,6 +4,8 @@ from typing import Optional
 from django.db import models
 from django.db.models import JSONField
 
+from utilities.json_compatible import ensure_json_compatible
+
 WAY_CHOICES = (
     ('in', 'entrada'),
     ('out', 'salida'),
@@ -112,7 +114,7 @@ class ApiRecord(models.Model):
 
         if not self.errors:
             self.errors = []
-        self.errors += errors
+        self.errors += errors  # type: ignore
 
     def add_error(self, error: dict, e: Optional[BaseException] = None) -> None:
         if not self.errors:
@@ -121,15 +123,19 @@ class ApiRecord(models.Model):
         if e:
             error["error"] = str(e)
             error["traceback"] = traceback.format_exc()
-        self.errors.append(error)
+        self.errors.append(error)  # type: ignore
+
+    def save(self, *args, **kwargs):
+        if self.errors:
+            self.errors = ensure_json_compatible(self.errors)
+        return super().save(*args, **kwargs)
 
     def __del__(self):
         if not getattr(self, "pk", None):
             return
         self.success = not self.errors
-
-        self.save()
-
         if self.errors:
             print("Error in API record: ")
             pprint(self.errors)
+
+        self.save()
