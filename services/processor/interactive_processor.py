@@ -61,9 +61,9 @@ class InteractiveProcessor(DestinationProcessorMixin):
         self.process_behavior()
         return True
 
-    def get_destination(self) -> Optional[Destination]:
+    def get_destination(self) -> None:
         if not self.reply:
-            return None
+            return
 
         self.destination = destination_find(
             self.reply.get_destinations(),
@@ -71,8 +71,11 @@ class InteractiveProcessor(DestinationProcessorMixin):
             self.response.platform_name,
             raise_exception=False)
 
+        if self.destination:
+            return
+
         if not self.piece:
-            return None
+            return
 
         self.destination = destination_find(
             self.piece.get_destinations(),

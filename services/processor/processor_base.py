@@ -17,7 +17,7 @@ class DestinationProcessorMixin:
     destination: Optional[Destination] = None
 
     @abstractmethod
-    def get_destination(self) -> Optional[Destination]:
+    def get_destination(self) -> None:
         raise NotImplementedError
 
     def process_destination(self):

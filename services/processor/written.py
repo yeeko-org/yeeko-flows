@@ -35,7 +35,7 @@ class WrittenProcessor(DestinationProcessorMixin):
 
         self.process_destination()
 
-    def get_destination(self):
-        return destination_find(
+    def get_destination(self) -> None:
+        self.destination = destination_find(
             self.written.get_destinations(), self.response.sender.member,
             self.response.platform_name, raise_exception=False)
