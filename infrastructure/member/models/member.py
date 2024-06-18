@@ -31,6 +31,34 @@ class Member(models.Model):
 
     # -----------------------------Extra manager-----------------------------
 
+    def get_extra_values_data(self, refrest=False) -> dict[str, str]:
+        from infrastructure.talk.models import ExtraValue
+        if hasattr(self, "_extra_values_data") and not refrest:
+            return getattr(self, "_extra_values_data", {})
+
+        self._extra_values_data = {}
+        extra_values_query = ExtraValue.objects\
+            .filter(member=self, extra__deleted=False)\
+            .values("extra__name", "value", "extra__format__name")
+
+        for extra_value in extra_values_query:
+            name = extra_value["extra__name"]
+            value = extra_value["value"]
+            forma = extra_value["extra__format__name"]
+
+            self._extra_values_data[name] = value
+
+            # agregar consideraciones para format
+
+        self._extra_values_data["username"] = self.user.username
+        self._extra_values_data["first_name"] = self.user.first_name
+        self._extra_values_data["last_name"] = self.user.last_name
+        self._extra_values_data["email"] = self.user.email
+        self._extra_values_data["phone"] = self.user.phone
+        self._extra_values_data["gender"] = self.user.gender
+
+        return self._extra_values_data
+
     def add_extra_value(
             self, extra,  value: str | None = None,
             interaction=None,

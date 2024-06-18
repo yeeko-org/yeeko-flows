@@ -8,6 +8,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import BuiltReply, Interaction
 from services.response.models import SectionsMessage, ReplyMessage
+from utilities.replacer_from_data import replace_parameter
 
 
 def exception_handler(func: Callable) -> Callable:
@@ -18,6 +19,14 @@ def exception_handler(func: Callable) -> Callable:
             self.api_record_in.add_error({"method": func.__name__, }, e=e)
 
     return wrapper
+
+
+def _rep_text(text: str, sender: MemberAccount, default: str = "") -> str:
+    return replace_parameter(
+        sender.member.get_extra_values_data(),
+        text,
+        default=default
+    )
 
 
 class ResponseAbc(ABC, BaseModel):
@@ -31,29 +40,37 @@ class ResponseAbc(ABC, BaseModel):
 
     @exception_handler
     def message_text(self, message: str, fragment_id: Optional[int] = None):
+        message = _rep_text(message, self.sender)
         message_data = self.text_to_data(message, fragment_id=fragment_id)
         self.message_list.append(message_data)
 
-    # @exception_handler
+    @exception_handler
     def message_multimedia(
         self, url_media: str, media_type: str, caption: str = "",
         fragment_id: Optional[int] = None
     ):
+        caption = _rep_text(caption, self.sender)
         message_data = self.multimedia_to_data(url_media, media_type, caption)
         self.message_list.append(message_data)
 
     @exception_handler
     def message_few_buttons(self, message: ReplyMessage):
+        message.replace_text(self.sender.member.get_extra_values_data())
+
         message_data = self.few_buttons_to_data(message)
         self.message_list.append(message_data)
 
     @exception_handler
     def message_many_buttons(self, message: ReplyMessage):
+        message.replace_text(self.sender.member.get_extra_values_data())
+
         message_data = self.many_buttons_to_data(message)
         self.message_list.append(message_data)
 
     @exception_handler
     def message_sections(self, message: SectionsMessage):
+        message.replace_text(self.sender.member.get_extra_values_data())
+
         message_data = self.sections_to_data(message)
         self.message_list.append(message_data)
 

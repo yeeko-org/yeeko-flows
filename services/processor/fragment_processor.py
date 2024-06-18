@@ -42,9 +42,6 @@ class FragmentProcessor:
             fragment.values, parameters)  # type: ignore
         self.reply_message = list(fragment.replies.order_by("order"))
 
-    def replace(self, text: str) -> str:
-        return replace_parameter(self.parameters, text)
-
     def header_from_fragment(self) -> Optional[Header | str]:
         if self.fragment.media_type:
             value = (
@@ -55,19 +52,18 @@ class FragmentProcessor:
                 return Header(type=self.fragment.media_type, value=value)
 
         if self.fragment.header:
-            return self.replace(self.fragment.header)
+            return self.fragment.header
 
         return
 
     def process_reply_message(self):
         header = self.header_from_fragment()
 
-        footer = self.replace(
-            self.fragment.footer) if self.fragment.footer else None
+        footer = self.fragment.footer if self.fragment.footer else None
 
         message = ReplyMessage(
             header=header,
-            body=self.replace(self.fragment.body or ""),
+            body=self.fragment.body or "",
             footer=footer,
             fragment_id=self.fragment.pk
         )
@@ -90,7 +86,7 @@ class FragmentProcessor:
         if not url_media:
             return
 
-        url_media = self.replace(url_media)
+        url_media = url_media
         self.response.message_multimedia(
             url_media=url_media,
             media_type=self.fragment.media_type or "image",
@@ -104,5 +100,5 @@ class FragmentProcessor:
             self.process_media()
 
         elif self.fragment.body:
-            self.response.message_text(self.replace(
-                self.fragment.body), fragment_id=self.fragment.pk)
+            self.response.message_text(
+                self.fragment.body, fragment_id=self.fragment.pk)

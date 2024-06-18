@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+from utilities.replacer_from_data import replace_parameter
+
 
 class Button(BaseModel):
     title: str
@@ -22,6 +24,19 @@ class Message(BaseModel):
     header: Optional[str | Header] = None
     footer: Optional[str] = None
     fragment_id: Optional[int] = None
+
+    def replace_text(self, extra_values_data: dict):
+        self.body = replace_parameter(extra_values_data, self.body)
+
+        if self.header:
+            if isinstance(self.header, Header):
+                self.header.value = replace_parameter(
+                    extra_values_data, self.header.value)
+            else:
+                self.header = replace_parameter(extra_values_data, self.header)
+
+        if self.footer:
+            self.footer = replace_parameter(extra_values_data, self.footer)
 
 
 class ReplyMessage(Message):
@@ -64,13 +79,61 @@ class ReplyMessage(Message):
     def get_only_buttons(self) -> List[Button]:
         return [button for button in self.buttons if isinstance(button, Button)]
 
+    def replace_text(self, extra_values_data: dict):
+
+        super().replace_text(extra_values_data)
+
+        self.button_text = replace_parameter(
+            extra_values_data, self.button_text)
+
+        for index, button in enumerate(self.buttons):
+            if isinstance(button, Button):
+                self.buttons[index].title = replace_parameter(
+                    extra_values_data,
+                    button.title
+                )
+                self.buttons[index].description = replace_parameter(
+                    extra_values_data,
+                    button.description or ""
+                )
+            if isinstance(button, SectionHeader):
+                self.buttons[index].title = replace_parameter(
+                    extra_values_data,
+                    button.title
+                )
+
 
 class Section(BaseModel):
     title: str
     buttons: List[Button] = []
+
+    def replace_text(self, extra_values_data: dict):
+
+        self.title = replace_parameter(
+            extra_values_data, self.title)
+
+        for index, button in enumerate(self.buttons):
+            if isinstance(button, Button):
+                self.buttons[index].title = replace_parameter(
+                    extra_values_data,
+                    button.title
+                )
+                self.buttons[index].description = replace_parameter(
+                    extra_values_data,
+                    button.description or ""
+                )
 
 
 class SectionsMessage(Message):
     button_text: str
     sections: List[Section]
     top_element_style: Optional[str] = "compact"
+
+    def replace_text(self, extra_values_data: dict):
+        super().replace_text(extra_values_data)
+
+        self.button_text = replace_parameter(
+            extra_values_data, self.button_text)
+
+        for index, _ in enumerate(self.sections):
+            self.sections[index].replace_text(extra_values_data)
