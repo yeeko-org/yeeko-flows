@@ -1,4 +1,4 @@
-from services.processor.behavior_processor import BehaviorProcessor
+from services.processor.behavior import BehaviorProcessor
 from services.response.abstract import ResponseAbc
 
 

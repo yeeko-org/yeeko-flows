@@ -6,8 +6,8 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import Interaction
 from infrastructure.xtra.models import Extra
-from services.processor.behavior_processor import BehaviorProcessor
-from services.processor.processor_base import Processor
+from services.processor.behavior import BehaviorProcessor
+from services.processor.base_mixin import Processor
 from services.processor.written import WrittenProcessor
 from services.request.message_model import TextMessage
 from services.response import ResponseAbc
@@ -54,60 +54,48 @@ class TextMessageProcessor(Processor):
 
     def process(self):
 
-        if self.message.text.startswith("/"):
-            behavior_processor = BehaviorProcessor(
-                self.message.text[1:], self.response)
-            behavior_processor.process()
+        if self.command_handler():
             return
 
-        self.intension()
-
-    def intension(self):
-        self.message.valid_time_interval()
-
-        if self.context_direct and self.written:
-            self.process_written()
+        if self.context_direct and self.process_written():
             return
 
-        intent_to_contact_administrator = self.intent_to_contact_administrator()
-
-        if self.written:  # indirect intension
-            # intencion indirecta, se requiere mas analisis por written
-            # evaluacion de tiempo
-            # evaluacion de intencion de contacto con administrador
-            self.process_written()
-            return
-
-        if intent_to_contact_administrator:
-            self.process_intent_to_contact_administrator()
+        if self.intent_to_contact_administrator():
             return
 
         if not self.last_interaction_out:
-            self.started()
+            self.call_behavior("start")
             return
 
-        self.process_default()
+        valid_time_interval = self.message.valid_time_interval(
+            raise_exception=False)
+
+        if valid_time_interval and self.process_written():
+            return
+
+        self.call_behavior("default_text")
+
+    def command_handler(self):
+        if self.message.text.startswith("/"):
+            self.call_behavior(self.message.text[1:])
+            return True
 
     def intent_to_contact_administrator(self) -> bool:
-        return bool(re.search(r"admin", self.message.text, re.IGNORECASE))
+        if not bool(re.search(r"admin", self.message.text, re.IGNORECASE)):
+            return False
 
-    def process_intent_to_contact_administrator(self):
-        pass
+        self.call_behavior("admin_contact")
+        return True
 
-    def process_default(self):
-        print("++++++++++++++++++++++process_default++++++++++++++++++++++")
-        pass
+    def call_behavior(self, behavior):
+        BehaviorProcessor(behavior, self.response).process()
 
     def process_written(self):
         if not self.written:
             return
 
-        written_processor = WrittenProcessor(
+        WrittenProcessor(
             response=self.response, message=self.message,
             written=self.written, default_extra=self.default_extra
-        )
-        written_processor.process()
-
-    def started(self):
-        behavior_processor = BehaviorProcessor("start", self.response)
-        behavior_processor.process()
+        ).process()
+        return True

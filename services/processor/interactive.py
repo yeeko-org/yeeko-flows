@@ -1,8 +1,8 @@
 from typing import Optional
 from infrastructure.box.models import Destination, Piece, Reply
-from services.processor.behavior_processor import BehaviorProcessor
+from services.processor.behavior import BehaviorProcessor
 from services.processor.destination_rules import destination_find
-from services.processor.processor_base import DestinationProcessorMixin
+from services.processor.base_mixin import DestinationProcessorMixin
 from services.request.message_model import InteractiveMessage
 from services.response.abstract import ResponseAbc
 

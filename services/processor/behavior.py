@@ -36,7 +36,7 @@ class BehaviorProcessor:
         self.apply_behavior = apply_behavior
 
     def process(self):
-        from services.processor.piece_processor import PieceProcessor
+        from services.processor.piece import PieceProcessor
         if not self.apply_behavior.main_piece:
             self.process_behavior_code()
             return

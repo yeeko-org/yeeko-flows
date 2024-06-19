@@ -1,9 +1,9 @@
 from typing import Type
 from infrastructure.service.models import ApiRecord
 from services.manager_flow.manager_flow_abc import AbstractManagerFlow
-from services.processor.interactive_processor import InteractiveProcessor
-from services.processor.state_processor import StateProcessor
-from services.processor.text_processor import TextMessageProcessor
+from services.processor.interactive import InteractiveProcessor
+from services.processor.state import StateProcessor
+from services.processor.text import TextMessageProcessor
 from services.request import InputSender, RequestAbc
 from services.response import ResponseAbc
 

@@ -2,7 +2,7 @@ from typing import Optional
 from infrastructure.box.models import Written
 from infrastructure.xtra.models import Extra
 from services.processor.destination_rules import destination_find
-from services.processor.processor_base import DestinationProcessorMixin
+from services.processor.base_mixin import DestinationProcessorMixin
 from services.request.message_model import TextMessage
 from services.response.abstract import ResponseAbc
 

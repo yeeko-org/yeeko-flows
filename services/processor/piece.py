@@ -1,8 +1,8 @@
 from infrastructure.box.models import Fragment, Piece
-from services.processor.behavior_processor import BehaviorProcessor
+from services.processor.behavior import BehaviorProcessor
 from services.processor.destination_rules import destination_find
-from services.processor.fragment_processor import FragmentProcessor
-from services.processor.processor_base import DestinationProcessorMixin
+from services.processor.fragment import FragmentProcessor
+from services.processor.base_mixin import DestinationProcessorMixin
 from services.response import ResponseAbc
 
 
