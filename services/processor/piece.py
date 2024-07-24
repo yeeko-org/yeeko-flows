@@ -62,3 +62,20 @@ class PieceProcessor(DestinationProcessorMixin):
             piece_processor = PieceProcessor(
                 fragment.embedded_piece, self.response, self.parameters)
             piece_processor.process()
+
+        elif fragment.fragment_type == "media":
+            if not fragment.persistent_media:
+                raise Exception(
+                    f"El fragmento {fragment} no tiene un multimedia "
+                    "persistente asociado"
+                )
+            media_id=fragment.persistent_media.get_media_id()
+            if not media_id:
+                raise Exception(
+                    f"El media persistente asociado al fragmento {fragment} "
+                    "no tiene un id asociado")
+            self.response.message_multimedia(
+                media_type=fragment.persistent_media.media_type,
+                media_id=media_id,
+                fragment_id=fragment.pk
+            )
