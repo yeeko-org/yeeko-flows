@@ -9,3 +9,4 @@ from .tool import *
 from .box import *
 from .assign import *
 from .talk import *
+from .persistent_media import *

@@ -16,13 +16,14 @@ class FragmentInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     fk_name = 'piece'
-    raw_id_fields = ('behavior', 'embedded_piece', )
+    raw_id_fields = ('behavior', 'embedded_piece', 'persistent_media')
     fields = [
         "fragment_type",
         "piece",
         "order",
         "body",
         "behavior",
+        "persistent_media",
         "deleted",
         "file",
         "media_url",

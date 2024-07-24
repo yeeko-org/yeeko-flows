@@ -15,7 +15,7 @@ class AccountAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('General', {
-            'fields': ('pid', 'space', 'platform', 'title', 'token', 'config', 'active')
+            'fields': ('pid', 'app_id', 'space', 'platform', 'title', 'token', 'config', 'active')
         }),
         ('Response Settings', {
             'fields': ('init_text_response', 'text_response', 'payload_response')
