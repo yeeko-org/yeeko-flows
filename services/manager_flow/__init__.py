@@ -2,13 +2,14 @@ from typing import Type
 from infrastructure.service.models import ApiRecord
 from services.manager_flow.manager_flow_abc import AbstractManagerFlow
 from services.processor.interactive import InteractiveProcessor
+from services.processor.media import MediaProcessor
 from services.processor.state import StateProcessor
 from services.processor.text import TextMessageProcessor
 from services.request import InputSender, RequestAbc
 from services.response import ResponseAbc
 
 from services.request.message_model import (
-    InteractiveMessage, EventMessage, TextMessage
+    InteractiveMessage, EventMessage, MediaMessage, TextMessage
 )
 
 
@@ -43,7 +44,7 @@ class ManagerFlow(AbstractManagerFlow):
         aquellos mensajes que se procesen se les registrara el record_interaction
         """
         for message in input_sender.messages:
-            if type(message) in [TextMessage, InteractiveMessage]:
+            if type(message) in [TextMessage, InteractiveMessage, MediaMessage]:
                 message.record_interaction(  # type: ignore
                     api_record_in, input_sender.member)
 
@@ -66,7 +67,7 @@ class ManagerFlow(AbstractManagerFlow):
                 api_record_in.add_error(data_error, e=e)
 
     def process_message(
-        self, message: TextMessage | InteractiveMessage | EventMessage,
+        self, message: TextMessage | InteractiveMessage | EventMessage | MediaMessage,
         response: ResponseAbc
     ) -> None:
         if isinstance(message, TextMessage):
@@ -79,5 +80,10 @@ class ManagerFlow(AbstractManagerFlow):
         elif isinstance(message, EventMessage):
             event_processor = StateProcessor(self, message, response)
             event_processor.process()
+
+        elif isinstance(message, MediaMessage):
+            media_processor = MediaProcessor(message, response)
+            media_processor.process()
+
         else:
-            raise ValueError("Message type not supported")
+            raise ValueError(f"Message type {type(message)} not supported")
