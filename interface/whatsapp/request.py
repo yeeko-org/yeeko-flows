@@ -4,8 +4,11 @@ from django.conf import settings
 import requests
 from services.request import InputAccount, RequestAbc
 from services.request.message_model import (
-    InteractiveMessage, EventMessage, TextMessage
+    InteractiveMessage, EventMessage, MediaMessage, TextMessage
 )
+
+FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
+FACEBOOK_API_URL = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
 
 
 def set_status_read(
@@ -16,9 +19,7 @@ def set_status_read(
     if not token:
         return
 
-    FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
-    base_url = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
-    url = f"{base_url}/{phone_number_id}/messages"
+    url = f"{FACEBOOK_API_URL}/{phone_number_id}/messages"
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -100,7 +101,9 @@ class WhatsAppRequest(RequestAbc):
                 input_account.api_record.add_error(data_error, e=e)
                 continue
 
-            message_class = self.data_to_class(message)
+            message_class = self.data_to_class(
+                message, input_account.account.pid,
+                input_account.account.token)
             self._set_status_read(
                 message_class.message_id, input_account.account.pid,
                 input_account.account.token
@@ -153,8 +156,8 @@ class WhatsAppRequest(RequestAbc):
                 self._set_statuses(change, input_account)
 
     def data_to_class(
-        self, data: dict
-    ) -> TextMessage | InteractiveMessage | EventMessage:
+        self, data: dict, pid, token
+    ) -> TextMessage | InteractiveMessage | EventMessage | MediaMessage:
         type = data.get("type")
         if type == "text":
             message = self._create_text_message(data)
@@ -162,6 +165,8 @@ class WhatsAppRequest(RequestAbc):
             message = self._create_interactive_message(data)
         elif type in ["state", "reaction"]:
             message = self._create_state_notification(data)
+        elif type in ["image", "video", "audio", "document", "sticker"]:
+            message = self._create_media_message(data, pid, token)
         else:
             raise ValueError(f"Message type {type} not supported")
 
@@ -190,6 +195,58 @@ class WhatsAppRequest(RequestAbc):
         )
         interactive.get_built_reply()
         return interactive
+
+    def _create_media_message(self, data: dict, pid, token) -> MediaMessage:
+
+        message_id = data.get("id", "")
+        timestamp = data.get("timestamp", 0)
+
+        media_type = data.get("type")
+        if not media_type:
+            raise ValueError("Media type not found")
+        media_data = data.get(media_type, {})
+
+        mime_type = media_data.get("mime_type")
+        sha256 = media_data.get("sha256")
+        media_id = media_data.get("id")
+
+        caption = media_data.get("caption")
+        filename = media_data.get("filename")
+        voice = media_data.get("voice")
+
+        url_media = f"{FACEBOOK_API_URL}/{media_id}"
+        file_content = None
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        response = requests.get(url_media, headers=headers)
+
+        if response.status_code == 200:
+            media_info = response.json()
+            media_url = media_info.get("url")
+
+            media_response = requests.get(media_url, headers=headers)
+
+            if media_response.status_code == 200:
+                file_content = media_response.content
+
+        return MediaMessage(
+            message_id=message_id,
+            timestamp=int(timestamp),
+            media_type=media_type,
+
+            mime_type=mime_type,
+            sha256=sha256,
+            media_id=media_id,
+
+            origin_content=file_content,
+
+            caption=caption,
+            filename=filename,
+            voice=voice
+        )
 
     def _create_state_notification(self, status_data: dict) -> EventMessage:
         type_status = status_data.get("type")
