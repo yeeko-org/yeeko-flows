@@ -4,6 +4,7 @@ from django.db.models import JSONField
 
 from infrastructure.flow.models import Crate
 from infrastructure.member.models.member import Member
+from infrastructure.persistent_media.models import Media as PersistentMedia
 from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
 from infrastructure.place.models import Account
@@ -100,16 +101,20 @@ class Fragment(models.Model):
         ("message", "Mensaje"),
         ("behavior", "Función Behavior"),
         ("embedded", "Pieza embebida"),
+        ("media", "Persistent Multimedia")
     )
     fragment_type = models.CharField(
         max_length=20, choices=FRAGMENT_TYPES, blank=True, null=True
     )
-    piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, related_name='fragments')
     order = models.SmallIntegerField(default=0)
 
+    piece = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, related_name='fragments')
     behavior = models.ForeignKey(
         Behavior, on_delete=models.CASCADE, blank=True, null=True)
+    persistent_media = models.ForeignKey(
+        PersistentMedia, on_delete=models.CASCADE, blank=True, null=True)
+
     addl_params = JSONField(blank=True, null=True)
     deleted = models.BooleanField(
         default=False, verbose_name='Borrado')
@@ -145,6 +150,8 @@ class Fragment(models.Model):
             return f"{self.piece.name} - {self.behavior.name}"
         elif self.fragment_type == 'embedded' and self.embedded_piece:
             return f"{self.piece.name} - {self.embedded_piece.name}"
+        elif self.fragment_type == 'media' and self.persistent_media:
+            return f"{self.piece.name} - {self.persistent_media.get_name()}"
         return f"{self.piece.name} - {self.pk}"
 
     class Meta:
