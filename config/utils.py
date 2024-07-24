@@ -19,14 +19,19 @@ def getenv_bool(env_name: str, default: bool = True) -> bool:
     if not env_value:
         return default
 
-    return env_value.lower() == "true"
+    return env_value.lower() in ["true", "1"]
 
 
-def getenv_db(
-        env_pref: str = "DATABASE", is_postgres: bool = True,
-        base_dir: Optional[Path] = None
-) -> dict:
-    database_name = os.getenv(f"{env_pref}_NAME", "db.sqlite3")
+def getenv_int(env_name: str, default: int = 0) -> int:
+    env_value = os.getenv(env_name)
+    if not env_value or not env_value.isdigit():
+        return default
+
+    return int(env_value)
+
+
+def getenv_db(env_pref="DATABASE", is_postgres: bool = True) -> dict:
+    database_name = os.getenv(f"{env_pref}_NAME")
     if is_postgres:
         return {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -37,9 +42,7 @@ def getenv_db(
             'PORT': int(os.getenv(f"{env_pref}_PORT", 5432)),
         }
     else:
-        if base_dir:
-            database_name = base_dir / database_name
-
         return {
-            'ENGINE': 'django.db.backends.sqlite3', 'NAME': database_name
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': database_name or "db.sqlite3"
         }
