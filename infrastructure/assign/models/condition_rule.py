@@ -27,7 +27,8 @@ class ConditionRule(models.Model):
 
     # --------------------------------Condition-------------------------------
     platforms = models.ManyToManyField(
-        Platform, blank=True, verbose_name='Plataformas')
+        Platform, blank=True, verbose_name='Plataformas',
+        related_name='rules_in')
 
     circles = models.ManyToManyField(
         Extra, blank=True, related_name='rules_in')

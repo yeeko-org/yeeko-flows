@@ -59,7 +59,8 @@ class StatusAttendance(models.Model):
 
 class MemberAccount(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="member_accounts")
     uid = models.CharField(
         max_length=191, blank=True, null=True
     )
