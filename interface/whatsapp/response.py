@@ -38,15 +38,24 @@ class WhatsAppResponse(ResponseAbc):
         return self._base_data("text", {"body": message}, fragment_id)
 
     def multimedia_to_data(
-        self, url_media: str, media_type: str, caption: Optional[str] = None,
+        self, url_media: str, media_id: str, media_type: str, caption: Optional[str] = None,
         fragment_id: Optional[int] = None
     ) -> dict:
-        if media_type not in ["image", "video", "audio", "file"]:
+        if media_type not in ["image", "video", "audio", "file", "document", "sticker"]:
             raise ValueError(
                 f"Media type {media_type} must be in "
                 "['image', 'video', 'audio', 'file']"
             )
-        body = {"link": url_media, "caption": caption}
+        
+        if not url_media and not media_id:
+            raise ValueError("You must provide either url_media or media_id")
+
+        body = {"caption": caption} if caption else {}
+        if media_id:
+            body["id"] = media_id
+        if url_media:
+            body["link"] = url_media
+
         return self._base_data(media_type, body, fragment_id)
 
     def _message_to_data(
