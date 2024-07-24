@@ -7,7 +7,7 @@ from infrastructure.service.models import ApiRecord, InteractionType, Platform
 
 
 from services.request.message_model import (
-    InteractiveMessage, EventMessage, TextMessage
+    InteractiveMessage, EventMessage, MediaMessage, TextMessage
 )
 from services.user_manager import MemberAccountManager
 from django.utils import timezone
@@ -15,7 +15,8 @@ from django.utils import timezone
 
 class InputSender:
     member: MemberAccount
-    messages: List[TextMessage | InteractiveMessage | EventMessage]
+    messages: List[TextMessage | InteractiveMessage |
+                   EventMessage | MediaMessage]
 
     def __init__(
             self, sender_id: str, account: Account, member_data: Optional[dict]
@@ -166,6 +167,6 @@ class RequestAbc(ABC):
 
     @abstractmethod
     def data_to_class(
-        self, data: dict
-    ) -> TextMessage | InteractiveMessage | EventMessage:
+        self, data: dict, pid, token
+    ) -> TextMessage | InteractiveMessage | EventMessage | MediaMessage:
         raise NotImplementedError

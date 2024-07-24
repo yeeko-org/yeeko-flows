@@ -2,6 +2,9 @@
 import time
 from typing import Any, Optional
 
+from django.core.files.base import ContentFile
+
+from infrastructure.member.models import MemberAccount
 from infrastructure.talk.models import BuiltReply, Interaction
 from pydantic import BaseModel
 
@@ -33,14 +36,14 @@ class InteractionMessage(MessageBase):
             original_dump["interaction"] = str(self.interaction)
         return original_dump
 
-    def record_interaction(self, api_record, member_account, raw_payload):
+    def record_interaction(self, api_record, member_account, raw_data_in):
         self.interaction = Interaction.objects.create(
             mid=self.message_id,
             interaction_type_id="default",
             member_account=member_account,
             timestamp=self.timestamp,
             api_record_out=api_record,  # salida del servidor
-            raw_payload=raw_payload
+            raw_data_in=raw_data_in
         )
 
 
@@ -83,3 +86,38 @@ class EventMessage(MessageBase):
         if not hasattr(self, "_interaction"):
             self._interaction = Interaction.objects.get(mid=self.message_id)
         return self._interaction
+
+
+class MediaMessage(InteractionMessage):
+    media_type: str
+    mime_type: str
+    sha256: str
+    media_id: str
+
+    caption: str | None = None
+    filename: str | None = None
+    voice: bool | None = None
+
+    origin_content: Any
+    origin_name: str | None = None
+
+    def save_content(self):
+        if not self.interaction:
+            return
+        if not self.origin_content:
+            return
+        if not self.origin_name:
+            self.origin_name = f"{self.message_id}.{self.mime_type.split('/')[1]}"
+
+        file = ContentFile(self.origin_content, name=self.origin_name)
+
+        self.interaction.media_in_type = self.media_type
+        self.interaction.media_in.save(self.origin_name, file, save=True)
+
+    def record_interaction(self, api_record, member_account):
+        _record_interaction = super()\
+            .record_interaction(api_record, member_account, None)
+
+        self.save_content()
+
+        return _record_interaction
