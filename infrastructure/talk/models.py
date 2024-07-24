@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 import uuid as uuid_lib
 from django.db.models import JSONField
@@ -29,6 +30,9 @@ ORIGIN_CHOICES = (
     ("assigned", "Asignado"),
     ("unknown", "Desconocido"),
 )
+
+CAN_DELETE_S3 = getattr(
+    settings, "CAN_DELETE_AWS_STORAGE_FILES", False)
 
 # class RequestCategory(models.Model):
 #     name = models.CharField(max_length=50, primary_key=True)
@@ -84,6 +88,10 @@ class Trigger(models.Model):
         verbose_name_plural = 'Orígenes'
 
 
+def get_media_in_upload_path(instance, filename):
+    return f"media_in/{instance.member_account.account.pid}/{filename}"
+
+
 class Interaction(models.Model):
     mid = models.CharField(max_length=200, primary_key=True)
     interaction_type = models.ForeignKey(
@@ -109,7 +117,10 @@ class Interaction(models.Model):
     # reply_from = models.ForeignKey(
     #     'self', on_delete=models.CASCADE,
     #     blank=True, null=True, related_name='reply_from')
-    raw_payload = models.TextField(blank=True, null=True)
+    raw_data_in = models.TextField(blank=True, null=True)
+    media_in = models.FileField(
+        upload_to=get_media_in_upload_path, blank=True, null=True)
+    media_in_type = models.CharField(max_length=20, blank=True, null=True)
     reference = JSONField(blank=True, null=True)
     # commit_simple = JSONField(blank=True, null=True, blank=True, null=True)
     # write_destination = models.ForeignKey(
@@ -126,6 +137,23 @@ class Interaction(models.Model):
 
     def __str__(self):
         return f"{self.interaction_type.name} - {self.mid}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and CAN_DELETE_S3:
+            try:
+                old_instance = Interaction.objects.get(pk=self.pk)
+                if old_instance.media_in and old_instance.media_in != self.media_in:
+                    old_instance.media_in.delete(save=False)
+            except Interaction.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if CAN_DELETE_S3:
+            self.media_in.delete(save=False)
+
+        super().delete(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Interacción'
