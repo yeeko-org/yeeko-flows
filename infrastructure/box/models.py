@@ -58,6 +58,7 @@ class Piece(models.Model, AssingMixin, DestinationMixin):
     TYPE_CHOICES = (
         ("content", "Contenido"),
         ("destinations", "Para Destinos"),
+        ("template", "Template"),
     )
     piece_type = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default='content')
@@ -161,6 +162,14 @@ class Fragment(models.Model):
 
 
 class Reply(models.Model, AssingMixin, DestinationMixin):
+    REPLY_TYPE_CHOICES = (
+        ("payload", "Payload"),
+        ("quick_reply", "Respuesta rápida"),
+        ("url", "URL"),
+    )
+
+    reply_type = models.CharField(
+        choices=REPLY_TYPE_CHOICES, max_length=20, default="payload")
     fragment = models.ForeignKey(
         Fragment, on_delete=models.CASCADE, related_name='replies')
 
@@ -279,3 +288,45 @@ class Destination(models.Model, AssingMixin):
 
         if match_any:
             return any(match_any)
+
+
+class Template(models.Model):
+    STATUS_CHOICES = (
+        ('APPROVED', 'Aprobado'),
+        ('IN_APPEAL', 'En apelación'),
+        ('PENDING', 'Pendiente'),
+        ('REJECTED', 'Rechazado'),
+        ('PENDING_DELETION', 'Pendiente de eliminación'),
+        ('DELETED', 'Eliminado'),
+        ('DISABLED', 'Desactivado'),
+        ('PAUSED', 'Pausado'),
+        ('LIMIT_EXCEEDED', 'Límite excedido'),
+    )
+    template_id = models.CharField(max_length=20)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=80)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    category = models.CharField(max_length=80, blank=True, null=True)
+    language = models.CharField(max_length=10, default='es_MX')
+    description = models.TextField(blank=True, null=True)
+
+    raw_template = models.JSONField(default=dict)
+    piece = models.ForeignKey(
+        Piece, on_delete=models.CASCADE, blank=True, null=True)
+
+    def make_piece(self):
+        from infrastructure.tool.models import Behavior
+        piece = Piece.objects.create(
+            name=self.name, description=self.description,
+            behavior=Behavior.objects.get(name='send_message'),
+            default_extra=Extra.objects.get(name='default'),
+            crate=Crate.objects.get(name='message'),
+            order_in_crate=1
+        )
+        Fragment.objects.create(
+            piece=piece, body=self.raw_template, order=1
+        )
+        self.piece = piece
+        self.save()
