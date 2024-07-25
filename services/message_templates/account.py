@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from infrastructure.box.models import Fragment, Piece, Reply, Template
+from infrastructure.box.models import Fragment, Piece, Reply, PlatformTemplate
 from infrastructure.flow.models import Crate, CrateType, Flow
 from infrastructure.place.models import Account
 
@@ -81,7 +81,7 @@ class AccountTemplateAbstact(ABC):
         lenguage
     ):
 
-        template, _ = Template.objects.get_or_create(
+        template, _ = PlatformTemplate.objects.get_or_create(
             account=self.account,
             template_id=template_id
         )
@@ -95,7 +95,7 @@ class AccountTemplateAbstact(ABC):
         self.template_update_piece(template)
         self.template_update_fragment(template)
 
-    def template_update_piece(self, template: Template):
+    def template_update_piece(self, template: PlatformTemplate):
         if template.piece:
             return
         piece = Piece()
@@ -107,7 +107,7 @@ class AccountTemplateAbstact(ABC):
         template.piece = piece
         template.save()
 
-    def template_update_fragment(self, template: Template):
+    def template_update_fragment(self, template: PlatformTemplate):
         components_dict = self.get_template_components(template.raw_template)
 
         header = components_dict.get('header')

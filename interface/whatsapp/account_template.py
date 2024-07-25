@@ -1,8 +1,8 @@
 import requests
 
 from django.conf import settings
-from infrastructure.box.models import Destination, Fragment, Piece, Reply, Template
-from infrastructure.flow.models import Crate, CrateType, Flow
+
+from infrastructure.box.models import Fragment, Reply
 from infrastructure.place.models import Account
 from services.message_templates.account import AccountTemplateAbstact
 

@@ -290,7 +290,7 @@ class Destination(models.Model, AssingMixin):
             return any(match_any)
 
 
-class Template(models.Model):
+class PlatformTemplate(models.Model):
     STATUS_CHOICES = (
         ('APPROVED', 'Aprobado'),
         ('IN_APPEAL', 'En apelación'),
