@@ -1,5 +1,9 @@
+import re
+
 from abc import ABC, abstractmethod
-from infrastructure.box.models import Fragment, Piece, Reply, PlatformTemplate
+
+from infrastructure.box.models import (
+    Fragment, Piece, Reply, PlatformTemplate, TemplateParameter)
 from infrastructure.flow.models import Crate, CrateType, Flow
 from infrastructure.place.models import Account
 
@@ -43,7 +47,9 @@ class AccountTemplateAbstact(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_button_reply(self, fragment: Fragment, button: dict):
+    def create_button_reply(
+            self, fragment: Fragment, button: dict, index: int
+    ):
         """Create a button reply from particular button data"""
         raise NotImplementedError
 
@@ -56,7 +62,7 @@ class AccountTemplateAbstact(ABC):
         if not crate:
             crate_type, _ = CrateType.objects.get_or_create(
                 name="Templates")
-            flow = Flow.objects.get_or_create(
+            flow, _ = Flow.objects.get_or_create(
                 name="Templates", space=self.account.space)
             crate = Crate.objects.create(
                 name="Templates",
@@ -116,6 +122,10 @@ class AccountTemplateAbstact(ABC):
         footer = components_dict.get('footer')
         buttons = components_dict.get('buttons', [])
 
+        self.check_markers(template, header or "")
+        self.check_markers(template, body or "")
+        self.check_markers(template, footer or "")
+
         fragment = Fragment.objects.filter(piece=template.piece).first()
         if not fragment:
             fragment = Fragment.objects.create(
@@ -137,5 +147,15 @@ class AccountTemplateAbstact(ABC):
 
         Reply.objects.filter(fragment=fragment).delete()
 
-        for button in buttons:
-            self.create_button_reply(fragment, button)
+        for index, button in enumerate(buttons):
+            self.create_button_reply(fragment, button, index)
+
+    def check_markers(self, template: PlatformTemplate, text: str):
+        markers = re.findall(r'{{\d+}}', text)
+        for marker in markers:
+            order = int(marker[2:-2])
+            _, _ = TemplateParameter.objects.get_or_create(
+                template=template,
+                key=marker,
+                order=order
+            )
