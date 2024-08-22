@@ -1,10 +1,13 @@
+from datetime import timedelta
+
 from django.db import models
 from django.db.models import JSONField
+from django.utils import timezone
 
 from infrastructure.member.models.member import Member
 from infrastructure.place.models import Account, Space
 from infrastructure.users.models import User
-from infrastructure.service.models import Platform
+from infrastructure.service.models import ApiRecord, Platform
 
 
 init_status = [
@@ -72,6 +75,8 @@ class MemberAccount(models.Model):
         verbose_name="Status de Atención"
     )
 
+    interest_degree = models.IntegerField(default=60)
+
     @property
     def is_staff(self):
         if not hasattr(self, "member_is_staff"):
@@ -84,6 +89,18 @@ class MemberAccount(models.Model):
     class Meta:
         verbose_name_plural = "Configuraciones de Member"
         verbose_name = "Configuración de Member"
+
+    def check_session_validation(self):
+        from infrastructure.talk.models import Interaction
+
+        last_interaction = Interaction.objects.filter(
+            member_account=self, is_incoming=True).order_by("created").last()
+
+        # check interaction.created no more than 24 hours
+        if last_interaction:
+            return last_interaction.created > timezone.now() - timedelta(days=1)
+
+        return False
 
 
 class Chrono(models.Model):
@@ -122,6 +139,10 @@ class AuthConfig(models.Model):
 
 
 class InviteExtension(models.Model):
+    inviter_user = models.ForeignKey(
+        User, related_name="invitation", on_delete=models.CASCADE
+    )
+
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, blank=True, null=True
     )
@@ -134,12 +155,11 @@ class InviteExtension(models.Model):
     response = models.TextField(blank=True, null=True)
     date_invitation = models.DateTimeField(blank=True, null=True)
     date_accepted = models.DateTimeField(blank=True, null=True)
-    inviter_user = models.ForeignKey(
-        User, related_name="invitation", on_delete=models.CASCADE
-    )
     viewed = models.DateTimeField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
+    phone_error_request = models.ForeignKey(
+        ApiRecord, on_delete=models.CASCADE, blank=True, null=True)
     gender = models.CharField(max_length=300, blank=True, null=True)
     other_data = JSONField(blank=True, null=True)
     verified = models.BooleanField(null=True, default=None)

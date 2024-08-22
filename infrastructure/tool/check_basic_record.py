@@ -7,6 +7,7 @@ class CheckBehaviorRecord:
             "reset",
             "restart",
             "start",
+            "insistent"
         ]
         self.register_behaviors(generic_code_behavior_list, in_code=True)
 
