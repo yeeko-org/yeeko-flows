@@ -4,7 +4,7 @@ from django.conf import settings
 
 from infrastructure.box.models import Fragment, Reply
 from infrastructure.place.models import Account
-from services.message_templates.account import AccountTemplateAbstact
+from services.message_templates.template_in import AccountTemplateAbstact
 
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v20.0')
 FACEBOOK_API_URL = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
@@ -45,7 +45,7 @@ class AccountTemplate(AccountTemplateAbstact):
             template_name = template.get('name')
             template_status = template.get('status')
             template_category = template.get('category')
-            template_lenguage = template.get('lenguage')
+            template_lenguage = template.get('language')
             self.create_template_object(
                 template,
                 template_id,
@@ -82,7 +82,9 @@ class AccountTemplate(AccountTemplateAbstact):
             "buttons": buttons,
         }
 
-    def create_button_reply(self, fragment: Fragment, button: dict):
+    def create_button_reply(
+            self, fragment: Fragment, button: dict, index: int
+    ):
         button_type = button.get('type', "")
         button_text = button.get('text')
         button_url = button.get('url')
@@ -91,6 +93,7 @@ class AccountTemplate(AccountTemplateAbstact):
             reply_type=button_type.lower(),
             fragment=fragment,
             title=button_text,
+            order=index
         )
         if button_url:
             button_reply.large_title = button_url
