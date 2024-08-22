@@ -309,24 +309,35 @@ class PlatformTemplate(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='PENDING')
     category = models.CharField(max_length=80, blank=True, null=True)
-    language = models.CharField(max_length=10, default='es_MX')
+    language = models.CharField(
+        max_length=10, default='es_MX', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     raw_template = models.JSONField(default=dict)
-    piece = models.ForeignKey(
-        Piece, on_delete=models.CASCADE, blank=True, null=True)
+    piece = models.OneToOneField(
+        Piece, on_delete=models.CASCADE, blank=True, null=True, related_name='template')
 
-    def make_piece(self):
-        from infrastructure.tool.models import Behavior
-        piece = Piece.objects.create(
-            name=self.name, description=self.description,
-            behavior=Behavior.objects.get(name='send_message'),
-            default_extra=Extra.objects.get(name='default'),
-            crate=Crate.objects.get(name='message'),
-            order_in_crate=1
-        )
-        Fragment.objects.create(
-            piece=piece, body=self.raw_template, order=1
-        )
-        self.piece = piece
-        self.save()
+    parameters: models.QuerySet["TemplateParameter"]
+
+    def __str__(self):
+        return f"{self.name} - {self.account}"
+
+
+class TemplateParameter(models.Model):
+    COMPONENT_CHOICES = (
+        ("body", "Body"),
+        ("header", "Header"),
+        ("footer", "Footer"),
+    )
+    template = models.ForeignKey(
+        PlatformTemplate, on_delete=models.CASCADE, related_name='parameters')
+    component_type = models.CharField(
+        max_length=10, choices=COMPONENT_CHOICES, default='body')
+    key = models.CharField(max_length=80)
+    order = models.SmallIntegerField(default=0)
+    extra = models.ForeignKey(
+        Extra, on_delete=models.CASCADE, blank=True, null=True)
+    default_value = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.template} - {self.key}"
