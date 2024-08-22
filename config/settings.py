@@ -56,6 +56,7 @@ INSTALLED_APPS = (
     'infrastructure.flow.apps.FlowConfig',
     'infrastructure.xtra.apps.XtraConfig',
     'infrastructure.tool.apps.ToolConfig',
+    'infrastructure.notification.apps.NotificationConfig',
     'infrastructure.box.apps.BoxConfig',
     'infrastructure.assign.apps.AssingConfig',
     'infrastructure.talk.apps.TalkConfig',
@@ -242,3 +243,7 @@ REST_FRAMEWORK = {
 }
 
 # -------------------------end DJANGO REST FRAMEWORK--------------------------
+
+# -------------------------------NOTIFICATIONS--------------------------------
+NOTIFICATION_LAPSE_MINUTES = getenv_int('NOTIFICATION_LAPSE_MINUTES', 15)
+# -----------------------------END NOTIFICATIONS------------------------------

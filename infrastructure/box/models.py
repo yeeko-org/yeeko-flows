@@ -4,6 +4,7 @@ from django.db.models import JSONField
 
 from infrastructure.flow.models import Crate
 from infrastructure.member.models.member import Member
+from infrastructure.notification.models import Notification
 from infrastructure.persistent_media.models import Media as PersistentMedia
 from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
@@ -234,6 +235,9 @@ class Destination(models.Model, AssingMixin):
     message_link = models.ForeignKey(
         MessageLink, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Link con mensaje', related_name='destinations')
+    notification = models.ForeignKey(
+        Notification, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='destinations')
     # ------------------------------end origin------------------------------
 
     # -------------------------------destination----------------------------

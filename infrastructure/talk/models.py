@@ -1,13 +1,26 @@
+import json
+import re
+import uuid as uuid_lib
+
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
-import uuid as uuid_lib
 from django.db.models import JSONField
+from django.utils import timezone
 
 from infrastructure.assign.models import ApplyBehavior
+from infrastructure.flow.models import Flow
+from infrastructure.notification.models import Notification, NotificationTiming
 from infrastructure.service.models import InteractionType, ApiRecord
-from infrastructure.box.models import Fragment, MessageLink, Reply
-from infrastructure.xtra.models import Extra
+from infrastructure.box.models import Fragment, MessageLink, PlatformTemplate, Reply, Written
+from infrastructure.tool.models import Behavior
+from infrastructure.xtra.models import ClassifyExtra, Extra
 from infrastructure.member.models import MemberAccount, Member
+from utilities.json_compatible import ensure_json_compatible
+
+DEFAULT_NOTIFICATION_LAPSE_MINUTES = getattr(
+    settings, 'DEFAULT_NOTIFICATION_LAPSE_MINUTES', 30)
 
 EVENT_NAME_CHOICES = (
     ('received', 'received'),
@@ -28,6 +41,7 @@ ORIGIN_CHOICES = (
     ("written", "Escrito"),
     ("dictionary", "Diccionario"),
     ("assigned", "Asignado"),
+    ("notification", "Notificación"),
     ("unknown", "Desconocido"),
 )
 
@@ -50,31 +64,45 @@ CAN_DELETE_S3 = getattr(
 
 
 class Trigger(models.Model):
-    # yk_participation = models.ForeignKey(
-    #     YkParticipation, on_delete=models.CASCADE, blank=True, null=True)
-    # proposal_participation = models.ForeignKey(
-    #     ProposalParticipation, on_delete=models.CASCADE, blank=True, null=True)
-    # behavior = models.ForeignKey(
-    #     Behavior, on_delete=models.CASCADE, blank=True, null=True)
+    interaction_reply = models.ForeignKey(
+        'Interaction', on_delete=models.CASCADE, blank=True, null=True,
+        related_name='trigger_reply')
+
+    behavior = models.ForeignKey(
+        Behavior, on_delete=models.CASCADE, blank=True, null=True)
+    built_reply = models.ForeignKey(
+        "BuiltReply", on_delete=models.CASCADE, blank=True, null=True,
+        related_name='trigger_reply')
+    written = models.ForeignKey(
+        Written, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='trigger_reply')
+    template = models.ForeignKey(
+        PlatformTemplate, on_delete=models.CASCADE,
+        blank=True, null=True, related_name='trigger_reply')
+
+    message_link = models.ForeignKey(
+        MessageLink, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='trigger_reply')
+
+    notification = models.ForeignKey(
+        Notification, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='trigger_reply')
+
+    is_direct = models.BooleanField(
+        default=False, help_text='Fue en respuesta clara')
+
+    interaction: "Interaction"
+
     # fragment = models.ForeignKey(
     #     Fragment, on_delete=models.CASCADE, blank=True, null=True)
     # destination = models.ForeignKey(
     #     Destination, on_delete=models.CASCADE, blank=True, null=True)
     # reply = models.ForeignKey(
     #     Reply, on_delete=models.CASCADE, blank=True, null=True)
-    interaction_reply = models.ForeignKey(
-        'Interaction', on_delete=models.CASCADE, blank=True, null=True,
-        related_name='trigger_reply')
-    built_reply = models.ForeignKey(
-        "BuiltReply", on_delete=models.CASCADE, blank=True, null=True)
-    message_link = models.ForeignKey(
-        MessageLink, on_delete=models.CASCADE, blank=True, null=True)
     # persona = models.ForeignKey(
     #     MemberAccount, on_delete=models.CASCADE, blank=True, null=True)
     # notification = models.ForeignKey(
     #     'Notification', on_delete=models.CASCADE, blank=True, null=True)
-    is_direct = models.BooleanField(
-        default=False, help_text='Fue en respuesta clara')
 
     def __str__(self):
         fields_of_model = self._meta.get_fields()
@@ -118,6 +146,7 @@ class Interaction(models.Model):
     #     'self', on_delete=models.CASCADE,
     #     blank=True, null=True, related_name='reply_from')
     raw_data_in = models.TextField(blank=True, null=True)
+    raw_data = JSONField(blank=True, null=True, default=dict)
     media_in = models.FileField(
         upload_to=get_media_in_upload_path, blank=True, null=True)
     media_in_type = models.CharField(max_length=20, blank=True, null=True)
@@ -226,6 +255,57 @@ class ExtraValue(models.Model):
     def __str__(self):
         return f"{self.extra} - {self.value or 'True'}"
 
+    def get_value(self):
+        if not self.value:
+            return None
+
+        if self.extra.format_id == 'json':
+            try:
+                return json.loads(self.value or "{}")
+            except json.JSONDecodeError:
+                return {}
+
+        if self.extra.format_id == 'int':
+            try:
+                return int(self.value)
+            except ValueError:
+                return 0
+
+        return self.value
+
+    def set_value(self, value):
+        if self.extra.format_id == 'json':
+            if not isinstance(value, (dict, list)):
+                value = {
+                    "value": value
+                }
+            try:
+                self.value = json.dumps(value)
+            except json.JSONDecodeError as e:
+                value = {
+                    "data": ensure_json_compatible(value),
+                    "set_value_error": str(e)
+                }
+                self.value = json.dumps(value)
+        else:
+            self.value = str(value)
+
+    def addition(self, adder: int = 1, save: bool = True):
+        if not self.extra.format_id == 'int':
+            raise ValueError(
+                f'Just for int format, extra format is {self.extra.format_id}')
+
+        if not self.value:
+            self.value = "0"
+
+        if not bool(re.fullmatch(r"-?\d+", self.value)):
+            raise ValueError(f'Value is not a number: {self.value}')
+
+        self.value = str(int(self.value) + adder)
+
+        if save:
+            self.save()
+
     class Meta:
         verbose_name = 'Valor extra'
         verbose_name_plural = 'Valores extra'
@@ -246,3 +326,142 @@ class ExtraValue(models.Model):
 #     class Meta:
 #         verbose_name = 'Error de API'
 #         verbose_name_plural = 'Errores de API'
+
+
+class NotificationMember(models.Model):
+    member_account = models.ForeignKey(
+        MemberAccount, on_delete=models.CASCADE)
+    notification = models.ForeignKey(
+        Notification, on_delete=models.CASCADE)
+
+    controller = models.ForeignKey(
+        ExtraValue, on_delete=models.CASCADE, related_name='controller',
+        blank=True)
+    parameters = models.ForeignKey(
+        ExtraValue, on_delete=models.CASCADE, related_name='parameters',
+        blank=True)
+
+    last_sent = models.DateTimeField(auto_now=True)
+    next_at = models.DateTimeField(blank=True, null=True)
+
+    actual_timing = models.ForeignKey(
+        NotificationTiming, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='actual_timings')
+    next_timing = models.ForeignKey(
+        NotificationTiming, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='next_timings')
+
+    def degrade_interest_degreee(self):
+        if not self.actual_timing or not self.actual_timing.degradation_to_disinterest:
+            return
+
+        degradation = self.actual_timing.degradation_to_disinterest / 100
+        self.member_account.interest_degree -= int(
+            degradation * self.member_account.interest_degree)
+        self.member_account.save()
+
+    def set_controler(self):
+        if self.controler:
+            return
+
+        try:
+            extra_controler = Extra.objects.get(
+                name=self.notification.name+"_controler",
+                space=self.member_account.account.space)
+        except Extra.DoesNotExist:
+            # create the classify by init_data
+            classify_extra, _ = ClassifyExtra.objects\
+                .get_or_create(name="notification")
+
+            flow, _ = Flow.objects.get_or_create(
+                name="notification",
+                space=self.member_account.account.space
+            )
+
+            extra_controler = Extra.objects.create(
+                name=self.notification.name+"_controler",
+                classify=classify_extra,
+                space=self.member_account.account.space,
+                flow=flow,
+                format="int"
+            )
+
+            self.controler, _ = ExtraValue.objects.get_or_create(
+                extra=extra_controler,
+                member=self.member_account.member,
+            )
+
+    def set_init_controler(self):
+        timing = self.notification.get_timing_or_last(0)
+
+        if timing:
+            timing_minuts = timing.timing
+        else:
+            timing_minuts = DEFAULT_NOTIFICATION_LAPSE_MINUTES
+
+        self.set_controler()
+
+        self.controler.set_value(0)
+        self.controler.origin = "notification"
+        self.controler.save()
+
+        self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
+        self.actual_timing = timing
+        self.next_timing = self.notification.get_timing_or_last(1)
+        self.save()
+
+    def set_next_controler(self):
+        self.degrade_interest_degreee()
+
+        if self.next_timing:
+            timing_minuts = self.next_timing.timing
+        else:
+            timing_minuts = DEFAULT_NOTIFICATION_LAPSE_MINUTES
+
+        self.set_controler()
+        index_controler = self.controler.get_value()  # type: ignore
+        if not isinstance(index_controler, int):
+            raise ValueError(
+                f"Controler value is not a number: {self.controler.get_value()}")
+
+        self.controler.set_value(index_controler + 1)
+        self.controler.origin = "notification"
+        self.controler.save()
+
+        self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
+        self.actual_timing = self.next_timing
+        self.next_timing = self.notification.get_timing_or_last(
+            index_controler + 1)
+        self.save()
+
+    def set_parameters(self, parameters: dict):
+        try:
+            parameter_extra = Extra.objects.get(
+                name=self.notification.name + "_parameters",
+                space=self.member_account.account.space)
+        except Extra.DoesNotExist:
+            parameter_extra = Extra.objects.create(
+                name=self.notification.name + "_parameters",
+                classify=self.controler.extra.classify,
+                space=self.controler.extra.space,
+                flow=self.controler.extra.flow,
+                format="json"
+            )
+
+        self.parameters, _ = ExtraValue.objects.get_or_create(
+            extra=parameter_extra,
+            member=self.member_account.member,
+            list_by=self.controler,
+        )
+
+        self.parameters.set_value(parameters)
+        self.parameters.origin = "notification"
+        self.parameters.save()
+
+    def next_at_not_chosen(self):
+        next_at_minutes = self.notification.not_choisen_reconsidered_time
+        self.next_at = timezone.now() + timedelta(minutes=next_at_minutes)
+
+    class Meta:
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'

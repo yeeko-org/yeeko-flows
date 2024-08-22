@@ -48,7 +48,7 @@ class Account(models.Model):
     notif_enabled = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.space} - {self.platform}"
+        return f"{self.space} - {self.platform} - {self.title}"
 
     class Meta:
         verbose_name_plural = "Cuentas por plataforma"
