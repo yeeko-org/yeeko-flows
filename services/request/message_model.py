@@ -1,12 +1,12 @@
 
+import json
 import time
-from typing import Any, Optional
 
 from django.core.files.base import ContentFile
+from pydantic import BaseModel, field_serializer
+from typing import Any, Optional
 
-from infrastructure.member.models import MemberAccount
 from infrastructure.talk.models import BuiltReply, Interaction
-from pydantic import BaseModel
 
 
 class MessageBase(BaseModel):
@@ -43,8 +43,15 @@ class InteractionMessage(MessageBase):
             member_account=member_account,
             timestamp=self.timestamp,
             api_record_out=api_record,  # salida del servidor
-            raw_data_in=raw_data_in
+            raw_data_in=raw_data_in,
+            raw_data=json.loads(self.model_dump_json()),
         )
+
+    @field_serializer('interaction')
+    def serialize_dt(self, interaction: Interaction | None, _info):
+        if isinstance(interaction, Interaction):
+            return interaction.mid
+        return interaction
 
 
 class TextMessage(InteractionMessage):
