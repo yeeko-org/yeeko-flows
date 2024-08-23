@@ -19,6 +19,7 @@ class InteractiveProcessor(DestinationProcessorMixin):
         self.message = message
         self.response = response
         self.reply = message.built_reply.reply if message.built_reply else None
+        self.response.set_trigger(message.built_reply, is_direct=True)
 
     def process(self):
         if self.process_if_not_built_reply():
