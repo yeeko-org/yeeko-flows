@@ -67,7 +67,7 @@ class MemberAccountManager:
         private_hash = getattr(settings, "CREATE_USER_PRIVATE_HASH")
         user = User.objects.create(
             username=self.sender_id,
-            first_name=self.name or self.sender_id,
+            first_name=self.name or "",
             last_name="",
             email=self.email or "",
             phone=self.phone,
