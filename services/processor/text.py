@@ -4,7 +4,7 @@ from typing import Optional
 from infrastructure.box.models import Piece, Reply, Written
 from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
-from infrastructure.talk.models import Interaction
+from infrastructure.talk.models import BuiltReply, Interaction
 from infrastructure.xtra.models import Extra
 from services.processor.behavior import BehaviorProcessor
 from services.processor.base_mixin import Processor
@@ -100,6 +100,8 @@ class TextMessageProcessor(Processor):
         if not self.written:
             return
 
+        self.response.set_trigger(self.written, self.context_direct)
+
         WrittenProcessor(
             response=self.response, message=self.message,
             written=self.written, default_extra=self.default_extra
@@ -122,6 +124,14 @@ class TextMessageProcessor(Processor):
 
         if not reply_by_text:
             return False
+
+        built_reply = BuiltReply.objects.filter(
+            interaction=self.last_interaction_out,
+            reply=reply_by_text
+        ).first()
+        if built_reply:
+            self.response.set_trigger(
+                built_reply, interaction_in=self.message.interaction)
 
         reply_processor = ReplyProcessor(
             reply=reply_by_text, response=self.response,
