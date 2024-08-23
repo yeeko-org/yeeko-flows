@@ -137,3 +137,9 @@ class SectionsMessage(Message):
 
         for index, _ in enumerate(self.sections):
             self.sections[index].replace_text(extra_values_data)
+
+
+class MediaMessage(BaseModel):
+    caption: str | None
+    id: str | None
+    link: str | None
