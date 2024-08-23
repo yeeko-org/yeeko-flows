@@ -19,7 +19,6 @@ class BehaviorProcessor:
     ) -> None:
         self.behavior = behavior
         self.response = response
-        self.parameters = parameters
 
         apply_behavior = ApplyBehavior.objects\
             .filter(behavior__name=behavior)\
@@ -34,6 +33,10 @@ class BehaviorProcessor:
             )
 
         self.apply_behavior = apply_behavior
+        self.parameters = update_parameters(
+            self.apply_behavior.values, parameters)  # type: ignore
+
+        self.response.set_trigger(apply_behavior.behavior)
 
     def process(self):
         from services.processor.piece import PieceProcessor
@@ -42,7 +45,8 @@ class BehaviorProcessor:
             return
 
         piece_processor = PieceProcessor(
-            piece=self.apply_behavior.main_piece, response=self.response
+            piece=self.apply_behavior.main_piece, response=self.response,
+            parameters=self.parameters
         )
         piece_processor.process()
 
@@ -53,8 +57,6 @@ class BehaviorProcessor:
             raise Exception(
                 f"No se encontró la clase de comportamiento: {self.behavior}")
 
-        parameters = update_parameters(
-            self.apply_behavior.values, self.parameters)  # type: ignore
-        parameters['response'] = self.response
+        self.parameters['response'] = self.response
 
-        behavior_code = behavior_class(**parameters)
+        _ = behavior_class(**self.parameters)
