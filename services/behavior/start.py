@@ -13,4 +13,4 @@ class StartBehavior:
         try:
             BehaviorProcessor(behavior_name_default, response).process()
         except Exception as e:
-            response.api_record_in.add_error({}, e)
+            response.add_error({}, e)
