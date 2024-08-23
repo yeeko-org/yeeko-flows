@@ -4,6 +4,11 @@ from django.db.models import QuerySet
 from infrastructure.member.models.member import Member
 
 
+class EndDestinationNotFound(Exception):
+    def __init__(self):
+        super().__init__("Destination not found")
+
+
 def destination_find(
         destinations: QuerySet[Destination], member: Member,
         platform_name: str, raise_exception: bool = True
@@ -29,5 +34,5 @@ def destination_find(
     default_destination = default_destination
 
     if not default_destination and raise_exception:
-        raise ValueError("Destination not found")
+        raise EndDestinationNotFound()
     return default_destination
