@@ -17,10 +17,12 @@ class PieceProcessor(DestinationProcessorMixin):
     ) -> None:
         self.piece = piece
         self.response = response
-        # self.parameters no actualiza porque values es un posible valor
         self.parameters = parameters
 
     def process(self):
+        if self.piece.insistent:
+            self.add_insistent_notification()
+
         if self.piece.piece_type == "destinations":
             self.process_destination()
             return
@@ -30,7 +32,7 @@ class PieceProcessor(DestinationProcessorMixin):
             try:
                 self.process_fragment(fragment)
             except Exception as e:
-                self.response.api_record_in.add_error({}, e)
+                self.response.add_error({}, e)
 
     def get_destination(self) -> None:
         self.destination = destination_find(
@@ -40,42 +42,11 @@ class PieceProcessor(DestinationProcessorMixin):
             raise_exception=False)
 
     def process_fragment(self, fragment: Fragment):
-        if fragment.fragment_type == "message":
-            fragment_processor = FragmentProcessor(
-                fragment, self.response, self.parameters)
-            fragment_processor.process()
+        fragment_processor = FragmentProcessor(
+            fragment, self.response, self.parameters)
+        fragment_processor.process()
 
-        elif fragment.fragment_type == "behavior":
-            if not fragment.behavior_id:  # type: ignore
-                raise Exception(
-                    f"El fragmento {fragment} no tiene un comportamiento asociado"
-                )
-            behavior_processor = BehaviorProcessor(
-                fragment.behavior_id, self.response)  # type: ignore
-            behavior_processor.process()
-
-        elif fragment.fragment_type == "embedded":
-            if not fragment.embedded_piece:
-                raise Exception(
-                    f"La pieza embebida en {fragment} no existe"
-                )
-            piece_processor = PieceProcessor(
-                fragment.embedded_piece, self.response, self.parameters)
-            piece_processor.process()
-
-        elif fragment.fragment_type == "media":
-            if not fragment.persistent_media:
-                raise Exception(
-                    f"El fragmento {fragment} no tiene un multimedia "
-                    "persistente asociado"
-                )
-            media_id=fragment.persistent_media.get_media_id()
-            if not media_id:
-                raise Exception(
-                    f"El media persistente asociado al fragmento {fragment} "
-                    "no tiene un id asociado")
-            self.response.message_multimedia(
-                media_type=fragment.persistent_media.media_type,
-                media_id=media_id,
-                fragment_id=fragment.pk
-            )
+    def add_insistent_notification(self):
+        self.response.notification_manager.add_notification(
+            "insistent", self.response.sender, piece=self.piece.pk
+        )
