@@ -17,12 +17,12 @@ class WhatsAppResponse(ResponseAbc):
             self, type_str: str, body: Optional[dict] = None,
             fragment_id: Optional[int] = None
     ) -> dict:
-        uid = self.sender.uid or ""
-        if uid.startswith("521"):
-            uid = "52" + uid[3:]
+        phone = self.sender.uid or ""
+        if phone.startswith("521"):
+            phone = "52" + phone[3:]
         return {
             "messaging_product": "whatsapp",
-            "to": uid,
+            "to": phone,
             "type": type_str,
             type_str: body,
             "_fragment_id": fragment_id,
