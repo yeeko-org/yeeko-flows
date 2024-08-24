@@ -69,6 +69,13 @@ class WhatsAppRequest(RequestAbc):
         value = change.get("value", {})
         contacts = value.get("contacts", [])
         for contact in contacts:
+            # example contact:
+            # {
+            # "profile": {
+            #   "name": "Lucian Vash", 
+            #   "phone": "5215513375592", 
+            #   "user_field_filter": "phone"
+            # }
             profile = contact.get("profile")
             sender_id = contact.get("wa_id")
             profile["phone"] = contact.get("wa_id")
