@@ -10,6 +10,10 @@ from utilities.standar_phone import standar_mx_phone
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v19.0')
 
 
+PLATFORM_NAME_FOR_DASHBOARD = getattr(
+    settings, 'PLATFORM_NAME_FOR_DASHBOARD', "dashboard")
+
+
 class MessageTemplate(MessageTemplateOutAbstract):
 
     def make_message(self) -> dict:
@@ -207,7 +211,7 @@ class MessageTemplate(MessageTemplateOutAbstract):
             response_body = {"body": response.text}
 
         self.api_record = ApiRecord.objects.create(
-            platform=self.account.platform,
+            platform_id=PLATFORM_NAME_FOR_DASHBOARD,
             body=message_data,
             interaction_type_id="default",
             is_incoming=False,

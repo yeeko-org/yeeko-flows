@@ -1,6 +1,11 @@
+from django.conf import settings
+
 from infrastructure.service.models import ApiRecord, InteractionType
 from services.message_simple.send_message import SendOpenSessionMessageAbstract
 from interface.whatsapp.response import WhatsAppResponse
+
+PLATFORM_NAME_FOR_DASHBOARD = getattr(
+    settings, 'PLATFORM_NAME_FOR_DASHBOARD', "dashboard")
 
 
 class SendWhatsappSessionMessage(SendOpenSessionMessageAbstract):
@@ -14,7 +19,7 @@ class SendWhatsappSessionMessage(SendOpenSessionMessageAbstract):
             name="whatsapp open session", way="out")
 
         api_record_in = ApiRecord.objects.create(
-            platform_id="whatsapp",
+            platform_id=PLATFORM_NAME_FOR_DASHBOARD,
             body={
                 "phone_to": self.phone_to,
                 "message": self.message,
