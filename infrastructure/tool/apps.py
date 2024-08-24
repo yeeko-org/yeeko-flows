@@ -9,6 +9,7 @@ class ToolConfig(AppConfig):
     def ready(self) -> None:
         from .check_basic_record import CheckBehaviorRecord
         _ready = super().ready()
-        if 'runserver' in sys.argv:
+        valid_commands = ["runserver", "shell"]
+        if any([command in sys.argv for command in valid_commands]):
             CheckBehaviorRecord()
         return _ready
