@@ -1,16 +1,25 @@
+from collections import defaultdict
+from typing import Dict, List
+
+from django.db.models import Q
+
+from infrastructure.assign.models.condition_rule import ConditionRule
 from infrastructure.member.models import MemberAccount
 from infrastructure.notification.models import Notification
 from infrastructure.place.models import Account
 from infrastructure.talk.models import NotificationMember
+from infrastructure.xtra.models import Extra
 
 
 class NotificationManager:
-
+    @classmethod
     def get_notification(
-            self, name: str, account: Account | None, raise_exeption: bool = False
+            cls, name: str, account: Account | None,
+            raise_exeption: bool = False
     ) -> Notification | None:
         try:
-            notification = Notification.objects.get(name=name, account=account)
+            notification = Notification.objects\
+                .get(name=name, account=account)
         except Notification.DoesNotExist:
             notification = None
 
@@ -28,12 +37,17 @@ class NotificationManager:
 
         return notification
 
+    @classmethod
     def add_notification(
-            self, name: str, member_account: MemberAccount, **kwargs
+            cls, name: str | Notification, member_account: MemberAccount,
+            **kwargs
     ):
-        notification = self.get_notification(name, member_account.account)
-        if not notification:
-            return
+        if isinstance(name, str):
+            notification = cls.get_notification(name, member_account.account)
+            if not notification:
+                return
+        else:
+            notification = name
 
         notification_member, _ = NotificationMember.objects.get_or_create(
             notification=notification,
@@ -46,3 +60,44 @@ class NotificationManager:
             notification_member.set_parameters(kwargs)
 
         notification_member.save()
+
+    @classmethod
+    def add_notifications_by_extra(
+            cls, extra: Extra, member_account: MemberAccount,
+            platform: str = ""
+    ):
+
+        condition_rule_query = ConditionRule.objects\
+            .filter(notification__isnull=False)\
+            .filter(Q(extra=extra) | Q(circles=extra))\
+            .order_by("notification").distinct()
+
+        notifications: Dict[Notification, List[ConditionRule]] = \
+            defaultdict(list)
+
+        for condition_rule in condition_rule_query:
+            if not condition_rule.notification:
+                continue
+            notifications[condition_rule.notification].append(condition_rule)
+
+        for notification in notifications:
+            # There can only be notification if it comes from a condition_rule
+            condition_rules = notifications[notification]
+
+            all_conditions = []
+            any_conditions = []
+
+            for condition_rule in condition_rules:
+                condition_evalue = condition_rule\
+                    .evalue(member_account.member, platform)
+
+                if condition_rule.match_all_rules:
+                    all_conditions.append(condition_evalue)
+                else:
+                    any_conditions.append(condition_evalue)
+
+            if not any_conditions and all(all_conditions):
+                cls.add_notification(notification, member_account)
+
+            elif any(any_conditions) and all(all_conditions):
+                cls.add_notification(notification, member_account)
