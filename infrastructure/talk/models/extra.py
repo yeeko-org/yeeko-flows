@@ -35,6 +35,8 @@ class ExtraValue(models.Model):
         blank=True, null=True,
     )
 
+    extra_id: int
+
     def __str__(self):
         return f"{self.extra} - {self.value or 'True'}"
 
