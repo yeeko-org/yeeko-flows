@@ -76,5 +76,5 @@ class ReplyProcessor(DestinationProcessorMixin):
         if not default_extra:
             return
 
-        self.response.sender.member.add_extra_value(
+        self.response.add_extra_value(
             default_extra, self.reply.title, self.interaction)
