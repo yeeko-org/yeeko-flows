@@ -9,11 +9,24 @@ class Notification(models.Model):
         Account, on_delete=models.CASCADE, related_name='notifications',
         blank=True, null=True)
 
-    limit_timing = models.IntegerField(blank=True, null=True)
+    limit_timing = models.IntegerField(
+        blank=True, null=True,
+        help_text=(
+            "Limit of times a notification is attempted to be sent, "
+            "if None, conditioned on the timings queryset length, "
+            "if is grate than the timings, use the last timing"
+        )
+    )
     unlimited_timing = models.BooleanField(default=False)
 
     not_choisen_reconsidered_time = models.IntegerField(
         default=120, help_text='Minutes, for not chosen, not for failed')
+
+    last_interaction_out_min_time = models.IntegerField(
+        default=0, help_text=(
+            "Minutes, Minimum time required between the last exit interaction"
+        )
+    )
 
     timings: models.QuerySet["NotificationTiming"]
 
