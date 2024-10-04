@@ -8,6 +8,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.notification.models import Notification
 from infrastructure.place.models import Account
 from infrastructure.talk.models import NotificationMember
+from infrastructure.talk.models.models import Interaction
 from infrastructure.xtra.models import Extra
 
 
@@ -40,6 +41,7 @@ class NotificationManager:
     @classmethod
     def add_notification(
             cls, name: str | Notification, member_account: MemberAccount,
+            last_interaction_out: Interaction | None = None,
             **kwargs
     ):
         if isinstance(name, str):
@@ -54,7 +56,7 @@ class NotificationManager:
             member_account=member_account,
             successful=None
         )
-        notification_member.set_init_controler()
+        notification_member.set_init_controler(last_interaction_out)
 
         if kwargs:
             notification_member.set_parameters(kwargs)
@@ -101,3 +103,22 @@ class NotificationManager:
 
             elif any(any_conditions) and all(all_conditions):
                 cls.add_notification(notification, member_account)
+    
+    @classmethod
+    def add_notifications_by_condition_rule(
+        cls, condition_rule: ConditionRule, platform_name: str = ""
+    ):
+        extra = condition_rule.extra
+
+        if not extra:
+            return
+
+        members_query = MemberAccount.objects.filter(
+            extra_values__extra=extra
+        ).distinct()
+
+        for member_account in members_query:
+            NotificationManager.add_notifications_by_extra(
+                extra, member_account, platform=platform_name
+            )
+
