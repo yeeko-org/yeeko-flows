@@ -8,7 +8,9 @@ from infrastructure.flow.models import Flow
 from infrastructure.member.models import MemberAccount
 from infrastructure.notification.models import Notification, NotificationTiming
 from infrastructure.talk.models.extra import ExtraValue
+from infrastructure.talk.models.models import Interaction
 from infrastructure.xtra.models import ClassifyExtra, Extra
+
 
 DEFAULT_NOTIFICATION_LAPSE_MINUTES = getattr(
     settings, 'DEFAULT_NOTIFICATION_LAPSE_MINUTES', 30)
@@ -77,47 +79,88 @@ class NotificationMember(models.Model):
                 member=self.member_account.member,
             )
 
-    def set_init_controler(self):
-        timing = self.notification.get_timing_or_last(0)
-
+    def get_timing_minuts(
+            self, timing: NotificationTiming | None,
+            last_interaction_out: Interaction | None = None
+    ) -> int:
         if timing:
             timing_minuts = timing.timing
         else:
             timing_minuts = DEFAULT_NOTIFICATION_LAPSE_MINUTES
 
-        self.set_controler()
+        if timing_minuts < self.notification.last_interaction_out_min_time:
+            timing_minuts = self.notification.last_interaction_out_min_time
 
+        if last_interaction_out:
+            elapsed_time = timezone.now() - last_interaction_out.created
+            elapsed_minutes = int(elapsed_time.total_seconds() / 60)
+
+            if elapsed_minutes > timing_minuts:
+                timing_minuts = 0
+            else:
+                remaining_time = timing_minuts - elapsed_minutes
+                timing_minuts = remaining_time
+
+        return timing_minuts
+
+    def set_init_controler(
+        self, last_interaction_out: Interaction | None = None
+    ):
+
+        self.set_controler()
         self.controler.set_value(0)
         self.controler.origin = "notification"
         self.controler.save()
 
+        timing = self.notification.get_timing_or_last(0)
+        timing_minuts = self.get_timing_minuts(timing, last_interaction_out)
         self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
+
         self.actual_timing = timing
-        self.next_timing = self.notification.get_timing_or_last(1)
+        self.set_next_timing()
         self.save()
 
-    def set_next_controler(self):
-        self.degrade_interest_degreee()
+    def next_timing_index(self) -> int:
+        controler_timing_index = self.controler.get_value()
+        if not isinstance(controler_timing_index, int):
+            raise ValueError(
+                f"Controler value is not a number: {controler_timing_index}")
+        return controler_timing_index + 1
 
-        if self.next_timing:
-            timing_minuts = self.next_timing.timing
+    def can_set_next(self) -> bool:
+
+        next_timing_index = self.next_timing_index()
+
+        if self.notification.unlimited_timing:
+            return True
+        elif self.notification.limit_timing:
+            return self.notification.limit_timing > next_timing_index
         else:
-            timing_minuts = DEFAULT_NOTIFICATION_LAPSE_MINUTES
+            return self.notification.timings.count() > next_timing_index
+
+    def set_next_timing(self):
+        if not self.can_set_next():
+            return
+
+        self.next_timing = self.notification.get_timing_or_last(
+            self.next_timing_index())
+
+    def set_next_controler(self, degrade_interest: bool = True):
+        if not self.can_set_next():
+            return
+        if degrade_interest:
+            self.degrade_interest_degreee()
 
         self.set_controler()
-        index_controler = self.controler.get_value()  # type: ignore
-        if not isinstance(index_controler, int):
-            raise ValueError(
-                f"Controler value is not a number: {self.controler.get_value()}")
-
-        self.controler.set_value(index_controler + 1)
+        self.controler.set_value(self.next_timing_index())
         self.controler.origin = "notification"
         self.controler.save()
 
-        self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
         self.actual_timing = self.next_timing
-        self.next_timing = self.notification.get_timing_or_last(
-            index_controler + 1)
+        timing_minuts = self.get_timing_minuts(self.actual_timing)
+
+        self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
+        self.set_next_timing()
         self.save()
 
     def set_parameters(self, parameters: dict):
