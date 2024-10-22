@@ -22,7 +22,7 @@ class Notification(models.Model):
     not_choisen_reconsidered_time = models.IntegerField(
         default=120, help_text='Minutes, for not chosen, not for failed')
 
-    last_interaction_out_min_time = models.IntegerField(
+    min_gap_last_interaction_out = models.IntegerField(
         default=0, help_text=(
             "Minutes, Minimum time required between the last exit interaction"
         )

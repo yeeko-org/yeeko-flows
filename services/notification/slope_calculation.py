@@ -123,7 +123,7 @@ class SlopsCalculation:
             notification_member = notifications_member.pop(0)
 
             out_min_time = notification_member.notification\
-                .last_interaction_out_min_time
+                .min_gap_last_interaction_out
             if out_min_time > elapsed_minutes:
                 # check if the minimum time has passed
                 continue

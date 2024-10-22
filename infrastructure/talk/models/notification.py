@@ -40,156 +40,148 @@ class NotificationMember(models.Model):
         related_name='next_timings')
 
     def degrade_interest_degreee(self):
-        if not self.actual_timing or not self.actual_timing.degradation_to_disinterest:
+        degradation = getattr(self.actual_timing, "degradation_to_disinterest")
+        if not degradation:
             return
 
-        degradation = self.actual_timing.degradation_to_disinterest / 100
-        self.member_account.interest_degree -= int(
-            degradation * self.member_account.interest_degree)
-        self.member_account.save()
+        self.member_account.degrade_interest_degreee(degradation)
 
     def set_controler(self):
-        if self.controler:
+        if self.controller:
             return
 
-        try:
-            extra_controler = Extra.objects.get(
-                name=self.notification.name+"_controler",
-                space=self.member_account.account.space)
-        except Extra.DoesNotExist:
-            # create the classify by init_data
-            classify_extra, _ = ClassifyExtra.objects\
-                .get_or_create(name="notification")
+        extra_controler, _ = Extra.objects.get_or_create(
+            name=self.notification.name+"_controler",
+            space=self.member_account.account.space,
+            defaults={
+                "classify_id": "Notification",
+                "flow_id": "Notification",
+                "format": "int"
+            }
+        )
 
-            flow, _ = Flow.objects.get_or_create(
-                name="notification",
-                space=self.member_account.account.space
-            )
-
-            extra_controler = Extra.objects.create(
-                name=self.notification.name+"_controler",
-                classify=classify_extra,
-                space=self.member_account.account.space,
-                flow=flow,
-                format="int"
-            )
-
-            self.controler, _ = ExtraValue.objects.get_or_create(
-                extra=extra_controler,
-                member=self.member_account.member,
-            )
+        self.controller, _ = ExtraValue.objects.get_or_create(
+            extra=extra_controler,
+            member=self.member_account.member,
+        )
 
     def get_timing_minuts(
             self, timing: NotificationTiming | None,
             last_interaction_out: Interaction | None = None
     ) -> int:
+        """
+        Calculates the remaining time in minutes for the next notification.
+
+        If there is a last_interaction_out, ajust the timing_minuts to the
+        min_gap_last_interaction_out. Get the elapsed time and if it is greater
+        than the timing_minuts, return 0, else return the remaining time.
+        """
         if timing:
             timing_minuts = timing.timing
         else:
             timing_minuts = DEFAULT_NOTIFICATION_LAPSE_MINUTES
+        if not last_interaction_out:
+            return timing_minuts
 
-        if timing_minuts < self.notification.last_interaction_out_min_time:
-            timing_minuts = self.notification.last_interaction_out_min_time
+        min_gap_last_out = self.notification.min_gap_last_interaction_out
+        if timing_minuts < min_gap_last_out:
+            timing_minuts = min_gap_last_out
 
-        if last_interaction_out:
-            elapsed_time = timezone.now() - last_interaction_out.created
-            elapsed_minutes = int(elapsed_time.total_seconds() / 60)
+        elapsed_time = timezone.now() - last_interaction_out.created
+        elapsed_minutes = int(elapsed_time.total_seconds() / 60)
 
-            if elapsed_minutes > timing_minuts:
-                timing_minuts = 0
-            else:
-                remaining_time = timing_minuts - elapsed_minutes
-                timing_minuts = remaining_time
+        if elapsed_minutes > timing_minuts:
+            return 0
+        else:
+            remaining_time = timing_minuts - elapsed_minutes
+            return remaining_time
 
-        return timing_minuts
+    def can_set_timing_index(self, timing_index) -> bool:
+        if self.notification.unlimited_timing:
+            return True
+        elif self.notification.limit_timing:
+            return self.notification.limit_timing > timing_index
+        else:
+            return self.notification.timings.count() > timing_index
 
-    def set_init_controler(
-        self, last_interaction_out: Interaction | None = None
+    def get_next_timing_index(self) -> int | None:
+
+        actual_timing_index = self.controller.get_value()
+        if not isinstance(actual_timing_index, int):
+            raise ValueError(
+                f"Controler value is not a number: {actual_timing_index}")
+        next_timing_index = actual_timing_index + 1
+
+        if self.can_set_timing_index(next_timing_index):
+            return next_timing_index
+        else:
+            return None
+
+    def set_index_into_controler(
+        self, timing_index: int, last_interaction_out: Interaction | None = None
     ):
 
         self.set_controler()
-        self.controler.set_value(0)
-        self.controler.origin = "notification"
-        self.controler.save()
+        self.controller.set_value(timing_index)
+        self.controller.origin = "notification"
+        self.controller.save()
 
-        timing = self.notification.get_timing_or_last(0)
+        timing = self.notification.get_timing_or_last(timing_index)
         timing_minuts = self.get_timing_minuts(timing, last_interaction_out)
         self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
 
         self.actual_timing = timing
-        self.set_next_timing()
+
+        next_timing_index = self.get_next_timing_index()
+        if next_timing_index:
+            self.next_timing = self.notification.get_timing_or_last(
+                next_timing_index)
+
         self.save()
 
-    def next_timing_index(self) -> int:
-        controler_timing_index = self.controler.get_value()
-        if not isinstance(controler_timing_index, int):
-            raise ValueError(
-                f"Controler value is not a number: {controler_timing_index}")
-        return controler_timing_index + 1
+    def set_init_controler(self, last_interaction_out: Interaction | None = None):
+        self.set_index_into_controler(0, last_interaction_out)
 
-    def can_set_next(self) -> bool:
-
-        next_timing_index = self.next_timing_index()
-
-        if self.notification.unlimited_timing:
-            return True
-        elif self.notification.limit_timing:
-            return self.notification.limit_timing > next_timing_index
-        else:
-            return self.notification.timings.count() > next_timing_index
-
-    def set_next_timing(self):
-        if not self.can_set_next():
+    def set_next_controler(
+            self, degrade_interest: bool = True,
+            last_interaction_out: Interaction | None = None
+    ):
+        next_timing_index = self.get_next_timing_index()
+        if next_timing_index is None:
             return
 
-        self.next_timing = self.notification.get_timing_or_last(
-            self.next_timing_index())
-
-    def set_next_controler(self, degrade_interest: bool = True):
-        if not self.can_set_next():
-            return
         if degrade_interest:
             self.degrade_interest_degreee()
 
-        self.set_controler()
-        self.controler.set_value(self.next_timing_index())
-        self.controler.origin = "notification"
-        self.controler.save()
+        self.set_index_into_controler(next_timing_index, last_interaction_out)
 
-        self.actual_timing = self.next_timing
-        timing_minuts = self.get_timing_minuts(self.actual_timing)
+    def set_parameters(self, parameters_data: dict):
 
-        self.next_at = timezone.now() + timedelta(minutes=timing_minuts)
-        self.set_next_timing()
-        self.save()
-
-    def set_parameters(self, parameters: dict):
-        try:
-            parameter_extra = Extra.objects.get(
-                name=self.notification.name + "_parameters",
-                space=self.member_account.account.space)
-        except Extra.DoesNotExist:
-            parameter_extra = Extra.objects.create(
-                name=self.notification.name + "_parameters",
-                classify=self.controler.extra.classify,
-                space=self.controler.extra.space,
-                flow=self.controler.extra.flow,
-                format="json"
-            )
+        parameter_extra, _ = Extra.objects.get_or_create(
+            name=self.notification.name + "_parameters",
+            space=self.member_account.account.space,
+            defaults={
+                "classify_id": "Notification",
+                "flow_id": "Notification",
+                "format": "json"
+            }
+        )
 
         self.parameters, _ = ExtraValue.objects.get_or_create(
             extra=parameter_extra,
             member=self.member_account.member,
-            list_by=self.controler,
+            list_by=self.controller,
         )
 
-        self.parameters.set_value(parameters)
+        self.parameters.set_value(parameters_data)
         self.parameters.origin = "notification"
         self.parameters.save()
 
-    def next_at_not_chosen(self):
+    def next_at_not_chosen(self, save: bool = True):
         next_at_minutes = self.notification.not_choisen_reconsidered_time
         self.next_at = timezone.now() + timedelta(minutes=next_at_minutes)
+        if save:
+            self.save()
 
     class Meta:
         verbose_name = 'Notification'
