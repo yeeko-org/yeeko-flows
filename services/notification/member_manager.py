@@ -54,7 +54,6 @@ class NotificationManager:
         notification_member, _ = NotificationMember.objects.get_or_create(
             notification=notification,
             member_account=member_account,
-            successful=None
         )
         notification_member.set_init_controler(last_interaction_out)
 
@@ -103,7 +102,7 @@ class NotificationManager:
 
             elif any(any_conditions) and all(all_conditions):
                 cls.add_notification(notification, member_account)
-    
+
     @classmethod
     def add_notifications_by_condition_rule(
         cls, condition_rule: ConditionRule, platform_name: str = ""
@@ -121,4 +120,3 @@ class NotificationManager:
             NotificationManager.add_notifications_by_extra(
                 extra, member_account, platform=platform_name
             )
-

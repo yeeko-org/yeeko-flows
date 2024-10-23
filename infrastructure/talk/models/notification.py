@@ -4,12 +4,11 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from infrastructure.flow.models import Flow
 from infrastructure.member.models import MemberAccount
 from infrastructure.notification.models import Notification, NotificationTiming
 from infrastructure.talk.models.extra import ExtraValue
 from infrastructure.talk.models.models import Interaction
-from infrastructure.xtra.models import ClassifyExtra, Extra
+from infrastructure.xtra.models import Extra
 
 
 DEFAULT_NOTIFICATION_LAPSE_MINUTES = getattr(
