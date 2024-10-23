@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
 import json
 import traceback
-from typing import Callable, List, Optional, Union
 
+from abc import ABC, abstractmethod
 from pydantic import BaseModel
+from typing import Callable, List, Optional, Union
 
 from infrastructure.box.models import PlatformTemplate, Written
 from infrastructure.member.models import MemberAccount
@@ -11,6 +11,7 @@ from infrastructure.notification.models import Notification
 from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import BuiltReply, Interaction, Trigger
 from infrastructure.tool.models import Behavior
+from infrastructure.xtra.models import Extra
 from services.notification.member_manager import NotificationManager
 from services.response.models import MediaMessage, Message, SectionsMessage, ReplyMessage
 from utilities.replacer_from_data import replace_parameter
@@ -42,8 +43,6 @@ class ResponseAbc(ABC, BaseModel):
     trigger: Trigger | None = None
 
     errors: List[dict] = []
-
-    notification_manager: NotificationManager = NotificationManager()
 
     class Config:
         arbitrary_types_allowed = True
@@ -252,3 +251,22 @@ class ResponseAbc(ABC, BaseModel):
 
         else:
             self.errors.extend(errors)
+
+    def add_extra_value(
+            self, extra: Extra,  value: str | None = None,
+            interaction: Interaction | None = None, origin: str = "unknown",
+            list_by=None
+    ):
+        extra_value = self.sender.member.add_extra_value(
+            extra,  value, interaction, origin, list_by
+        )
+
+        if not extra_value:
+            self.add_error(
+                {"method": "add_extra_value", "extra": extra.pk, "value": value}
+            )
+            return
+
+        NotificationManager.add_notifications_by_extra(
+            extra, self.sender, platform=self.platform_name
+        )

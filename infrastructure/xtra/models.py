@@ -57,7 +57,7 @@ class Extra(models.Model):
         blank=True, null=True, default=default_params)
     deleted = models.BooleanField(default=False)
 
-    format_id: str
+    format_id: str | None
 
     def __str__(self):
         return (f"{self.name} ({self.classify.name})")

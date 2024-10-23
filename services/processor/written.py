@@ -29,7 +29,7 @@ class WrittenProcessor(DestinationProcessorMixin):
 
     def process(self):
 
-        self.response.sender.member.add_extra_value(
+        self.response.add_extra_value(
             self.extra, self.message.text, self.message.interaction, "written"
         )
 
