@@ -5,10 +5,11 @@ from infrastructure.box.models import Piece, Reply
 from infrastructure.talk.models import BuiltReply, Interaction
 from services.processor.behavior import BehaviorProcessor
 from services.processor.context_mixin import ContextMixing
-from services.processor.reply import ReplyProcessor
+from services.processor.interactive import ReplyProcessor
 from services.processor.written import WrittenProcessorFull
 from services.request.message_model import TextMessage
 from services.response import ResponseAbc
+from utilities.standar_str import standar
 
 
 class TextProcessor(ContextMixing):
@@ -51,7 +52,7 @@ class TextProcessor(ContextMixing):
             return
 
         if call_default_text:
-            self.call_behavior("default_text")
+            self.call_behavior("default_text", parameters={"text": self.text})
 
     def command_handler(self):
         if self.text.startswith("/"):
@@ -65,8 +66,11 @@ class TextProcessor(ContextMixing):
         self.call_behavior("admin_contact")
         return True
 
-    def call_behavior(self, behavior):
-        BehaviorProcessor(behavior, self.response).process()
+    def call_behavior(self, behavior, parameters={}):
+        BehaviorProcessor(
+            behavior, self.response, parameters=parameters,
+            context_direct=self.context_direct,
+            interaction_in=self.interaction_in).process()
 
     def process_written(self):
         if not self.do_written:
@@ -105,8 +109,15 @@ class TextProcessor(ContextMixing):
         if not reply_by_text:
             return False
 
+        interaction_origin = Interaction.objects.filter(
+            fragment__piece=self.context_piece,
+            # Todo configurar el related_name despues de merge con notifications
+            builtreply__reply=reply_by_text,
+            member_account=self.response.sender
+        ).first()
+
         built_reply = BuiltReply.objects.filter(
-            interaction=self.last_interaction_out,
+            interaction=interaction_origin,
             reply=reply_by_text
         ).first()
         if built_reply:
@@ -115,7 +126,7 @@ class TextProcessor(ContextMixing):
 
         reply_processor = ReplyProcessor(
             reply=reply_by_text, response=self.response,
-            interaction=self.last_interaction_out
+            interaction_origin=self.last_interaction_out
         )
         reply_processor.process()
         return True
@@ -143,14 +154,3 @@ class TextMessageProcessor(TextProcessor):
             return
 
         self.call_behavior("default_text")
-
-
-def standar(text: str) -> str:
-    import unidecode
-    import re
-    if not text:
-        return ""
-    text = text.upper().strip()
-    text = unidecode.unidecode(text)
-    text = re.sub(r'[^a-zA-Z\s]', '', text)
-    return text.strip()
