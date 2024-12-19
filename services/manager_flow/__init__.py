@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List, Type
 from infrastructure.service.models import ApiRecord
 from services.manager_flow.manager_flow_abc import AbstractManagerFlow
 from services.processor.interactive import InteractiveProcessor
@@ -22,7 +22,7 @@ class ManagerFlow(AbstractManagerFlow):
         self.request = request_class(raw_data)
         self._response_class = response_class
 
-        self.response_list = []
+        self.response_list: List[ResponseAbc] = []
 
     def __call__(
             self
