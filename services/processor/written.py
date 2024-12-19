@@ -29,7 +29,8 @@ class WrittenProcessorFull(DestinationProcessorMixin):
         self.written = context_piece.written
         self.interaction_in = interaction_in
 
-        self.response.set_trigger(self.written, context_direct)
+        self.response.set_trigger(
+            self.written, context_direct, interaction_in=interaction_in)
 
         self.written.set_assign(
             self.response.sender.member, interaction_in)

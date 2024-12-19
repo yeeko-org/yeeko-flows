@@ -1,35 +1,39 @@
 from typing import Optional
 from infrastructure.box.models import Destination, Piece, Reply
+from infrastructure.talk.models import Interaction
 from services.processor.behavior import BehaviorProcessor
+from services.processor.context_mixin import ContextMixing
 from services.processor.destination_rules import destination_find
 from services.processor.base_mixin import DestinationProcessorMixin
 from services.request.message_model import InteractiveMessage
 from services.response.abstract import ResponseAbc
 
 
-class InteractiveProcessor(DestinationProcessorMixin):
-    message: InteractiveMessage
+class ReplyProcessor(DestinationProcessorMixin):
+    reply: Reply | None
     response: ResponseAbc
+    interaction_origin: Optional[Interaction] = None
     destination: Optional[Destination] = None
-    reply: Optional[Reply]
 
     def __init__(
-        self, message: InteractiveMessage, response: ResponseAbc
+        self, reply: Reply | None, response: ResponseAbc,
+        interaction_origin: Interaction | None = None,
+        piece: Piece | None = None
     ) -> None:
-        self.message = message
         self.response = response
-        self.reply = message.built_reply.reply if message.built_reply else None
-        self.response.set_trigger(message.built_reply, is_direct=True)
+        self.reply = reply
+        self.interaction_origin = interaction_origin
+
+        if piece:
+            self._piece = piece
 
     def process(self):
-        if self.process_if_not_built_reply():
-            return
-
         if not self.reply:
             return
 
-        self.reply.set_assign(
-            self.response.sender.member, self.message.interaction)
+        if self.interaction_origin:
+            self.reply.set_assign(
+                self.response.sender.member, self.interaction_origin)
 
         self.set_extra_default_to_member()
 
@@ -42,25 +46,14 @@ class InteractiveProcessor(DestinationProcessorMixin):
         return self._piece
 
     def get_piece(self) -> Piece | None:
-        if not self.message.built_reply:
+        if not self.interaction_origin:
             return None
 
-        replay_interaction = self.message.built_reply.interaction
-        if not replay_interaction:
-            return None
-
-        fragment = replay_interaction.fragment
+        fragment = self.interaction_origin.fragment
         if not fragment:
             return None
 
         return fragment.piece
-
-    def process_if_not_built_reply(self):
-        if self.message.built_reply:
-            return False
-
-        self.process_behavior()
-        return True
 
     def get_destination(self) -> None:
         if not self.reply:
@@ -85,7 +78,7 @@ class InteractiveProcessor(DestinationProcessorMixin):
             raise_exception=False)
 
     def set_extra_default_to_member(self):
-        if not self.piece:
+        if not (self.piece and self.reply):
             return
 
         default_extra = self.piece.default_extra
@@ -93,11 +86,44 @@ class InteractiveProcessor(DestinationProcessorMixin):
             return
 
         self.response.add_extra_value(
-            default_extra, self.message.payload, self.message.interaction)
+            default_extra, self.reply.title, self.interaction_origin)
 
-    def process_behavior(self, behavior_name: Optional[str] = None):
-        if not behavior_name:
-            behavior_name = self.message.payload
 
-        BehaviorProcessor(behavior=behavior_name,
-                          response=self.response).process()
+
+class InteractiveProcessor(ReplyProcessor, ContextMixing):
+    message: InteractiveMessage
+
+    def __init__(
+        self, message: InteractiveMessage, response: ResponseAbc
+    ) -> None:
+        super().__init__(
+            reply=message.built_reply.reply if message.built_reply else None,
+            response=response, interaction_origin=message.interaction
+        )
+        if message.built_reply:
+            self.response.set_trigger(
+                message.built_reply, is_direct=True,
+                interaction_in=message.interaction)
+
+    def process(self):
+        if self.process_if_not_built_reply():
+            return
+
+        super().process()
+
+    def get_piece(self) -> Piece | None:
+        if not self.message.built_reply:
+            return None
+
+        self.interaction_origin = self.message.built_reply.interaction
+        super().get_piece()
+
+    def process_if_not_built_reply(self):
+        if self.message.built_reply:
+            return False
+
+        BehaviorProcessor(
+            behavior=self.message.payload, response=self.response,
+            interaction_in=self.message.interaction
+        ).process()
+        return True
