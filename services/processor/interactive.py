@@ -92,7 +92,7 @@ class InteractiveProcessor(DestinationProcessorMixin):
         if not default_extra:
             return
 
-        self.response.sender.member.add_extra_value(
+        self.response.add_extra_value(
             default_extra, self.message.payload, self.message.interaction)
 
     def process_behavior(self, behavior_name: Optional[str] = None):

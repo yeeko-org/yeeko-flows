@@ -39,8 +39,7 @@ class WrittenProcessorFull(DestinationProcessorMixin):
         self.extra = _extra
 
     def process(self):
-
-        self.response.sender.member.add_extra_value(
+        self.response.add_extra_value(
             self.extra, self.message, self.interaction_in, "written"
         )
 

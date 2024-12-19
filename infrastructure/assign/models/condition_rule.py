@@ -1,7 +1,9 @@
 from django.db import models
 from django.db.models import JSONField
 
+from infrastructure.box.models import Destination, Fragment, Reply
 from infrastructure.member.models.member import Member
+from infrastructure.notification.models import Notification
 from infrastructure.service.models import Platform
 from infrastructure.xtra.models import Extra
 
@@ -14,14 +16,18 @@ class ConditionRule(models.Model):
 
     # ---------------------------------Origin---------------------------------
     fragment = models.ForeignKey(
-        "box.Fragment", on_delete=models.CASCADE,
+        Fragment, on_delete=models.CASCADE,
         blank=True, null=True, related_name='rules')
     reply = models.ForeignKey(
-        "box.Reply", on_delete=models.CASCADE,
+        Reply, on_delete=models.CASCADE,
         blank=True, null=True, related_name='rules')
 
     destination = models.ForeignKey(
-        "box.Destination", on_delete=models.CASCADE,
+        Destination, on_delete=models.CASCADE,
+        blank=True, null=True, related_name='rules')
+
+    notification = models.ForeignKey(
+        Notification, on_delete=models.CASCADE,
         blank=True, null=True, related_name='rules')
     # -------------------------------end Origin-------------------------------
 
