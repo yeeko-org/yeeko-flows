@@ -71,7 +71,7 @@ class ManagerFlow(AbstractManagerFlow):
         response: ResponseAbc
     ) -> None:
         if isinstance(message, TextMessage):
-            text_processor = TextMessageProcessor(self, message, response)
+            text_processor = TextMessageProcessor(message, response)
             text_processor.process()
         elif isinstance(message, InteractiveMessage):
             interactive_processor = InteractiveProcessor(message, response)

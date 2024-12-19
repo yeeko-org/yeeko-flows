@@ -6,12 +6,14 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import Interaction
 from infrastructure.xtra.models import Extra
-from services.processor.base_mixin import Processor
+from services.processor.context_mixin import ContextMixing
+from services.processor.text import TextProcessor
+from services.processor.written import WrittenProcessorFull
 from services.request.message_model import MediaMessage
 from services.response import ResponseAbc
 
 
-class MediaProcessor(Processor):
+class MediaProcessor(ContextMixing):
     sender: MemberAccount
     api_request: ApiRecord
     request_message_id: str
@@ -49,16 +51,40 @@ class MediaProcessor(Processor):
         self.written = getattr(context_piece, "written", None)
         self.default_extra = getattr(context_piece, "default_extra", None)
 
+    def process_written(self, text: str):
+        if not self.context_piece:
+            return False
+        try:
+            written_processor = WrittenProcessorFull(
+                response=self.response, message=text,
+                context_piece=self.context_piece,
+                interaction_in=self.message.interaction
+            )
+        except Exception as e:
+            return False
+
+        written_processor.process()
+        return True
+
     def process(self):
-        self.response.message_text(
-            message="media recibido y guardado"
-        )
         if not self.message.interaction:
             return
+
         media_in = self.message.interaction.media_in
         if not media_in:
             return
 
-        media_in_url = media_in.url
-        self.response.message_multimedia(
-            url_media=media_in_url, media_type=self.message.media_type)
+        caption = self.message.caption
+        media_url = media_in.url
+
+        if self.process_written(
+            f"{caption}:{media_url}" if caption else media_url
+        ):
+            return
+
+        if caption:
+            TextProcessor(
+                text=caption, response=self.response,
+                context_id=self.message.context_id,
+                interaction_in=self.message.interaction, do_written=False
+            ).process()

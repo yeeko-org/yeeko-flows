@@ -123,7 +123,11 @@ class MediaMessage(InteractionMessage):
 
     def record_interaction(self, api_record, member_account):
         _record_interaction = super()\
-            .record_interaction(api_record, member_account, None)
+            .record_interaction(
+                api_record, member_account,
+                f"{self.media_type}: {self.caption}"
+                if self.caption else self.media_type
+        )
 
         self.save_content()
 
