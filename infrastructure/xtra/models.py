@@ -33,8 +33,7 @@ class Format(models.Model):
     public_name = models.CharField(max_length=80, blank=True, null=True)
     javascript_name = models.CharField(max_length=50, blank=True, null=True)
     python_name = models.CharField(max_length=50, blank=True, null=True)
-    params = JSONField(
-        blank=True, null=True, default=default_params)
+    params = JSONField(blank=True, null=True, default=default_params)
 
     def __str__(self):
         return self.name
@@ -53,12 +52,15 @@ class Extra(models.Model):
     format = models.ForeignKey(
         Format, on_delete=models.CASCADE, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    has_session = models.BooleanField(default=False)
     params = JSONField(
         blank=True, null=True, default=default_params)
+    controller = models.ForeignKey(
+        'Extra', on_delete=models.CASCADE, blank=True, null=True)
     deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return (f"{self.name} ({self.classify.name})")
+        return f"{self.name} ({self.classify.name})"
 
     class Meta:
         verbose_name_plural = "Variables Extra"

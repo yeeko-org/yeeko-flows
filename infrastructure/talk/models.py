@@ -209,9 +209,26 @@ class Event(models.Model):
         unique_together = ('event_name', 'interaction', 'emoji')
 
 
+class Session(models.Model):
+    member_account = models.ForeignKey(
+        MemberAccount, on_delete=models.CASCADE)
+    number = models.IntegerField(default=1)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.member_account} - {self.number}"
+
+    class Meta:
+        verbose_name = 'Sesión'
+        verbose_name_plural = 'Sesiones'
+        unique_together = ('member_account', 'interaction')
+
+
 class ExtraValue(models.Model):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, blank=True, null=True)
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, blank=True, null=True,
         related_name='extra_values')
@@ -219,6 +236,13 @@ class ExtraValue(models.Model):
     origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES)
     modified = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     value = models.TextField(blank=True, null=True)
+    controller_value = models.ForeignKey(
+        "ExtraValue", on_delete=models.CASCADE, blank=True, null=True)
+    # Component
+    # [
+    #     controller_value: "Paracetamol",
+    #     controller_value: "Amoxicilina",
+    # ]
     list_by = models.ForeignKey(
         'self', on_delete=models.CASCADE, blank=True, null=True,
         related_name='children')
@@ -246,3 +270,20 @@ class ExtraValue(models.Model):
 #     class Meta:
 #         verbose_name = 'Error de API'
 #         verbose_name_plural = 'Errores de API'
+
+
+# Extra reporte (Tipo sesión)
+# Extra medicamento (Tipo sesión)
+# Extra nombre medicamento (NORMAL)
+
+# Reporte 1
+# ## Medicamento 1
+# ## Nombre medicamento
+# ## Medicamento 2
+# ## Medicamento 3
+
+# Reporte 2
+# ## Medicamento 1
+
+
+
