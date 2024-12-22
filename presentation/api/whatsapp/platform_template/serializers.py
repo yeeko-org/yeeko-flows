@@ -6,4 +6,4 @@ class MessageTemplateSerializer(serializers.Serializer):
     account_id = serializers.CharField()
     template_id = serializers.CharField(required=False, allow_blank=True)
     piece_id = serializers.CharField(required=False, allow_blank=True)
-    markeds_values = serializers.DictField(required=False)
+    marked_values = serializers.DictField(required=False)

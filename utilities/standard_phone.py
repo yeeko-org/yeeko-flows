@@ -2,7 +2,7 @@
 import re
 
 
-def standar_mx_phone(phone: str, raise_exeption = True) -> str:
+def standard_mx_phone(phone: str, raise_exeption = True) -> str:
     """
     For mexican phone numbers, standarize them to 521XXXXXXXXXX
     """

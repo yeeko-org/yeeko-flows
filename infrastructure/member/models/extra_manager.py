@@ -10,20 +10,21 @@ if TYPE_CHECKING:
 
 
 class ExtraManager:
+    _extra_values_data: dict
 
     @property
-    def extra_vale_query(self):
+    def extra_value_query(self):
         from infrastructure.talk.models import ExtraValue
         return ExtraValue.objects.filter(member=self)
 
-    def get_extra_values_data(self, refrest=False) -> dict[str, str]:
+    def get_extra_values_data(self, refresh=False) -> dict[str, str]:
         user: "User" = self.user  # type: ignore
 
-        if hasattr(self, "_extra_values_data") and not refrest:
+        if hasattr(self, "_extra_values_data") and not refresh:
             return getattr(self, "_extra_values_data", {})
 
         self._extra_values_data = {}
-        extra_values_query = self.extra_vale_query\
+        extra_values_query = self.extra_value_query\
             .filter(extra__deleted=False)\
             .select_related("extra")
 
@@ -32,6 +33,7 @@ class ExtraManager:
             value = extra_value.get_value()
             self._extra_values_data[name] = value
 
+        # TODO Together: Why not with a Serializer?
         self._extra_values_data["username"] = user.username
         self._extra_values_data["first_name"] = user.first_name
         self._extra_values_data["last_name"] = user.last_name
@@ -48,7 +50,7 @@ class ExtraManager:
     ) -> "ExtraValue | None":
         if not extra:
             return
-        extra_value, _ = self.extra_vale_query.get_or_create(extra=extra)
+        extra_value, _ = self.extra_value_query.get_or_create(extra=extra)
 
         extra_value.set_value(value)
         extra_value.origin = origin
@@ -71,10 +73,10 @@ class ExtraManager:
     def remove_extra(self, extra: "Extra | None"):
         if not extra:
             return
-        self.extra_vale_query.filter(extra=extra).delete()
+        self.extra_value_query.filter(extra=extra).delete()
 
     def remove_extras(self, extras: "list[Extra] | QuerySet[Extra]"):
-        self.extra_vale_query.filter(extra__in=extras).delete()
+        self.extra_value_query.filter(extra__in=extras).delete()
 
     def remove_all_extras(self):
-        self.extra_vale_query.delete()
+        self.extra_value_query.delete()

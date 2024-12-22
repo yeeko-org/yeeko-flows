@@ -1,5 +1,5 @@
 
-def standar(text: str) -> str:
+def standard(text: str) -> str:
     import unidecode
     import re
     if not text:

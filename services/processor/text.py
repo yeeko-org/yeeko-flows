@@ -9,7 +9,7 @@ from services.processor.interactive import ReplyProcessor
 from services.processor.written import WrittenProcessorFull
 from services.request.message_model import TextMessage
 from services.response import ResponseAbc
-from utilities.standar_str import standar
+from utilities.standard_str import standard
 
 
 class TextProcessor(ContextMixing):
@@ -66,7 +66,7 @@ class TextProcessor(ContextMixing):
         self.call_behavior("admin_contact")
         return True
 
-    def call_behavior(self, behavior, parameters={}):
+    def call_behavior(self, behavior, parameters=None):
         BehaviorProcessor(
             behavior, self.response, parameters=parameters,
             context_direct=self.context_direct,
@@ -102,7 +102,7 @@ class TextProcessor(ContextMixing):
         for replay in replays:
             if not replay.title:
                 continue
-            if standar(replay.title) == standar(self.text):
+            if standard(replay.title) == standard(self.text):
                 reply_by_text = replay
                 break
 
@@ -111,7 +111,7 @@ class TextProcessor(ContextMixing):
 
         interaction_origin = Interaction.objects.filter(
             fragment__piece=self.context_piece,
-            # Todo configurar el related_name despues de merge con notifications
+            # TODO configurar el related_name después de merge con notifications
             builtreply__reply=reply_by_text,
             member_account=self.response.sender
         ).first()

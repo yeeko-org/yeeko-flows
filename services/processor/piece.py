@@ -13,8 +13,10 @@ class PieceProcessor(DestinationProcessorMixin):
 
     def __init__(
             self, piece: Piece, response: ResponseAbc,
-            parameters: dict = {}
+            parameters: dict = None
     ) -> None:
+        if parameters is None:
+            self.parameters = {}
         self.piece = piece
         self.response = response
         self.parameters = parameters

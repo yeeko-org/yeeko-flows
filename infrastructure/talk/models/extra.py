@@ -9,6 +9,21 @@ from infrastructure.xtra.models import Extra
 from utilities.json_compatible import ensure_json_compatible
 
 
+class Session(models.Model):
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE)
+    number = models.IntegerField(default=1)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.member} - {self.number}"
+
+    class Meta:
+        verbose_name = 'Sesión'
+        verbose_name_plural = 'Sesiones'
+        unique_together = ('member', 'number')
+
+
 ORIGIN_CHOICES = (
     ("payload", "Payload"),
     ("written", "Escrito"),
@@ -20,16 +35,27 @@ ORIGIN_CHOICES = (
 
 
 class ExtraValue(models.Model):
-    extra = models.ForeignKey(
-        Extra, on_delete=models.CASCADE)
+    extra = models.ForeignKey(Extra, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, blank=True, null=True
+    )
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name='extra_values',
         blank=True, null=True
     )
     interactions = models.ManyToManyField(Interaction, blank=True)
-    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES)
+    # TODO Together: Would this be a Trigger relation? I added default value
+    origin = models.CharField(
+        max_length=20, choices=ORIGIN_CHOICES, default="unknown")
     modified = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     value = models.TextField(blank=True, null=True)
+    controller_value = models.ForeignKey(
+        "ExtraValue", on_delete=models.CASCADE, blank=True, null=True)
+    # Component
+    # [
+    #     controller_value: "Paracetamol",
+    #     controller_value: "Amoxicilina",
+    # ]
     list_by = models.ForeignKey(
         'self', on_delete=models.CASCADE, related_name='children',
         blank=True, null=True,
@@ -96,3 +122,17 @@ class ExtraValue(models.Model):
         verbose_name_plural = 'Valores extra'
         unique_together = ('extra', 'member', 'list_by')
         ordering = ['-modified']
+
+
+# Extra reporte (Tipo sesión)
+# Extra medicamento (Tipo sesión)
+# Extra nombre medicamento (NORMAL)
+
+# Reporte 1
+# ## Medicamento 1
+# ## Nombre medicamento
+# ## Medicamento 2
+# ## Medicamento 3
+
+# Reporte 2
+# ## Medicamento 1

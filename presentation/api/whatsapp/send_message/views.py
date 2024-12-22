@@ -6,12 +6,12 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.place.models import Account
 from interface.whatsapp.send_message_simple import SendWhatsappSessionMessage
 from utilities.storage_file import upload_file_to_storage
-from utilities.standar_phone import standar_mx_phone
+from utilities.standard_phone import standard_mx_phone
 
 from .serializers import MessageBasicSerializer
 
 
-class WhastappSendSimpleMessage(ViewSet):
+class WhatsappSendSimpleMessage(ViewSet):
     serializer_class = MessageBasicSerializer
 
     def create(self, request, *args, **kwargs):
@@ -27,7 +27,7 @@ class WhastappSendSimpleMessage(ViewSet):
 
         phone_to = data.get("phone_to")
         try:
-            valid_phone = standar_mx_phone(phone_to)  # type: ignore
+            valid_phone = standard_mx_phone(phone_to)  # type: ignore
         except Exception as e:
             raise ValidationError(f"Phone {phone_to} error: {e}")
 

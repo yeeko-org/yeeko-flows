@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-from utilities.replacer_from_data import replace_parameter
+from utilities.parameters import replace_parameter
 
 
 class Button(BaseModel):

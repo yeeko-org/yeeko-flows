@@ -31,7 +31,9 @@ class Space(models.Model):
 
 class Account(models.Model):
     pid = models.CharField(max_length=191, primary_key=True)
-    app_id = models.CharField(max_length=191, blank=True, null=True, help_text="whatsapp_Business ID")
+    app_id = models.CharField(
+        max_length=191, blank=True, null=True,
+        help_text="whatsapp_Business ID")
     space = models.ForeignKey(
         Space, on_delete=models.CASCADE, related_name='accounts'
     )

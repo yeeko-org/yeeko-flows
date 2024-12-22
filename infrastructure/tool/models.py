@@ -80,6 +80,7 @@ class Parameter(models.Model):
     is_required = models.BooleanField(default=False)
     # RICK 5: Aún no decido si quiero mantener esto:
     default_value = models.CharField(max_length=255, blank=True, null=True)
+    # TODO Together: Crees que debamos estandarizar esto con Format?
     data_type = models.CharField(max_length=20, choices=DATA_TYPES)
     customizable_by_piece = models.BooleanField(default=False)
     addl_config = JSONField(blank=True, null=True)

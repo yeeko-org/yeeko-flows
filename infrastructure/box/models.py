@@ -19,15 +19,16 @@ MEDIA_TYPES = (
 )
 
 
-class AssingMixin:
+class AssignMixin:
     def __init__(self, *args, **kwargs) -> None:
         from infrastructure.assign.models import Assign
+        # TODO Duda: Esto no iría antes de __init__?
         self.assignments: models.QuerySet[Assign]
         super().__init__(*args, **kwargs)
 
     def set_assign(self, member, interaction):
-        for assing in self.assignments.filter(deleted=False):
-            assing.to_member(member, interaction)
+        for assign in self.assignments.filter(deleted=False):
+            assign.to_member(member, interaction)
 
 
 class DestinationMixin:
@@ -37,7 +38,7 @@ class DestinationMixin:
         return self.destinations.filter(deleted=False).order_by('order')
 
 
-class Written(models.Model, AssingMixin, DestinationMixin):
+class Written(models.Model, AssignMixin, DestinationMixin):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE,
         blank=True, null=True)
@@ -55,7 +56,7 @@ class Written(models.Model, AssingMixin, DestinationMixin):
         verbose_name_plural = 'Opciones escritas'
 
 
-class Piece(models.Model, AssingMixin, DestinationMixin):
+class Piece(models.Model, AssignMixin, DestinationMixin):
     TYPE_CHOICES = (
         ("content", "Contenido"),
         ("destinations", "Para Destinos"),
@@ -162,7 +163,7 @@ class Fragment(models.Model):
         ordering = ['order']
 
 
-class Reply(models.Model, AssingMixin, DestinationMixin):
+class Reply(models.Model, AssignMixin, DestinationMixin):
     REPLY_TYPE_CHOICES = (
         ("payload", "Payload"),
         ("quick_reply", "Respuesta rápida"),
@@ -216,7 +217,7 @@ class MessageLink(models.Model, DestinationMixin):
         verbose_name = "Message Link"
 
 
-class Destination(models.Model, AssingMixin):
+class Destination(models.Model, AssignMixin):
     DESTINATION_TYPES = (
         ('url', 'URL'),
         ('behavior', 'Función Behavior'),

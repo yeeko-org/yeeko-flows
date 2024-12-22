@@ -110,7 +110,7 @@ class RequestAbc(ABC):
         self.platform_name = platform_name
         self.input_accounts = []
 
-        self._contacs_data = {}
+        self._contacts_data = {}
         self._use_global_api_record = False
 
         if not set_messages:
