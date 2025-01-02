@@ -119,14 +119,13 @@ class Fragment(models.Model):
         PersistentMedia, on_delete=models.CASCADE, blank=True, null=True)
 
     addl_params = JSONField(blank=True, null=True)
-    deleted = models.BooleanField(
-        default=False, verbose_name='Borrado')
 
     file = models.FileField(
         upload_to='box', blank=True, null=True,
         verbose_name='Archivo o imagen')
     media_url = models.CharField(
-        max_length=255, verbose_name='URL de multimedia', blank=True, null=True)
+        max_length=255, verbose_name='URL de multimedia',
+        blank=True, null=True)
     media_type = models.CharField(
         max_length=20, choices=MEDIA_TYPES, blank=True, null=True)
 
@@ -144,6 +143,10 @@ class Fragment(models.Model):
         Piece, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Pieza embebida')
 
+    deleted = models.BooleanField(
+        default=False, verbose_name='Borrado')
+
+    # TODO Rick: Distinguir 'muchos botones' y 'pocos botones' // quick_replies
     replies: models.QuerySet["Reply"]
 
     def __str__(self):
@@ -164,6 +167,7 @@ class Fragment(models.Model):
 
 
 class Reply(models.Model, AssignMixin, DestinationMixin):
+    # TODO Together: Qué implicación tiene esto? Cómo se determina?
     REPLY_TYPE_CHOICES = (
         ("payload", "Payload"),
         ("quick_reply", "Respuesta rápida"),
@@ -320,7 +324,8 @@ class PlatformTemplate(models.Model):
 
     raw_template = models.JSONField(default=dict)
     piece = models.OneToOneField(
-        Piece, on_delete=models.CASCADE, blank=True, null=True, related_name='template')
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='template')
 
     parameters: models.QuerySet["TemplateParameter"]
 

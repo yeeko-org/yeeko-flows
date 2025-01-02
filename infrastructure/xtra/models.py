@@ -54,9 +54,9 @@ class Extra(models.Model):
     format = models.ForeignKey(
         Format, on_delete=models.CASCADE, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    has_session = models.BooleanField(default=False)
     params = JSONField(
         blank=True, null=True, default=dict)
+    has_session = models.BooleanField(default=False)
     controller = models.ForeignKey(
         'Extra', on_delete=models.CASCADE, blank=True, null=True)
     deleted = models.BooleanField(default=False)

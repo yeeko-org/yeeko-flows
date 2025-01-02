@@ -11,7 +11,7 @@ from utilities.json_compatible import ensure_json_compatible
 
 class Session(models.Model):
     member = models.ForeignKey(
-        Member, on_delete=models.CASCADE)
+        Member, on_delete=models.CASCADE, related_name='sessions')
     number = models.IntegerField(default=1)
     active = models.BooleanField(default=True)
 
@@ -44,7 +44,7 @@ class ExtraValue(models.Model):
         blank=True, null=True
     )
     interactions = models.ManyToManyField(Interaction, blank=True)
-    # TODO Together: Would this be a Trigger relation? I added default value
+    # TODO Rick: Delete this field if it's set by front-end
     origin = models.CharField(
         max_length=20, choices=ORIGIN_CHOICES, default="unknown")
     modified = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -100,6 +100,14 @@ class ExtraValue(models.Model):
                 self.value = json.dumps(value)
         else:
             self.value = str(value)
+
+        # TODO Rick: Here we need to check with session
+        if self.member and self.extra.controller:
+            filter_qs = {"extra": self.extra.controller}
+            if self.session:
+                filter_qs["session"] = self.session
+            self.controller_value = self.member.extra_values.filter(
+                **filter_qs).last()
 
     def addition(self, adder: int = 1, save: bool = True):
         if not self.extra.format_id == 'int':

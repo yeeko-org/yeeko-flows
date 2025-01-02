@@ -24,11 +24,20 @@ class ExtraManager:
             return getattr(self, "_extra_values_data", {})
 
         self._extra_values_data = {}
+        # TODO Lucian, the four next functions could improve factoring
         extra_values_query = self.extra_value_query\
-            .filter(extra__deleted=False)\
+            .filter(extra__deleted=False, session__isnull=True)\
             .select_related("extra")
 
         for extra_value in extra_values_query:
+            name = extra_value.extra.name
+            value = extra_value.get_value()
+            self._extra_values_data[name] = value
+
+        session_extra_values_query = self.extra_value_query\
+            .filter(extra__deleted=False, session__active=True)\
+            .select_related("extra")
+        for extra_value in session_extra_values_query:
             name = extra_value.extra.name
             value = extra_value.get_value()
             self._extra_values_data[name] = value
@@ -46,14 +55,20 @@ class ExtraManager:
     def add_extra_value(
             self, extra: "Extra | None",  value: str | None = None,
             interaction: "Interaction | None" = None,
-            origin: str = "unknown", list_by=None
+            origin: str = None, list_by=None
     ) -> "ExtraValue | None":
         if not extra:
             return
-        extra_value, _ = self.extra_value_query.get_or_create(extra=extra)
+        if extra.has_session:
+            session = self.get_session()
+            extra_value, _ = self.extra_value_query.get_or_create(
+                extra=extra, session=session)
+        else:
+            extra_value, _ = self.extra_value_query.get_or_create(extra=extra)
 
         extra_value.set_value(value)
-        extra_value.origin = origin
+        if origin:
+            extra_value.origin = origin
         extra_value.list_by = list_by
         extra_value.save()
 
@@ -61,6 +76,12 @@ class ExtraManager:
             extra_value.interactions.add(interaction)
 
         return extra_value
+
+    def get_session(self):
+        # from infrastructure.talk.models import Session
+        # TODO Rick: hay errores de typos
+        # TODO LUCIAN: Debemos crearla si no existe?
+        return self.sessions.filter(active=True).last()
 
     def add_circles(
             self, circles: "list[Extra] | QuerySet[Extra]",
