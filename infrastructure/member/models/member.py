@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from infrastructure.talk.models import ExtraValue, Session
 
 
-class Member(ExtraManager, models.Model):
+class Member(models.Model, ExtraManager):
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="members")

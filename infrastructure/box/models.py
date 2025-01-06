@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.db.models import JSONField
 
@@ -10,6 +12,9 @@ from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
 from infrastructure.place.models import Account
 
+if TYPE_CHECKING:
+    from infrastructure.assign.models import Assign
+
 MEDIA_TYPES = (
     ('image', 'Imagen'),
     ('video', 'Video'),
@@ -20,11 +25,7 @@ MEDIA_TYPES = (
 
 
 class AssignMixin:
-    def __init__(self, *args, **kwargs) -> None:
-        from infrastructure.assign.models import Assign
-        # TODO Duda: Esto no iría antes de __init__?
-        self.assignments: models.QuerySet[Assign]
-        super().__init__(*args, **kwargs)
+    assignments: "models.QuerySet[Assign]"
 
     def set_assign(self, member, interaction):
         for assign in self.assignments.filter(deleted=False):

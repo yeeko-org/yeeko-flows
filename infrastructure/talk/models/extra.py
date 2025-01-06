@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Any, Dict
 
 from django.db import models
 
@@ -12,11 +13,22 @@ from utilities.json_compatible import ensure_json_compatible
 class Session(models.Model):
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name='sessions')
-    number = models.IntegerField(default=1)
+    number = models.IntegerField(default=1, blank=True)
     active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.member} - {self.number}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            last_session = self.member.sessions.last()
+            if last_session:
+                self.number = last_session.number + 1
+
+        if self.active:
+            self.member.sessions.exclude(pk=self.pk).update(active=False)
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Sesión'
@@ -51,6 +63,7 @@ class ExtraValue(models.Model):
     value = models.TextField(blank=True, null=True)
     controller_value = models.ForeignKey(
         "ExtraValue", on_delete=models.CASCADE, blank=True, null=True)
+    active = models.BooleanField(default=True)
     # Component
     # [
     #     controller_value: "Paracetamol",
@@ -100,14 +113,6 @@ class ExtraValue(models.Model):
                 self.value = json.dumps(value)
         else:
             self.value = str(value)
-
-        # TODO Rick: Here we need to check with session
-        if self.member and self.extra.controller:
-            filter_qs = {"extra": self.extra.controller}
-            if self.session:
-                filter_qs["session"] = self.session
-            self.controller_value = self.member.extra_values.filter(
-                **filter_qs).last()
 
     def addition(self, adder: int = 1, save: bool = True):
         if not self.extra.format_id == 'int':
