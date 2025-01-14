@@ -34,12 +34,13 @@ class User(AbstractUser, PermissionsMixin):
         blank=True, null=True,
     )
 
-    objects = UserManager() # type: ignore
+    objects = UserManager()  # type: ignore
 
     # TODO Ricardo: Revisar si se deja por serializador o por diccionario
 
     def get_basic_data(self):
         from rest_framework import serializers
+
         class BasicSerializer(serializers.ModelSerializer):
             class Meta:
                 model = User
@@ -49,15 +50,6 @@ class User(AbstractUser, PermissionsMixin):
                 ]
         serializer = BasicSerializer(self)
         return serializer.data
-
-        return {
-            'username': self.username,
-            'email': self.email,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'phone': self.phone,
-            'gender': self.gender,
-        }
 
     class Meta:
         db_table = 'auth_user'
