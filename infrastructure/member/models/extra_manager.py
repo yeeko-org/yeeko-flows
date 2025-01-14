@@ -36,8 +36,7 @@ class ExtraManager:
         without_controller = list(
             extra_values_query.filter(controller__isnull=True))
         with_controller = list(
-            extra_values_query.filter(
-                controller__isnull=False, controller__active=True))
+            extra_values_query.filter(controller__active=True))
 
         for extra_value in without_controller + with_controller:
             name = extra_value.extra.name
@@ -60,7 +59,7 @@ class ExtraManager:
         is_new = True if value is None else False
         if value is None:
             value = self.extra_values\
-                .filter(extra=extra, session=_session).count()
+                .filter(extra=extra, session=_session).count() + 1
         try:
             extra_controler = self.extra_values.get(
                 extra=extra, session=_session, value=value)
