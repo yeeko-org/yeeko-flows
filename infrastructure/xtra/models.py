@@ -29,7 +29,6 @@ class ClassifyExtra(models.Model):
         ordering = ['order']
 
 
-# TODO Lucian: We neet to set initial data for this model
 class Format(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
     public_name = models.CharField(max_length=80, blank=True, null=True)
