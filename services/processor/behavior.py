@@ -18,7 +18,7 @@ class BehaviorProcessor:
 
     def __init__(
             self, behavior: str, response: ResponseAbc,
-            parameters: dict = None, context_direct: bool = False,
+            parameters: dict | None = None, context_direct: bool = False,
             interaction_in: Optional[Interaction] = None,
     ) -> None:
         self.behavior = behavior
