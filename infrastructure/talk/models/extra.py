@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Any, Dict
 
 from django.db import models
 
@@ -7,6 +8,32 @@ from infrastructure.member.models import Member
 from infrastructure.talk.models.models import Interaction
 from infrastructure.xtra.models import Extra
 from utilities.json_compatible import ensure_json_compatible
+
+
+class Session(models.Model):
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name='sessions')
+    number = models.IntegerField(default=1, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.member} - {self.number}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            last_session = self.member.sessions.last()
+            if last_session:
+                self.number = last_session.number + 1
+
+        if self.active:
+            self.member.sessions.exclude(pk=self.pk).update(active=False)
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Sesión'
+        verbose_name_plural = 'Sesiones'
+        unique_together = ('member', 'number')
 
 
 ORIGIN_CHOICES = (
@@ -20,16 +47,28 @@ ORIGIN_CHOICES = (
 
 
 class ExtraValue(models.Model):
-    extra = models.ForeignKey(
-        Extra, on_delete=models.CASCADE)
+    extra = models.ForeignKey(Extra, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, blank=True, null=True
+    )
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name='extra_values',
         blank=True, null=True
     )
     interactions = models.ManyToManyField(Interaction, blank=True)
-    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES)
+    # TODO Rick: Delete this field if it's set by front-end
+    origin = models.CharField(
+        max_length=20, choices=ORIGIN_CHOICES, default="unknown")
     modified = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     value = models.TextField(blank=True, null=True)
+    controller_value = models.ForeignKey(
+        "ExtraValue", on_delete=models.CASCADE, blank=True, null=True)
+    active = models.BooleanField(default=True)
+    # Component
+    # [
+    #     controller_value: "Paracetamol",
+    #     controller_value: "Amoxicilina",
+    # ]
     list_by = models.ForeignKey(
         'self', on_delete=models.CASCADE, related_name='children',
         blank=True, null=True,
@@ -96,3 +135,17 @@ class ExtraValue(models.Model):
         verbose_name_plural = 'Valores extra'
         unique_together = ('extra', 'member', 'list_by')
         ordering = ['-modified']
+
+
+# Extra reporte (Tipo sesión)
+# Extra medicamento (Tipo sesión)
+# Extra nombre medicamento (NORMAL)
+
+# Reporte 1
+# ## Medicamento 1
+# ## Nombre medicamento
+# ## Medicamento 2
+# ## Medicamento 3
+
+# Reporte 2
+# ## Medicamento 1

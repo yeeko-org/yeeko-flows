@@ -58,6 +58,7 @@ class WrittenProcessor(WrittenProcessorFull):
     written: Written
     extra: Extra
 
+    # TODO Together: Why you don´t add the super() call?
     def __init__(
             self, response: ResponseAbc, message: TextMessage,
             written: Written, default_extra: Optional[Extra] = None

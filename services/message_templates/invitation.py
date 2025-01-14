@@ -4,34 +4,37 @@ from abc import ABC
 
 from infrastructure.member.models import InviteExtension
 from services.message_templates.template_out import MessageTemplateOutAbstract
-from utilities.standar_phone import standar_mx_phone
+from utilities.standard_phone import standard_mx_phone
 
 
 class InviteExtensionManagerAbstract(ABC):
     invitation: InviteExtension
     message_template_manager: MessageTemplateOutAbstract
-    markeds_values: dict = {}
+    marked_values: dict = {}
 
     def __init__(
             self, invitation: InviteExtension,
             message_template_manager: MessageTemplateOutAbstract,
-            markeds_values: dict = {}
+            marked_values: dict = None
     ) -> None:
+        if marked_values is None:
+            self.marked_values = {}
+        else:
+            self.marked_values = marked_values.copy()
         self.invitation = invitation
         self.message_template_manager = message_template_manager
-        self.markeds_values = markeds_values.copy()
 
     def make_invitation_by_phone(self):
         if not self.invitation.phone:
             raise ValueError("Phone is required")
 
         try:
-            phone = standar_mx_phone(self.invitation.phone)
+            phone = standard_mx_phone(self.invitation.phone)
         except Exception as e:
             self.add_error(f"Phone {self.invitation.phone} error: {e}")
             return
 
-        self.message_template_manager.markeds_values = self.markeds_values
+        self.message_template_manager.marked_values = self.marked_values
         send_mid = self.message_template_manager.send_message(phone_to=phone)
 
         api_record = self.message_template_manager.api_record

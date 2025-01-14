@@ -3,8 +3,13 @@ from django.conf import settings
 
 class CheckInitialData:
     def __init__(self) -> None:
-        from infrastructure.xtra.models import ClassifyExtra
+        from infrastructure.xtra.models import ClassifyExtra, Format
         print("-----------Checking initial data for ClassifyExtra-----------")
-        ClassifyExtra.objects.get_or_create(name="Notification")
-        ClassifyExtra.objects.get_or_create(name="Dashboard")
-        # add more ClassifyExtra here
+        
+        classifies = ["Notification", "Dashboard"]
+        for classify in classifies:
+            ClassifyExtra.objects.get_or_create(name=classify)
+
+        formats = ["json", "int", "cv"]
+        for format in formats:
+            Format.objects.get_or_create(name=format)

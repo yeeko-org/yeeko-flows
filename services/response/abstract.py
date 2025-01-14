@@ -14,7 +14,7 @@ from infrastructure.tool.models import Behavior
 from infrastructure.xtra.models import Extra
 from services.notification.member_manager import NotificationManager
 from services.response.models import MediaMessage, Message, SectionsMessage, ReplyMessage
-from utilities.replacer_from_data import replace_parameter
+from utilities.parameters import replace_parameter
 
 
 def exception_handler(func: Callable) -> Callable:

@@ -32,11 +32,14 @@ class NotificationProcesor(DestinationProcessorMixin):
     def __init__(
             self, notification_member: NotificationMember,
             response: ResponseAbc,
-            parameters: dict = {}
+            parameters: dict = None
     ):
+        if parameters is None:
+            self.parameters = {}
+        else:
+            self.parameters = parameters.copy()
         self.notification_member = notification_member
         self.response = response
-        self.parameters = parameters
 
     def get_destination(self):
         self.destination = destination_find(
@@ -49,7 +52,7 @@ class NotificationProcesor(DestinationProcessorMixin):
 
 class SlopsCalculation:
     account: Account
-    notificatios_by_member: Dict[MemberAccount, List[NotificationMember]]
+    notifications_by_member: Dict[MemberAccount, List[NotificationMember]]
     platform_name: str
     response_class: Type[ResponseAbc]
     errors: List[Dict[str, str]] = []
@@ -58,8 +61,10 @@ class SlopsCalculation:
 
     def __init__(
             self, account: Account, response_class: Type[ResponseAbc],
-            platform_name: str = "", request_data: dict = {}
+            platform_name: str = "", request_data: dict = None
     ):
+        if request_data is None:
+            request_data = {}
         self.account = account
         self.platform_name = platform_name or self.platform_name
         self.response_class = response_class
@@ -78,21 +83,21 @@ class SlopsCalculation:
             .select_related("notification", "member_account")\
             .order_by("actual_timing__minimum_interest", "created_at")
 
-        self.notificatios_by_member = {}
+        self.notifications_by_member = {}
         count_notifications = 0
         for pile in pile_query:
-            if pile.member_account not in self.notificatios_by_member:
-                self.notificatios_by_member[pile.member_account] = []
+            if pile.member_account not in self.notifications_by_member:
+                self.notifications_by_member[pile.member_account] = []
 
-            self.notificatios_by_member[pile.member_account].append(pile)
+            self.notifications_by_member[pile.member_account].append(pile)
 
-            # por notificacion exitosa, no va aqui
+            # por notificación exitosa, no va aquí
             count_notifications += 1
             if count_notifications > simultaneous_slope_notifications_limit:
                 break
 
     def process_notifications(self):
-        for member_account, notifications in self.notificatios_by_member.items():
+        for member_account, notifications in self.notifications_by_member.items():
             self.process_member(notifications, member_account)
 
     def process_member(

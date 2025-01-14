@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.db.models import JSONField
 
@@ -10,6 +12,9 @@ from infrastructure.tool.models import Behavior, Collection
 from infrastructure.xtra.models import Extra
 from infrastructure.place.models import Account
 
+if TYPE_CHECKING:
+    from infrastructure.assign.models import Assign
+
 MEDIA_TYPES = (
     ('image', 'Imagen'),
     ('video', 'Video'),
@@ -19,15 +24,12 @@ MEDIA_TYPES = (
 )
 
 
-class AssingMixin:
-    def __init__(self, *args, **kwargs) -> None:
-        from infrastructure.assign.models import Assign
-        self.assignments: models.QuerySet[Assign]
-        super().__init__(*args, **kwargs)
+class AssignMixin:
+    assignments: "models.QuerySet[Assign]"
 
     def set_assign(self, member, interaction):
-        for assing in self.assignments.filter(deleted=False):
-            assing.to_member(member, interaction)
+        for assign in self.assignments.filter(deleted=False):
+            assign.to_member(member, interaction)
 
 
 class DestinationMixin:
@@ -37,7 +39,7 @@ class DestinationMixin:
         return self.destinations.filter(deleted=False).order_by('order')
 
 
-class Written(models.Model, AssingMixin, DestinationMixin):
+class Written(models.Model, AssignMixin, DestinationMixin):
     extra = models.ForeignKey(
         Extra, on_delete=models.CASCADE,
         blank=True, null=True)
@@ -55,7 +57,7 @@ class Written(models.Model, AssingMixin, DestinationMixin):
         verbose_name_plural = 'Opciones escritas'
 
 
-class Piece(models.Model, AssingMixin, DestinationMixin):
+class Piece(models.Model, AssignMixin, DestinationMixin):
     TYPE_CHOICES = (
         ("content", "Contenido"),
         ("destinations", "Para Destinos"),
@@ -118,14 +120,13 @@ class Fragment(models.Model):
         PersistentMedia, on_delete=models.CASCADE, blank=True, null=True)
 
     addl_params = JSONField(blank=True, null=True)
-    deleted = models.BooleanField(
-        default=False, verbose_name='Borrado')
 
     file = models.FileField(
         upload_to='box', blank=True, null=True,
         verbose_name='Archivo o imagen')
     media_url = models.CharField(
-        max_length=255, verbose_name='URL de multimedia', blank=True, null=True)
+        max_length=255, verbose_name='URL de multimedia',
+        blank=True, null=True)
     media_type = models.CharField(
         max_length=20, choices=MEDIA_TYPES, blank=True, null=True)
 
@@ -143,6 +144,10 @@ class Fragment(models.Model):
         Piece, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Pieza embebida')
 
+    deleted = models.BooleanField(
+        default=False, verbose_name='Borrado')
+
+    # TODO Rick: Distinguir 'muchos botones' y 'pocos botones' // quick_replies
     replies: models.QuerySet["Reply"]
 
     def __str__(self):
@@ -162,7 +167,8 @@ class Fragment(models.Model):
         ordering = ['order']
 
 
-class Reply(models.Model, AssingMixin, DestinationMixin):
+class Reply(models.Model, AssignMixin, DestinationMixin):
+    # TODO Together: Qué implicación tiene esto? Cómo se determina?
     REPLY_TYPE_CHOICES = (
         ("payload", "Payload"),
         ("quick_reply", "Respuesta rápida"),
@@ -216,7 +222,7 @@ class MessageLink(models.Model, DestinationMixin):
         verbose_name = "Message Link"
 
 
-class Destination(models.Model, AssingMixin):
+class Destination(models.Model, AssignMixin):
     DESTINATION_TYPES = (
         ('url', 'URL'),
         ('behavior', 'Función Behavior'),
@@ -319,7 +325,8 @@ class PlatformTemplate(models.Model):
 
     raw_template = models.JSONField(default=dict)
     piece = models.OneToOneField(
-        Piece, on_delete=models.CASCADE, blank=True, null=True, related_name='template')
+        Piece, on_delete=models.CASCADE, blank=True, null=True,
+        related_name='template')
 
     parameters: models.QuerySet["TemplateParameter"]
 

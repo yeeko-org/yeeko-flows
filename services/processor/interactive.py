@@ -89,7 +89,6 @@ class ReplyProcessor(DestinationProcessorMixin):
             default_extra, self.reply.title, self.interaction_origin)
 
 
-
 class InteractiveProcessor(ReplyProcessor, ContextMixing):
     message: InteractiveMessage
 

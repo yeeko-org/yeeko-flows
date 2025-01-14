@@ -1,4 +1,4 @@
-from .replay import ReplyAdmin  # noqa
+from .reply import ReplyAdmin  # noqa
 from .fragment import FragmentAdmin  # noqa
 from .piece import PieceAdmin  # noqa
 from .written import WrittenAdmin  # noqa

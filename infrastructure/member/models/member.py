@@ -6,10 +6,10 @@ from infrastructure.users.models import User
 from .extra_manager import ExtraManager
 
 if TYPE_CHECKING:
-    from infrastructure.talk.models import ExtraValue
+    from infrastructure.talk.models import ExtraValue, Session
 
 
-class Member(ExtraManager, models.Model):
+class Member(models.Model, ExtraManager):
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="members")
@@ -22,6 +22,7 @@ class Member(ExtraManager, models.Model):
     role_id: int
     pk: int
     extra_values: models.QuerySet["ExtraValue"]
+    sessions: models.QuerySet["Session"]
 
     def __str__(self):
         return f"{self.user} ({self.space})"

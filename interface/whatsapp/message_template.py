@@ -5,7 +5,7 @@ from infrastructure.service.models import ApiRecord
 from infrastructure.talk.models import BuiltReply
 from services.message_templates.template_out import MessageTemplateOutAbstract
 from services.response.models import Button, Header, ReplyMessage
-from utilities.standar_phone import standar_mx_phone
+from utilities.standard_phone import standard_mx_phone
 
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v19.0')
 
@@ -55,7 +55,7 @@ class MessageTemplate(MessageTemplateOutAbstract):
             if parameter.component_type.lower() == type_component.lower():
 
                 if parameter.extra:
-                    value = self.markeds_values.get(
+                    value = self.marked_values.get(
                         parameter.extra.name) or parameter.default_value
                 else:
                     value = parameter.default_value
@@ -185,7 +185,7 @@ class MessageTemplate(MessageTemplateOutAbstract):
             self.phone_to = self.member_account.uid
         elif phone_to:
             try:
-                self.phone_to = standar_mx_phone(phone_to)
+                self.phone_to = standard_mx_phone(phone_to)
             except Exception as e:
                 raise ValueError(f"Phone {phone_to} error: {e}")
         else:
