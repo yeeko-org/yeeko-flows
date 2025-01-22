@@ -1,9 +1,9 @@
+from abc import abstractmethod
 import json
 import traceback
 
-from abc import ABC, abstractmethod
-from pydantic import BaseModel
-from typing import Callable, List, Optional, Union
+
+from typing import List, Optional, Union
 
 from infrastructure.box.models import PlatformTemplate, Written
 from infrastructure.member.models import MemberAccount
@@ -13,29 +13,12 @@ from infrastructure.talk.models import BuiltReply, Interaction, Trigger
 from infrastructure.tool.models import Behavior
 from infrastructure.xtra.models import Extra
 from services.notification.member_manager import NotificationManager
-from services.response.models import MediaMessage, Message, SectionsMessage, ReplyMessage
-from utilities.parameters import replace_parameter
 
 
-def exception_handler(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs):
-        try:
-            return func(self, *args, **kwargs)
-        except Exception as e:
-            self.add_error({"method": func.__name__, }, e=e)
-
-    return wrapper
+from yeeko_abc_message_models import response as y_response
 
 
-def _rep_text(text: str, sender: MemberAccount, default: str = "") -> str:
-    return replace_parameter(
-        sender.member.get_extra_values_data(),
-        text,
-        default=default
-    )
-
-
-class ResponseAbc(ABC, BaseModel):
+class ResponseAbc(y_response.ResponseAbc):
     sender: MemberAccount
     api_record_in: ApiRecord | None = None
     message_list: List[dict] = []
@@ -44,112 +27,54 @@ class ResponseAbc(ABC, BaseModel):
 
     errors: List[dict] = []
 
-    class Config:
-        arbitrary_types_allowed = True
+    def __init__(
+            self, sender: MemberAccount,
+            api_record_in: ApiRecord | None = None,
+            trigger: Trigger | None = None, platform_name: str = "unknown",
+            debug: bool = False
+    ) -> None:
+        if not sender.uid:
+            raise ValueError("Sender must have a uid")
 
-    @exception_handler
-    def message_text(self, message: str, fragment_id: Optional[int] = None):
-        message = _rep_text(message, self.sender)
-        message_data = self.text_to_data(message, fragment_id=fragment_id)
+        if not sender.account.token:
+            raise ValueError("Account must have a token")
+        self.sender = sender
+        self.api_record_in = api_record_in
+        self.trigger = trigger
+        self.platform_name = platform_name
+        super().__init__(
+            sender_uid=sender.uid, account_pid=sender.account.pid,
+            account_token=sender.account.token, debug=debug)
+    
+    def _get_parameters(self) -> dict:
+        return self.sender.member.get_extra_values_data()
 
-        message_data["_standard_message"] = json.loads(
-            Message(body=message).model_dump_json())
-        self.message_list.append(message_data)
+    def _send_message(self, message: dict):
+        uuid_list = message.pop("uuid_list", [])
+        fragment_id = message.get("_fragment_id", None)
+        standard_message = message.get("_standard_message", None)
+        print(type(standard_message))
+        try:
+            api_record_out = self.send_message(message)
+        except Exception as e:
 
-    # @exception_handler
-    def message_multimedia(
-        self, media_type: str, url_media: str = "", media_id: str = "", caption: str = "",
-        fragment_id: Optional[int] = None
-    ):
-        caption = _rep_text(caption, self.sender)
-        message_data = self.multimedia_to_data(
-            url_media, media_id, media_type, caption, fragment_id=fragment_id)
-        message_data["_standard_message"] = json.loads(MediaMessage(
-            caption=caption, id=media_id, link=url_media).model_dump_json())
-        self.message_list.append(message_data)
-
-    @exception_handler
-    def message_few_buttons(self, message: ReplyMessage):
-        message.replace_text(self.sender.member.get_extra_values_data())
-
-        message_data = self.few_buttons_to_data(message)
-        message_data["_standard_message"] = json.loads(
-            message.model_dump_json())
-        self.message_list.append(message_data)
-
-    @exception_handler
-    def message_many_buttons(self, message: ReplyMessage):
-        message.replace_text(self.sender.member.get_extra_values_data())
-
-        message_data = self.many_buttons_to_data(message)
-        message_data["_standard_message"] = json.loads(
-            message.model_dump_json())
-        self.message_list.append(message_data)
-
-    @exception_handler
-    def message_sections(self, message: SectionsMessage):
-        message.replace_text(self.sender.member.get_extra_values_data())
-
-        message_data = self.sections_to_data(message)
-        message_data["_standard_message"] = json.loads(
-            message.model_dump_json())
-        self.message_list.append(message_data)
-
-    def send_messages(self):
-        for message in self.message_list:
-            uuid_list = message.pop("uuid_list", [])
-            fragment_id = message.get("_fragment_id", None)
-            standard_message = message.get("_standard_message", None)
-            print(type(standard_message))
-            try:
-                api_record_out = self.send_message(message)
-            except Exception as e:
-
-                self.add_error(
-                    {"method": "send_message",  "message": message}, e=e
-                )
-                continue
-            try:
-                self.save_interaction(
-                    api_record_out, message, uuid_list, fragment_id, standard_message)
-            except Exception as e:
-                self.add_error(
-                    {"method": "save_interaction"}, e=e
-                )
-
-    @abstractmethod
-    def text_to_data(
-        self, message: str, fragment_id: Optional[int] = None
-    ) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def multimedia_to_data(
-        self, url_media: str, media_id: str, media_type: str, caption: str,
-        fragment_id: Optional[int] = None
-    ) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def few_buttons_to_data(self, message: ReplyMessage) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def many_buttons_to_data(self, message: ReplyMessage) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def sections_to_data(self, message: SectionsMessage) -> dict:
-        raise NotImplementedError
+            self.add_error(
+                {"method": "send_message",  "message": message}, e=e
+            )
+            return
+        try:
+            self.save_interaction(
+                api_record_out, message, uuid_list, fragment_id, standard_message)
+        except Exception as e:
+            self.add_error(
+                {"method": "save_interaction"}, e=e
+            )
 
     @abstractmethod
     def send_message(
         self, message_data: dict
     ) -> ApiRecord:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_mid(self, body: Optional[dict]) -> Optional[str]:
+        # send the message to the platform
         raise NotImplementedError
 
     def save_interaction(
@@ -258,7 +183,7 @@ class ResponseAbc(ABC, BaseModel):
             list_by=None
     ):
         extra_value = self.sender.member.add_extra_value(
-            extra,  value, interaction, origin, list_by
+            extra,  value, interaction, origin=origin, list_by=list_by
         )
 
         if not extra_value:
