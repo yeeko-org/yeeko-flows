@@ -34,9 +34,9 @@ class ExtraManager:
             .select_related("extra")
 
         without_controller = list(
-            extra_values_query.filter(controller__isnull=True))
+            extra_values_query.filter(controller_value__isnull=True))
         with_controller = list(
-            extra_values_query.filter(controller__active=True))
+            extra_values_query.filter(controller_value__active=True))
 
         for extra_value in without_controller + with_controller:
             name = extra_value.extra.name
