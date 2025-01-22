@@ -4,7 +4,7 @@ from services.request.message_model import MediaMessage
 from yeeko_abc_message_models.whatsapp_message import request as w_request
 
 
-class WhastAppRequest(RequestAbc, w_request.WhatsAppRequest):
+class WhatsAppRequest(RequestAbc, w_request.WhatsAppRequest):
     def __init__(self, raw_data: dict, debug=False) -> None:
         super().__init__(raw_data, debug=debug, platform_name="whatsapp")
 
