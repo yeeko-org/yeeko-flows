@@ -39,7 +39,7 @@ class WhatsAppSendMessageTemplate(ViewSet):
             piece=piece,
             template=template,
         )
-        message_template.markeds_values = data.get("markeds_values", {})
+        message_template.marked_values = data.get("marked_values", {})
         mid = message_template.send_message(data.get("phone_to"))
 
         if not message_template.api_record:

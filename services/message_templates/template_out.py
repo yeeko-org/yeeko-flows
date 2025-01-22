@@ -12,7 +12,7 @@ from infrastructure.service.models import ApiRecord, InteractionType
 from infrastructure.talk.models import BuiltReply, Interaction, Trigger
 from services.response.models import ReplyMessage
 from services.user_manager import MemberAccountManager
-from utilities.standar_phone import standar_mx_phone
+from utilities.standard_phone import standard_mx_phone
 
 
 class MessageTemplateOutAbstract(ABC):
@@ -25,7 +25,7 @@ class MessageTemplateOutAbstract(ABC):
     member_account: MemberAccount | None = None
     phone_to: str | None = None
 
-    markeds_values: dict = {}
+    marked_values: dict = {}
     reply_uuids: list = []
     api_record: ApiRecord | None = None
 
@@ -90,7 +90,7 @@ class MessageTemplateOutAbstract(ABC):
         if not self.phone_to:
             raise ValueError("Phone to is required")
         try:
-            self.phone_to = standar_mx_phone(self.phone_to)
+            self.phone_to = standard_mx_phone(self.phone_to)
         except Exception as e:
             raise ValueError(f"Phone {self.phone_to} error: {e}")
 
@@ -110,7 +110,7 @@ class MessageTemplateOutAbstract(ABC):
             wey="out"
         )
 
-        self.message_display.replace_text(self.markeds_values)
+        self.message_display.replace_text(self.marked_values)
 
         message_display = json.loads(self.message_display.model_dump_json())
 

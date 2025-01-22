@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Destinos',
                 'ordering': ['order'],
             },
-            bases=(models.Model, infrastructure.box.models.AssingMixin),
+            bases=(models.Model, infrastructure.box.models.AssignMixin),
         ),
         migrations.CreateModel(
             name='Fragment',
@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Opción escrita',
                 'verbose_name_plural': 'Opciones escritas',
             },
-            bases=(models.Model, infrastructure.box.models.AssingMixin, infrastructure.box.models.DestinationMixin),
+            bases=(models.Model, infrastructure.box.models.AssignMixin, infrastructure.box.models.DestinationMixin),
         ),
         migrations.CreateModel(
             name='Reply',
@@ -94,7 +94,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Respuestas (Botones)',
                 'ordering': ['order'],
             },
-            bases=(models.Model, infrastructure.box.models.AssingMixin, infrastructure.box.models.DestinationMixin),
+            bases=(models.Model, infrastructure.box.models.AssignMixin, infrastructure.box.models.DestinationMixin),
         ),
         migrations.CreateModel(
             name='Piece',
@@ -117,7 +117,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Piezas (Mensajes)',
                 'ordering': ['order_in_crate'],
             },
-            bases=(models.Model, infrastructure.box.models.AssingMixin, infrastructure.box.models.DestinationMixin),
+            bases=(models.Model, infrastructure.box.models.AssignMixin, infrastructure.box.models.DestinationMixin),
         ),
         migrations.CreateModel(
             name='MessageLink',

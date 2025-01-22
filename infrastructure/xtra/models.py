@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import JSONField
 
-from infrastructure.place.models import default_params, Space
+from infrastructure.place.models import Space
 from infrastructure.flow.models import Flow
 
 
@@ -16,7 +16,8 @@ class ClassifyExtra(models.Model):
     icon = models.CharField(max_length=20, default="bookmark")
     pixel_excel = models.IntegerField(default=120)
     settings = JSONField(
-        default=dict, verbose_name="Configuración adicional", blank=True, null=True
+        default=dict, blank=True, null=True,
+        verbose_name="Configuración adicional",
     )
 
     def __str__(self):
@@ -33,8 +34,7 @@ class Format(models.Model):
     public_name = models.CharField(max_length=80, blank=True, null=True)
     javascript_name = models.CharField(max_length=50, blank=True, null=True)
     python_name = models.CharField(max_length=50, blank=True, null=True)
-    params = JSONField(
-        blank=True, null=True, default=default_params)
+    params = JSONField(blank=True, null=True, default=dict)
 
     def __str__(self):
         return self.name
@@ -54,10 +54,13 @@ class Extra(models.Model):
         Format, on_delete=models.CASCADE, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     params = JSONField(
-        blank=True, null=True, default=default_params)
+        blank=True, null=True, default=dict)
+    has_session = models.BooleanField(default=False)
+    controller = models.ForeignKey(
+        'Extra', on_delete=models.CASCADE, blank=True, null=True)
     deleted = models.BooleanField(default=False)
 
-    format_id: str
+    format_id: str | None
 
     def __str__(self):
         return (f"{self.name} ({self.classify.name})")

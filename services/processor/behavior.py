@@ -1,6 +1,8 @@
 
+from typing import Optional
 from infrastructure.assign.models import ApplyBehavior
 
+from infrastructure.talk.models import Interaction
 from services.response import ResponseAbc
 
 from django.db.models import Q
@@ -15,7 +17,9 @@ class BehaviorProcessor:
     parameters: dict
 
     def __init__(
-            self, behavior: str, response: ResponseAbc, parameters: dict = {}
+            self, behavior: str, response: ResponseAbc,
+            parameters: dict | None = None, context_direct: bool = False,
+            interaction_in: Optional[Interaction] = None,
     ) -> None:
         self.behavior = behavior
         self.response = response
@@ -36,7 +40,9 @@ class BehaviorProcessor:
         self.parameters = update_parameters(
             self.apply_behavior.values, parameters)  # type: ignore
 
-        self.response.set_trigger(apply_behavior.behavior)
+        self.response.set_trigger(
+            apply_behavior.behavior, context_direct,
+            interaction_in=interaction_in)
 
     def process(self):
         from services.processor.piece import PieceProcessor

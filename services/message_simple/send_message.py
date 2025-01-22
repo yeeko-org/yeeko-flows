@@ -6,7 +6,7 @@ from infrastructure.member.models import MemberAccount
 from infrastructure.place.models import Account
 from services.response.abstract import ResponseAbc
 from services.response.models import Message
-from utilities.standar_phone import standar_mx_phone
+from utilities.standard_phone import standard_mx_phone
 
 
 class SendOpenSessionMessageAbstract(ABC, BaseModel):
@@ -17,7 +17,7 @@ class SendOpenSessionMessageAbstract(ABC, BaseModel):
     file_type: str | None = None
 
     def get_member_account(self) -> MemberAccount | None:
-        self.phone_to = standar_mx_phone(self.phone_to)
+        self.phone_to = standard_mx_phone(self.phone_to)
         try:
             return MemberAccount.objects.get(
                 account=self.account, uid=self.phone_to)

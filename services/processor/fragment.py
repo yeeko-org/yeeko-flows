@@ -3,7 +3,7 @@ from infrastructure.box.models import Fragment, Reply
 from infrastructure.talk.models import BuiltReply
 from services.response.abstract import ResponseAbc
 from services.response.models import Button, Header, ReplyMessage, SectionHeader
-from utilities.parameters import replace_parameter, update_parameters
+from utilities.parameters import update_parameters
 
 
 def fragment_reply(
@@ -29,12 +29,12 @@ def fragment_reply(
 class FragmentProcessor:
     fragment: Fragment
     response: ResponseAbc
-    parameters: dict
+    parameters: dict | None
     reply_message: List[Reply]
 
     def __init__(
             self, fragment: Fragment, response: ResponseAbc,
-            parameters: dict = {}
+            parameters: dict = None
     ) -> None:
         self.response = response
         self.fragment = fragment

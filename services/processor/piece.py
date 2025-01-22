@@ -1,5 +1,5 @@
 from infrastructure.box.models import Fragment, Piece
-from services.processor.behavior import BehaviorProcessor
+from services.notification.member_manager import NotificationManager
 from services.processor.destination_rules import destination_find
 from services.processor.fragment import FragmentProcessor
 from services.processor.base_mixin import DestinationProcessorMixin
@@ -13,8 +13,10 @@ class PieceProcessor(DestinationProcessorMixin):
 
     def __init__(
             self, piece: Piece, response: ResponseAbc,
-            parameters: dict = {}
+            parameters: dict = None
     ) -> None:
+        if parameters is None:
+            self.parameters = {}
         self.piece = piece
         self.response = response
         self.parameters = parameters
@@ -47,6 +49,6 @@ class PieceProcessor(DestinationProcessorMixin):
         fragment_processor.process()
 
     def add_insistent_notification(self):
-        self.response.notification_manager.add_notification(
+        NotificationManager.add_notification(
             "insistent", self.response.sender, piece=self.piece.pk
         )

@@ -83,13 +83,6 @@ class MemberAccount(models.Model):
             self.member_is_staff = self.member.user.is_staff
         return self.member_is_staff
 
-    def __str__(self):
-        return f"{self.member} - {self.account}"
-
-    class Meta:
-        verbose_name_plural = "Configuraciones de Member"
-        verbose_name = "Configuración de Member"
-
     def check_session_validation(self):
         from infrastructure.talk.models import Interaction
 
@@ -101,6 +94,19 @@ class MemberAccount(models.Model):
             return last_interaction.created > timezone.now() - timedelta(days=1)
 
         return False
+
+    def degrade_interest_degreee(self, degradation, save=True):
+        degradation = degradation / 100
+        self.interest_degree -= int(degradation * self.interest_degree)
+        if save:
+            self.save()
+
+    def __str__(self):
+        return f"{self.member} - {self.account}"
+
+    class Meta:
+        verbose_name_plural = "Configuraciones de Member"
+        verbose_name = "Configuración de Member"
 
 
 class Chrono(models.Model):

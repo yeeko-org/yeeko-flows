@@ -40,7 +40,7 @@ class WhatsAppRequest(RequestAbc):
 
     def __init__(self, raw_data: dict) -> None:
         super().__init__(raw_data, platform_name="whatsapp")
-        self._contacs_data = {}
+        self._contacts_data = {}
 
     def _get_input_account(self, change: dict) -> Optional[InputAccount]:
         value = change.get("value", {})
@@ -80,7 +80,7 @@ class WhatsAppRequest(RequestAbc):
             sender_id = contact.get("wa_id")
             profile["phone"] = contact.get("wa_id")
             profile["user_field_filter"] = "phone"
-            self._contacs_data.setdefault(
+            self._contacts_data.setdefault(
                 sender_id, {
                     "sender_id": sender_id,
                     "contact": profile
@@ -94,7 +94,7 @@ class WhatsAppRequest(RequestAbc):
         messages = value.get("messages", [])
         for message in messages:
             sender_id = message.get("from")
-            member_data = self._contacs_data.get(sender_id, {})
+            member_data = self._contacts_data.get(sender_id, {})
 
             try:
                 input_sender = input_account\
@@ -126,7 +126,7 @@ class WhatsAppRequest(RequestAbc):
         for status_data in statuses:
             sender_id = status_data.get("recipient_id")
             status_data["type"] = "state"
-            member_data = self._contacs_data.get(sender_id, {})
+            member_data = self._contacts_data.get(sender_id, {})
             data_error = {"status_data": status_data}
 
             try:
