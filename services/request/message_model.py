@@ -69,7 +69,11 @@ class EventMessage(message_model.EventMessage):
     @property
     def interaction(self):
         if not hasattr(self, "_interaction"):
-            self._interaction = Interaction.objects.get(mid=self.message_id)
+            try:
+                self._interaction = Interaction.objects\
+                    .get(mid=self.message_id)
+            except Interaction.DoesNotExist:
+                self._interaction = None
         return self._interaction
 
 

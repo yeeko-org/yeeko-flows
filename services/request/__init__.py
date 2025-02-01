@@ -54,9 +54,9 @@ class InputAccount(y_request.InputAccount):
         api_record: Optional[ApiRecord] = None
     ) -> None:
         self.account = account
-        self.api_record = api_record or self._create_api_record()
 
         super().__init__(raw_data, account.pid)
+        self.api_record = api_record or self._create_api_record()
 
     def _create_api_record(self) -> ApiRecord:
         return ApiRecord.objects.create(
@@ -95,8 +95,9 @@ class RequestAbc(y_request.RequestAbc):
         self.platform_name = platform_name
         self._contacts_data = {}
         self._use_global_api_record = False
-
+        self.raw_data = raw_data
         self.record_request()
+
         super().__init__(raw_data, debug=debug)
 
         self._record_metadata()
@@ -142,16 +143,23 @@ class RequestAbc(y_request.RequestAbc):
         # for a implentated class y_request.RequestAbc
         message = super().data_to_class(data)  # type: ignore
 
+        print("message_type -------------- ", type(message))
+
         # this return de Custom models with more methods
         if isinstance(message, y_request.TextMessage):
-            return TextMessage(**message.dict())
+            return TextMessage(**message.model_dump())
         elif isinstance(message, y_request.InteractiveMessage):
-            interactive = InteractiveMessage(**message.dict())
+            interactive = InteractiveMessage(**message.model_dump())
             interactive.get_built_reply()
             return interactive
-        elif isinstance(message, y_request.EventMessage):
-            return EventMessage(**message.dict())
+        elif isinstance(message, (y_request.EventMessage, EventMessage)):
+            return EventMessage(**message.model_dump())
         elif isinstance(message, y_request.MediaMessage):
-            return MediaMessage(**message.dict())
+            return MediaMessage(**message.model_dump())
 
         raise ValueError("Message not found")
+
+    def add_error(self, data: dict, e: Exception):
+        if not self.api_record:
+            return super().add_error(data, e)
+        self.api_record.add_error(data, e)

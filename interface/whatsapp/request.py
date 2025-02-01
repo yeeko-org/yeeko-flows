@@ -1,5 +1,5 @@
 from services.request import RequestAbc
-from services.request.message_model import MediaMessage
+from services.request.message_model import EventMessage, MediaMessage
 
 from yeeko_abc_message_models.whatsapp_message import request as w_request
 
@@ -21,3 +21,7 @@ class WhatsAppRequest(RequestAbc, w_request.WhatsAppRequest):
                         message.origin_content = w_request.get_file_content(
                             message.media_id, token
                         )
+
+    def _create_state_notification(self, status_data: dict) -> EventMessage:
+        message = super()._create_state_notification(status_data)
+        return EventMessage(**message.model_dump())
