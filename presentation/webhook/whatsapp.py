@@ -1,10 +1,11 @@
 import json
+from pprint import pprint
 from django.conf import settings
 from django.http import HttpResponse
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
-from interface.whatsapp.request import WhatsAppRequest
+from interface.whatsapp.request import RecordWhatsAppRequest, WhatsAppRequest
 from interface.whatsapp.response import WhatsAppResponse
 
 from services.manager_flow import ManagerFlow
@@ -40,14 +41,20 @@ class WhatsappMessageView(generic.View):
     def post(self, request, *args, **kwargs):
         try:
             incoming_message = json.loads(self.request.body)
+            print("incoming_message -------------------------------------")
+            pprint(incoming_message)
+
+            wa_request = WhatsAppRequest(incoming_message)
+            request_record = RecordWhatsAppRequest(wa_request)
+
             manage = ManagerFlow(
-                incoming_message,
-                request_class=WhatsAppRequest,
+                request_record=request_record,
                 response_class=WhatsAppResponse
             )
             manage()
 
         except Exception as e:
-            raise e
+            pass
+            # raise e
 
         return HttpResponse()
