@@ -4,16 +4,16 @@ from infrastructure.service.models import ApiRecord
 from services.response import ResponseAbc
 import requests
 
-from yeeko_abc_message_models.whatsapp_message import response
+from yeeko_abc_message_models.messenger import response
 
 
-class WhatsAppResponse(ResponseAbc, response.WhatsAppResponse):
+class MessengerResponse(ResponseAbc, response.MessengerResponse):
 
     def _base_data(
-            self, type_str: str, body: Optional[dict] = None,
+            self, recipient_id: str, message_body: dict,
             fragment_id: Optional[int] = None, **kwargs
     ) -> dict:
-        data = super()._base_data(type_str, body)
+        data = super()._base_data(recipient_id, message_body)
         data["_fragment_id"] = fragment_id
         return data
 
@@ -21,12 +21,11 @@ class WhatsAppResponse(ResponseAbc, response.WhatsAppResponse):
         self, message_data: dict
     ) -> ApiRecord:
 
-        url = f"{self.base_url}/{self.sender.account.pid}/messages"
+        url = f"{self.base_url}/me/messages"
         headers = {
-            "Authorization": f"Bearer {self.sender.account.token}",
+            "Authorization": f"Bearer {self.account_token}",
             "Content-Type": "application/json",
         }
-
         response = requests.post(url, headers=headers, json=message_data)
         try:
             response_body = response.json()

@@ -143,6 +143,7 @@ class TextMessageProcessor(TextProcessor):
             text=message.text, response=response,
             context_id=message.context_id, interaction_in=message.interaction
         )
+        self.message = message
 
     def process(self):
         super().process(call_default_text=False)

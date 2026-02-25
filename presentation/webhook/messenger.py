@@ -4,18 +4,19 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
+from yeeko_abc_message_models.messenger.request import MessengerRequest
 
-from interface.whatsapp.request import RecordWhatsAppRequest, WhatsAppRequest
-from interface.whatsapp.response import WhatsAppResponse
 
+from interface.messenger.request import RecordMessengerRequest
+from interface.messenger.response import MessengerResponse
 from services.manager_flow import ManagerFlow
 
 
-class WhatsappMessageView(generic.View):
+class MessengerWebhookView(generic.View):
 
     def get(self, request, *args, **kwargs):
         webhook_token_whatsapp = getattr(
-            settings, "WEBHOOK_TOKEN_WHATSAPP", None
+            settings, "WEBHOOK_TOKEN_MESSENGER", None
         )
 
         data: dict = request.GET or {}
@@ -44,17 +45,16 @@ class WhatsappMessageView(generic.View):
             print("incoming_message -------------------------------------")
             pprint(incoming_message)
 
-            wa_request = WhatsAppRequest(incoming_message)
-            request_record = RecordWhatsAppRequest(wa_request)
+            request = MessengerRequest(incoming_message)
+            request_record = RecordMessengerRequest(request)
 
             manage = ManagerFlow(
                 request_record=request_record,
-                response_class=WhatsAppResponse
+                response_class=MessengerResponse
             )
             manage()
 
         except Exception as e:
-            pass
-            # raise e
+            print(e)
 
         return HttpResponse()

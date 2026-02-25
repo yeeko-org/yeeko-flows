@@ -1,25 +1,135 @@
+# Yeeko Chat Flow  
+  
+Yeeko Chat Flow es un motor de flujos conversacionales **multicanal** basado en **Django**, diseñado para configurar y ejecutar flujos de mensajería de forma **declarativa** en plataformas como **WhatsApp** y **Messenger** (y extensible a otras como Telegram).  
+  
+El sistema se apoya en una **arquitectura de capas** y en **modelos genéricos** altamente tipados para mensajes de entrada y salida, de modo que el equipo pueda concentrarse en la lógica conversacional y el “qué” del flujo, mientras los intérpretes por plataforma resuelven el “cómo” (transformación a/desde JSON).  
+  
+**Idea clave (homologación):**  
+  
+- `json -> RequestModel (genérico)`  
+- `ResponseModel (genérico) -> json`  
+  
+Incluye soporte para procesamiento de mensajes **texto**, **interactivos**, **multimedia** y **eventos de estado**, además de trazabilidad y notificaciones.  
+  
+---  
+  
+## Documentación  
+  
+| Documento | Descripción |  
+|---|---|  
+| [arquitectura.md](arquitectura.md) | Arquitectura de capas del sistema (Presentación, Interfaz, Servicios, Infraestructura) |  
+| [modelos.md](modelos.md) | Modelos de base de datos: Place, Flow, Box, Talk, Assign, Xtra, Notification |  
+| [procesadores.md](procesadores.md) | Pipeline de procesamiento de mensajes y lógica de procesadores |  
+| [ExtraValues y sessions.md](ExtraValues%20y%20sessions.md) | Sistema de variables extra y sesiones por usuario |  
+| [notificaciones.md](notificaciones.md) | Configuración de notificaciones y su modelo |  
+| [notification _flow.md](notification%20_flow.md) | Flujo de ejecución y cálculo de tiempos de las notificaciones |  
+| [Trigger.md](Trigger.md) | Registro de origen de interacciones y lógica de trazabilidad |  
+| [interface.md](interface.md) | Capa de interfaz: implementaciones para WhatsApp y Messenger |  
+| [instalacion.md](instalacion.md) | Instalación, configuración y puesta en marcha del sistema |  
+| [TESTS.md](TESTS.md) | Suite de pruebas automatizadas: estructura y guía de ejecución |  
+| [compatibilidad.md](compatibilidad.md) | Notas de compatibilidad entre plataformas y casos especiales |  
+  
+---  
+  
+## Flujo principal (visión general)  
+  
+El flujo general se divide en 4 etapas, orquestadas por **ManagerFlow** (no es una etapa por sí misma, sino el coordinador donde se gestionan estados, datos y persistencia):  
+  
+1. **Webhook**  
+- Punto más externo (acceso público) por donde llegan los mensajes.  
+- Enruta el payload hacia el manejador del flujo.  
+  
+2. **Request**  
+- Convierte diccionarios/JSON en **clases instanciadas** (modelo genérico homologado).  
+- Verifica existencia/creación de usuarios.  
+- Registra el histórico de entrada.  
+  
+3. **Process**  
+- Procesa el mensaje en **procesadores especializados** por tipo/situación:  
+- texto  
+- botones / interactivos  
+- reglas de visualización y destinos  
+- multimedia  
+- estados/eventos  
+  
+4. **Response**  
+- Recibe mensajes resultantes como **modelos genéricos** y los transforma a diccionarios por plataforma.  
+- Calcula primero todos los mensajes y luego hace el envío en la etapa final.  
+- Registra la interacción de salida y sus disparadores.  
+  
+> Nota: el diagrama del “main flow” debe vivir en `docs/` o en la wiki del proyecto (referencia en la documentación).  
+  
+---  
+  
+## Inicio rápido  
+  
 
-# Yeeko chat Flow
+		# 1. Clonar el repositorio  
+		git clone <repo-url>  
+		cd yeeko-chat-flow  
+		  
+		# 2. Crear entorno virtual y activarlo  
+		python -m venv venv  
+		venv\Scripts\activate # Windows  
+		source venv/bin/activate # Linux/Mac  
+		  
+		# 3. Instalar dependencias  
+		pip install -r requirements.txt  
+		  
+		# 4. Configurar variables de entorno (ver instalacion.md)  
+		cp .env.example .env  
+		  
+		# 5. Aplicar migraciones  
+		python manage.py migrate  
+		  
+		# 6. Levantar servidor de desarrollo  
+		python manage.py runserver
 
-Yeeko Chat Flow es un sistema para enviar mensajes a través de plataformas de mensajería instantánea como WhatsApp, Messenger o Telegram, altamente flexible para adaptarse a múltiples necesidades mientras se mantiene una misma estructura para los flujos conversacionales. Con una estructura basada en una [arquitectura de capas](https://github.com/yeeko-org/yeeko-flows/wiki/Arquitectura-de-Capas) y altamente tipada.
+Consulta instalacion.md para la configuración completa del webhook de Meta y la integración con WhatsApp.
 
-Una de las claves principales del sistema son sus **modelos genericos** de mensajes de entrada y salida, lo que permite centrarse en el flujo y procesamiento conversacional, mientas los interpretes especializados en cada plataforma los transforman
+----------
 
-    json -> request_model_class
-    response_model_class -> json
 
-## Flow
+Consulta `instalacion.md` para la configuración completa del webhook de Meta y la integración con WhatsApp.
 
-El flujo general se puede dividir en 4 etapas:
+----------
 
-**ManagerFlow:** No es una etapa en sí, sino el orquestador donde se gestionan y almacenan los datos.
+## Estructura del proyecto
 
-1. **Webhook:** Punto mas externo, el acceso público donde llegarán los mensajes que serán enviados al manejador de flujos.
+	yeeko-chat-flow/
+	├── infrastructure/     # Modelos Django (persistencia)
+	│   ├── assign/         # Comportamientos y reglas de asignación
+	│   ├── box/            # Piezas, fragmentos, respuestas y destinos
+	│   ├── flow/           # Flujos conversacionales y contenedores
+	│   ├── member/         # Usuarios, miembros y cuentas
+	│   ├── notification/   # Modelo de notificaciones
+	│   ├── place/          # Spaces y cuentas (Account)
+	│   ├── service/        # Registros de API y plataformas
+	│   ├── talk/           # Interacciones, triggers y eventos
+	│   ├── tool/           # Herramientas y configuraciones auxiliares
+	│   ├── users/          # Usuarios del sistema
+	│   └── xtra/           # Extras y ExtraValues
+	├── services/           # Lógica de negocio y procesadores
+	│   ├── manager_flow/   # Orquestador principal del flujo
+	│   ├── processor/      # Procesadores por tipo de mensaje
+	│   ├── request/        # Parseo y homologación de entradas
+	│   ├── response/       # Acumulación y envío de respuestas
+	│   ├── behavior/       # Comportamientos especiales (start, reset, insistent)
+	│   └── notification/   # Servicio de notificaciones
+	├── interface/          # Implementaciones por plataforma
+	│   ├── whatsapp/       # Request, Response y utilidades WhatsApp
+	│   └── messenger/      # Request y Response Messenger
+	├── presentation/       # Webhooks, APIs y Django Admin
+	│   ├── webhook/        # Endpoints de entrada de mensajes
+	│   ├── api/            # APIs REST
+	│   └── admin/          # Configuración del administrador
+	├── utilities/          # Utilidades generales del sistema
+	└── test/               # Suite de pruebas automatizadas
 
-2. **Request:** Se encarga de reorganizar los diccionarios en clases instanciadas, con la intención de tener una estructura homologada, donde, sin importar el origen de los datos, siempre se mantenga la misma estructura solicitante. También se encarga de verificar la existencia de usuarios o la creación de nuevos usuarios, y realiza el registro histórico de entrada.
+----------
 
-3. **Process:** Esta etapa se encarga de procesar los mensajes entrantes en procesadores especializados para cada situación, desde los más simples, como los procesadores de texto, hasta los más complejos, como los botones que refieren a destinos con reglas de visualización.
+## Ejecutar pruebas
 
-4. **Response:** Se encarga de recibir los mensajes resultantes de los procesadores en forma de modelos generales y convertirlos en diccionarios especializados para las distintas plataformas. La estructura está pensada para calcular primero todos los mensajes y, en la etapa final del flujo, enviar todos los diccionarios a las plataformas. En esta última etapa se registra también la interacción de salida y sus disparadores.
+	python manage.py test test
 
-![main flow](https://github.com/user-attachments/assets/18861e7d-699f-4930-9e19-ed4ec86b73c1)
+Ver `TESTS.md` para más detalles.

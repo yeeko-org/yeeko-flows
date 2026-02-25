@@ -1,33 +1,16 @@
 
 import json
-import time
 
 from django.core.files.base import ContentFile
-from pydantic import BaseModel, field_serializer
+from pydantic import field_serializer
 from typing import Any, Optional
 
 from infrastructure.talk.models import BuiltReply, Interaction
 
-
-class MessageBase(BaseModel):
-    message_id: str
-    timestamp: int
-    context_id: Optional[str] = None
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def valid_time_interval(self, is_status=False, raise_exception=True):
-        max_time = 60000 if is_status else 30000
-        timestamp_server = int(time.time())
-        long_time_interval = self.timestamp > timestamp_server + max_time
-
-        if long_time_interval and raise_exception:
-            raise Exception("YA TE PASASTE, ES MUCHO TIEMPO")
-        return long_time_interval
+from yeeko_abc_message_models.request import message_model
 
 
-class InteractionMessage(MessageBase):
+class InteractionMessage(message_model.MessageBase):
     interaction: Optional[Interaction] = None
 
     def model_dump(self, *args, **kwargs) -> dict[str, Any]:
@@ -54,16 +37,13 @@ class InteractionMessage(MessageBase):
         return interaction
 
 
-class TextMessage(InteractionMessage):
-    text: str
-
+class TextMessage(message_model.TextMessage, InteractionMessage):
     def record_interaction(self, api_record, member_account):
         return super().record_interaction(api_record, member_account, self.text)
 
 
-class InteractiveMessage(InteractionMessage):
-    payload: str
-    title: Optional[str]
+class InteractiveMessage(message_model.InteractiveMessage, InteractionMessage):
+
     built_reply: Optional[BuiltReply] = None
 
     def get_built_reply(self):
@@ -76,13 +56,11 @@ class InteractiveMessage(InteractionMessage):
         return super().record_interaction(api_record, member_account, self.payload)
 
 
-class EventMessage(MessageBase):
-    status: str
-    emoji: Optional[str]
+class EventMessage(message_model.EventMessage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._interaction = Interaction.objects.get(mid=self.message_id)
+        _ = self.interaction
 
         """
         se puede generar el evento desde aqui, pero revisar si no se calcularan algunas otras acciones
@@ -91,22 +69,15 @@ class EventMessage(MessageBase):
     @property
     def interaction(self):
         if not hasattr(self, "_interaction"):
-            self._interaction = Interaction.objects.get(mid=self.message_id)
+            try:
+                self._interaction = Interaction.objects\
+                    .get(mid=self.message_id)
+            except Interaction.DoesNotExist:
+                self._interaction = None
         return self._interaction
 
 
-class MediaMessage(InteractionMessage):
-    media_type: str
-    mime_type: str
-    sha256: str
-    media_id: str
-
-    caption: str | None = None
-    filename: str | None = None
-    voice: bool | None = None
-
-    origin_content: Any
-    origin_name: str | None = None
+class MediaMessage(message_model.MediaMessage, InteractionMessage):
 
     def save_content(self):
         if not self.interaction:
@@ -132,3 +103,24 @@ class MediaMessage(InteractionMessage):
         self.save_content()
 
         return _record_interaction
+
+
+def model_to_model(
+    message: message_model.TextMessage | message_model.InteractiveMessage |
+    message_model.EventMessage | message_model.MediaMessage
+) -> TextMessage | InteractiveMessage | EventMessage | MediaMessage:
+
+    # Compatibilidad de los modelos de la libreria con los modelos de la aplicacion
+
+    if isinstance(message, message_model.TextMessage):
+        return TextMessage(**message.model_dump())
+    elif isinstance(message, message_model.InteractiveMessage):
+        interactive = InteractiveMessage(**message.model_dump())
+        interactive.get_built_reply()
+        return interactive
+    elif isinstance(message, (message_model.EventMessage, EventMessage)):
+        return EventMessage(**message.model_dump())
+    elif isinstance(message, message_model.MediaMessage):
+        return MediaMessage(**message.model_dump())
+
+    raise ValueError("Message not found")

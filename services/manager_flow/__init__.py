@@ -5,7 +5,8 @@ from services.processor.interactive import InteractiveProcessor
 from services.processor.media import MediaProcessor
 from services.processor.state import StateProcessor
 from services.processor.text import TextMessageProcessor
-from services.request import InputSender, RequestAbc
+from services.request import RequestAbc
+from services.request.record import RecordRequestAbc, InputSender
 from services.response import ResponseAbc
 
 from services.request.message_model import (
@@ -16,26 +17,24 @@ from services.request.message_model import (
 class ManagerFlow(AbstractManagerFlow):
 
     def __init__(
-            self, raw_data: dict, request_class: Type[RequestAbc],
+            self, request_record: RecordRequestAbc,
             response_class: Type[ResponseAbc]
     ) -> None:
-        self.request = request_class(raw_data)
+        self.request_record = request_record
         self._response_class = response_class
-
         self.response_list: List[ResponseAbc] = []
 
     def __call__(
             self
     ) -> None:
-        for input_account in self.request.input_accounts:
-            for input_sender in input_account.members:
-                self.process_messages(input_sender, input_account.api_record)
+        for input_sender in self.request_record.input_senders:
+            self.process_messages(input_sender)
 
         for response in self.response_list:
             response.send_messages()
 
     def process_messages(
-            self, input_sender: InputSender, api_record_in: ApiRecord
+            self, input_sender: InputSender
     ) -> None:
         """
         Se requiere implementar una funcion que limpie y determine el mensaje
@@ -46,12 +45,12 @@ class ManagerFlow(AbstractManagerFlow):
         for message in input_sender.messages:
             if type(message) in [TextMessage, InteractiveMessage, MediaMessage]:
                 message.record_interaction(  # type: ignore
-                    api_record_in, input_sender.member)
+                    input_sender.api_record, input_sender.member)
 
             response = self._response_class(
                 sender=input_sender.member,
-                api_record_in=api_record_in,
-                platform_name=self.request.platform_name
+                api_record_in=input_sender.api_record,
+                platform_name=self.request_record.platform_name
 
             )
 
@@ -64,7 +63,7 @@ class ManagerFlow(AbstractManagerFlow):
                     "method": "process_messages",
                     "message": message.model_dump(),
                 }
-                api_record_in.add_error(data_error, e=e)
+                input_sender.api_record.add_error(data_error, e=e)
 
     def process_message(
         self, message: TextMessage | InteractiveMessage | EventMessage | MediaMessage,

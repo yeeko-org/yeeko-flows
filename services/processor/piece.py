@@ -46,7 +46,10 @@ class PieceProcessor(DestinationProcessorMixin):
     def process_fragment(self, fragment: Fragment):
         fragment_processor = FragmentProcessor(
             fragment, self.response, self.parameters)
-        fragment_processor.process()
+        try:
+            fragment_processor.process()
+        except Exception as e:
+            self.response.add_error({"fragment": fragment.pk}, e)
 
     def add_insistent_notification(self):
         NotificationManager.add_notification(

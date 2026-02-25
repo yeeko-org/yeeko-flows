@@ -127,3 +127,5 @@ dmypy.json
 .vscode
 
 ngrok.exe
+.env_prod
+whatsapp_token.txt
