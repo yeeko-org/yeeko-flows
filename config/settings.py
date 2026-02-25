@@ -225,6 +225,7 @@ REST_FRAMEWORK = {
 
 # -----------------------------------Meta-------------------------------------
 WEBHOOK_TOKEN_WHATSAPP = getenv('WEBHOOK_TOKEN_WHATSAPP', 'whatsapp')
+WEBHOOK_TOKEN_MESSENGER = getenv('WEBHOOK_TOKEN_MESSENGER', 'messenger')
 # -----------------------------------Meta-------------------------------------
 
 CREATE_USER_PRIVATE_HASH = getenv('CREATE_USER_PRIVATE_HASH', 'yeeko')

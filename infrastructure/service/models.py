@@ -129,13 +129,3 @@ class ApiRecord(models.Model):
         if self.errors:
             self.errors = ensure_json_compatible(self.errors)
         return super().save(*args, **kwargs)
-
-    def __del__(self):
-        if not getattr(self, "pk", None):
-            return
-        self.success = not self.errors
-        if self.errors:
-            print("Error in API record: ")
-            pprint(self.errors)
-
-        self.save()

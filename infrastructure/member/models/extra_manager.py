@@ -89,7 +89,7 @@ class ExtraManager:
         if not extra:
             return
 
-        extra_values_kwargs: Dict[str, Any] = {"member": self}
+        extra_values_kwargs: Dict[str, Any] = {"member": self, "extra": extra}
         if extra.has_session:
             extra_values_kwargs["session"] = session or self.get_session()
 
