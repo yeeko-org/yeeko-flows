@@ -1,0 +1,686 @@
+{
+  "data": [
+    {
+      "name": "inicio_unidxs_por_registro",
+      "previous_category": "MARKETING",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola {{1}}!Gracias por tu registro en el sitio web de Unid@s.Parte de tu participación será a través de un ejercicio colectivo, en el que podrás aportar con ideas y propuestas para lograr un país más parejo, próspero y en paz.¿Te gustaría continuar tu participación? 🤩"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "¡Sí participar!"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "¿Cómo se participa?"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "id": "1411644089358428"
+    },
+    {
+      "name": "inicio_unidxs_por_pagina_web",
+      "previous_category": "MARKETING",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola {{1}}! Gracias por tu registro en el sitio web de Unid@s.arte de tu participación será a través de un ejercicio colectivo, en el que podrás aportar con ideas y propuestas para lograr un país más parejo, próspero y en paz.¿Te gustaría continuar tu participación?🤩"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "¡Sí participar!"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "¿Cómo se participa?"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "id": "466574358767483"
+    },
+    {
+      "name": "nido_auto_nuevos_temas",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hola {{1}}En tus participaciones anteriores hiciste aportes en {{2}} temas distintos.✨¡Con tu ayuda se generó diálogo y se formaron algunos consensos!👌Recientemente se abrieron otros {{3}} temas en los que, estoy segura, podrías seguir sumando para construir el México que queremos. 😉¿Quieres ver los nuevos temas?"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ver nuevos temas"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "En otro momento"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "846015189842126"
+    },
+    {
+      "name": "sample_purchase_feedback",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "IMAGE"
+        },
+        {
+          "type": "BODY",
+          "text": "Terima kasih sudah membeli {{1}}! Kami menghargai masukan Anda dan ingin mempelajari lebih lanjut terkait pengalaman Anda."
+        },
+        {
+          "type": "FOOTER",
+          "text": "Pesan ini berasal dari bisnis yang tidak terverifikasi."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Ikuti survei",
+              "url": "https://www.example.com/"
+            }
+          ]
+        }
+      ],
+      "language": "id",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1716476815389312"
+    },
+    {
+      "name": "sample_purchase_feedback",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "IMAGE"
+        },
+        {
+          "type": "BODY",
+          "text": "Agradecemos a aquisição de {{1}}! Valorizamos seu feedback e gostaríamos de saber mais sobre sua experiência."
+        },
+        {
+          "type": "FOOTER",
+          "text": "Esta mensagem é de uma empresa não verificada."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Responder à pesquisa",
+              "url": "https://www.example.com/"
+            }
+          ]
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1174333773432126"
+    },
+    {
+      "name": "sample_purchase_feedback",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "IMAGE"
+        },
+        {
+          "type": "BODY",
+          "text": "¡Gracias por comprar {{1}}! Valoramos tus comentarios y nos gustaría saber cómo fue tu experiencia."
+        },
+        {
+          "type": "FOOTER",
+          "text": "Este mensaje proviene de un negocio no verificado."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Responder encuesta",
+              "url": "https://www.example.com/"
+            }
+          ]
+        }
+      ],
+      "language": "es",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "2198401993653998"
+    },
+    {
+      "name": "sample_purchase_feedback",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "IMAGE"
+        },
+        {
+          "type": "BODY",
+          "text": "Thank you for purchasing {{1}}! We value your feedback and would like to learn more about your experience."
+        },
+        {
+          "type": "FOOTER",
+          "text": "This message is from an unverified business."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Take Survey",
+              "url": "https://www.example.com/"
+            }
+          ]
+        }
+      ],
+      "language": "en_US",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1131489811078366"
+    },
+    {
+      "name": "sample_issue_resolution",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Oi, {{1}}. Nós conseguimos resolver o problema que você estava enfrentando?"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Esta mensagem é de uma empresa não verificada."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sim"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Não"
+            }
+          ]
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1049168802432990"
+    },
+    {
+      "name": "sample_issue_resolution",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Halo {{1}}, apakah kami bisa mengatasi masalah yang sedang Anda hadapi?"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Pesan ini berasal dari bisnis yang tidak terverifikasi."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ya"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Tidak"
+            }
+          ]
+        }
+      ],
+      "language": "id",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1501354146962664"
+    },
+    {
+      "name": "sample_issue_resolution",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hola, {{1}}. ¿Pudiste solucionar el problema que tenías?"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Este mensaje proviene de un negocio no verificado."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sí"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "No"
+            }
+          ]
+        }
+      ],
+      "language": "es",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1142869389980329"
+    },
+    {
+      "name": "sample_issue_resolution",
+      "previous_category": "ISSUE_RESOLUTION",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hi {{1}}, were we able to solve the issue that you were facing?"
+        },
+        {
+          "type": "FOOTER",
+          "text": "This message is from an unverified business."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Yes"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "No"
+            }
+          ]
+        }
+      ],
+      "language": "en_US",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "id": "756373842107008"
+    },
+    {
+      "name": "nido_auto_proposers",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola de nuevo! 🙃Hace {{1}} días realizaste propuestas que han generado varias reacciones de las personas que se han sumado a este ejercicio ciudadano.¿Te gustaría ver cómo van los resultados de tus aportes? ✨"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ver los resultados"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Aportar ideas"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "558456229459044"
+    },
+    {
+      "name": "sample_happy_hour_announcement",
+      "previous_category": "APPOINTMENT_UPDATE",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "VIDEO"
+        },
+        {
+          "type": "BODY",
+          "text": "¡Llegó el happy hour! 🍺😀🍸"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Este mensaje proviene de un negocio no verificado."
+        }
+      ],
+      "language": "es",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "431985755667282"
+    },
+    {
+      "name": "sample_happy_hour_announcement",
+      "previous_category": "APPOINTMENT_UPDATE",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "VIDEO"
+        },
+        {
+          "type": "BODY",
+          "text": "O happy hour chegou! 🍺😀🍸"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Esta mensagem é de uma empresa não verificada."
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "655036522575460"
+    },
+    {
+      "name": "sample_happy_hour_announcement",
+      "previous_category": "APPOINTMENT_UPDATE",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "VIDEO"
+        },
+        {
+          "type": "BODY",
+          "text": "Jam diskon telah tiba! 🍺😀🍸"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Pesan ini berasal dari bisnis yang tidak terverifikasi."
+        }
+      ],
+      "language": "id",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "2316933075142964"
+    },
+    {
+      "name": "sample_happy_hour_announcement",
+      "previous_category": "APPOINTMENT_UPDATE",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "VIDEO"
+        },
+        {
+          "type": "BODY",
+          "text": "Happy hour is here! 🍺😀🍸"
+        },
+        {
+          "type": "FOOTER",
+          "text": "This message is from an unverified business."
+        }
+      ],
+      "language": "en_US",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "581041743710598"
+    },
+    {
+      "name": "nido_conclusion",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola! Tengo noticias para ti."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "URL",
+              "text": "Consultar resultadoss",
+              "url": "https://www.unidospormx.com/propuesta"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "6084306094995580"
+    },
+    {
+      "name": "nido_invite_init_participation",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola! 😃"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sí, aportar ideas"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "¿Qué es Unid@s?"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "En otro momento"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "610498797542711"
+    },
+    {
+      "name": "inicio_unidxs_por_telefono",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola 👋! Soy Nido, la moderadora virtual 🤖 de Unid@s."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sí comenzar"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ver todos los temas"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "512737756924470"
+    },
+    {
+      "name": "agenda_2024",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hola {{1}}, como persona afiliada {{2}}, te queremos informar que estamos comenzand",
+          "example": {
+            "body_text": [
+              [
+                "Alejandra Romero",
+                "al PRI"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "FOOTER",
+          "text": "¿No te interesa? Toca \"Detener promociones\""
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sí participar"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sobre la consulta"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Detener promociones"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "1182139609827540"
+    },
+    {
+      "name": "inicio_unidxs_tarde_por_topics",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "*¡Hola 👋! Soy Nido, la moderadora virtual 🤖 de Unid@s.*"
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "665702901941387"
+    },
+    {
+      "name": "nido_invite_yeekonsultas",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola! Soy Nido de nuevo 🙂"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Sí, aportar ideas"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "¿Qué es Unid@s?"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "En otro momento"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "9389059834452883"
+    },
+    {
+      "name": "inicio_unidxs_por_topics",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "*¡Hola 👋! Soy Nido, la moderadora virtual 🤖 de Unid@s."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "¡Sí comenzar!"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Ver todos los temas"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "¿Cómo se participa?"
+            }
+          ]
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "645616826943812"
+    },
+    {
+      "name": "inicio_unidxs_tarde_por_telefono",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "¡Hola 👋! Soy Nido, la moderadora virtual 🤖 de Unid@s"
+        }
+      ],
+      "language": "es_MX",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "473894838089368"
+    },
+    {
+      "name": "hello_world",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "TEXT",
+          "text": "Hello World"
+        },
+        {
+          "type": "BODY",
+          "text": "Welcome and congratulations!! This message demonstrates your ability to send a message notification from WhatsApp Business Platform’s Cloud API. Thank you for taking the time to test with us."
+        },
+        {
+          "type": "FOOTER",
+          "text": "WhatsApp Business API Team"
+        }
+      ],
+      "language": "en_US",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "id": "764387891313786"
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "MAZDZD",
+      "after": "MjQZD"
+    },
+    "next": "https://graph.facebook.com/v18.0/101164602775760/message_templates?access_token=EAALD2TdxHesBOw1GW3tBTRs0GjPkXfZAFkZAsYqZAwroSLncz1UspcaVZB2qcYAJhAiYnzxuOtLwBpdGDUuTKZCPrsP5NoyYtayyKjbqoHEZCOlROkP22HWFPXEd5GgiioLOejT27qFQr7Ct0b5SywrTNtrh9OmNx6sJLqVOboxReurPk8drkYeV0ax6irIQZAkyJzpTV4eg6PqZCi9T8DP8ZA350xzhBe0kz&pretty=0&limit=25&after=MjQZD"
+  }
+}
