@@ -1,3 +1,14 @@
+"""
+Tests para la clase abstracta base de procesamiento de peticiones (`RequestAbc`).
+
+Utiliza una implementación mínima concreta (`RequestBase`) para verificar el
+comportamiento de la clase base sin depender de ningún adaptador específico:
+  - Inicialización (`test_init`): comprueba que `raw_data`, `platform` e
+    `input_accounts` se asignen correctamente al construir la instancia.
+  - Registro de petición (`test_record_request`): verifica que `record_request()`
+    genere un `ApiRecord` persistido en base de datos, con la plataforma y el
+    cuerpo correctos, y que `timestamp_server` quede definido.
+"""
 
 import json
 from django.test import TestCase
@@ -58,30 +69,24 @@ class RequestAbcTest(TestCase):  # replace with your actual class name
             "object": "whatsapp_business_account"
         }
 
-        self.platform = "test_platform"
-        _ = Platform.objects.create(name=self.platform)
-        self.set_messages = False
+        self.platform_name = "test_platform"
+        _ = Platform.objects.create(name=self.platform_name)
 
     def test_init(self):
-        instance = RequestBase(
-            self.raw_data, self.platform, self.set_messages)
+        instance = RequestBase(self.raw_data, self.platform_name)
 
         self.assertEqual(instance.raw_data, self.raw_data)
-        self.assertEqual(instance.platform, self.platform)
-        self.assertEqual(instance.data, {})
+        self.assertEqual(instance.platform_name, self.platform_name)
         self.assertEqual(instance.input_accounts, [])
-        self.assertEqual(instance.errors, [])
 
     def test_record_request(self):
-        instance = RequestBase(
-            self.raw_data, self.platform, self.set_messages)
-        instance.record_request()
+        instance = RequestBase(self.raw_data, self.platform_name)
         self.assertTrue(instance.timestamp_server)
-        self.assertTrue(instance.api_request)
+        self.assertTrue(instance.api_record)
 
-        self.assertEqual(instance.api_request.platform.name, self.platform)
-        self.assertEqual(instance.api_request.body, self.raw_data)
+        self.assertEqual(instance.api_record.platform.name, self.platform_name)
+        self.assertEqual(instance.api_record.body, self.raw_data)
 
         self.assertTrue(ApiRecord.objects.filter(
-            pk=instance.api_request.pk).exists()
+            pk=instance.api_record.pk).exists()
         )

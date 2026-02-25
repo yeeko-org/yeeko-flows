@@ -1,0 +1,99 @@
+[
+    {
+        "model": "service.platform",
+        "pk": "whatsapp",
+        "fields": {
+            "name": "whatsapp",
+            "public_name": null,
+            "description": "",
+            "config": {},
+            "with_users": true,
+            "id_field": null,
+            "internal": false,
+            "color": null,
+            "icon": null,
+            "image": "",
+            "config_by_member": false
+        }
+    },
+    {
+        "model": "place.space",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "title": "Space Test",
+            "created": "2024-03-25T10:23:41.035",
+            "bot_name": "Xico",
+            "image": "",
+            "test": false,
+            "params": {}
+        }
+    },
+    {
+        "model": "service.interactiontype",
+        "pk": "default",
+        "fields": {
+            "name": "default",
+            "public_name": null,
+            "way": "in",
+            "group_type": null
+        }
+    },
+    {
+        "model": "place.account",
+        "pk": "103571329211620",
+        "fields": {
+            "pid": "103571329211620",
+            "space": 1,
+            "platform": "whatsapp",
+            "title": "Test",
+            "token": "Sin Token de envio",
+            "config": {},
+            "active": true,
+            "init_text_response": true,
+            "text_response": true,
+            "payload_response": true,
+            "notif_enabled": true
+        }
+    },
+    {
+        "model": "users.user",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "username": "test",
+            "first_name": "Test",
+            "last_name": "Test",
+            "email": ""
+        }
+    },
+    {
+        "model": "member.role",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "name": "test_role"
+        }
+    },
+    {
+        "model": "member.member",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "space": 1,
+            "user": 1,
+            "active": true,
+            "role": 1
+        }
+    },
+    {
+        "model": "member.memberaccount",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "member": 1,
+            "account": "103571329211620",
+            "uid": "5215513375592"
+        }
+    }
+]

@@ -1,0 +1,175 @@
+[
+    {
+        "model": "flow.flow",
+        "pk": 1,
+        "fields": {
+            "name": "Definiciones default",
+            "space": null,
+            "description": "",
+            "has_definitions": true,
+            "deleted": false
+        }
+    },
+    {
+        "model": "flow.cratetype",
+        "pk": "Funciones básicas",
+        "fields": {
+            "public_name": null,
+            "description": ""
+        }
+    },
+    {
+        "model": "flow.crate",
+        "pk": 1,
+        "fields": {
+            "name": "Funciones básicas",
+            "description": "",
+            "crate_type": "Funciones básicas",
+            "flow": 1,
+            "created": "2024-04-10T02:40:29.118",
+            "has_templates": false
+        }
+    },
+    {
+        "model": "xtra.classifyextra",
+        "pk": "Clasificación",
+        "fields": {
+            "public_name": null,
+            "description": "",
+            "only_developers": false,
+            "user_visible": null,
+            "is_public": false,
+            "order": 8,
+            "icon": "bookmark",
+            "pixel_excel": 120,
+            "settings": {
+                "x": ""
+            }
+        }
+    },
+    {
+        "model": "xtra.extra",
+        "pk": 1,
+        "fields": {
+            "name": "Test1",
+            "classify": "Clasificación",
+            "space": 1,
+            "flow": null,
+            "format": null,
+            "description": "",
+            "params": {},
+            "deleted": false
+        }
+    },
+    {
+        "model": "xtra.extra",
+        "pk": 2,
+        "fields": {
+            "name": "Test2",
+            "classify": "Clasificación",
+            "space": 1,
+            "flow": null,
+            "format": null,
+            "description": "",
+            "params": {},
+            "deleted": false
+        }
+    },
+    {
+        "model": "box.written",
+        "pk": 1,
+        "fields": {
+            "extra": 2,
+            "collection": null,
+            "available": false
+        }
+    },
+    {
+        "model": "box.piece",
+        "pk": 3,
+        "fields": {
+            "crate": 1,
+            "name": "test written",
+            "description": "written",
+            "behavior": null,
+            "default_extra": 1,
+            "insistent": false,
+            "mandatory": false,
+            "config": {},
+            "written": 1,
+            "order_in_crate": null,
+            "deleted": false
+        }
+    },
+    {
+        "model": "box.fragment",
+        "pk": 4,
+        "fields": {
+            "fragment_type": "message",
+            "piece": 3,
+            "order": 1,
+            "behavior": null,
+            "addl_params": null,
+            "deleted": false,
+            "file": "",
+            "media_url": null,
+            "media_type": null,
+            "header": null,
+            "body": "test fragmento",
+            "footer": null,
+            "reply_title": null,
+            "embedded_piece": null
+        }
+    },
+    {
+        "model": "service.apirecord",
+        "pk": 1,
+        "fields": {
+            "platform": "whatsapp",
+            "body": {
+                "object": "whatsapp_business_account"
+            },
+            "interaction_type": "default",
+            "is_incoming": false,
+            "response_status": null,
+            "response_body": null,
+            "repeated": null,
+            "error_text": null,
+            "errors": null,
+            "success": true,
+            "created": "2024-04-20T03:08:05.120",
+            "datetime": null
+        }
+    },
+    {
+        "model": "talk.interaction",
+        "pk": "mid.test",
+        "fields": {
+            "interaction_type": "default",
+            "is_incoming": true,
+            "member_account": 1,
+            "trigger": null,
+            "api_record_out": 1,
+            "persona": null,
+            "created": "2024-05-24T02:30:34.770",
+            "timestamp": null,
+            "raw_data_in": "",
+            "reference": null,
+            "apply_behavior": null,
+            "fragment": 4,
+            "api_record_in": []
+        }
+    },
+    {
+        "model": "box.destination",
+        "pk": 1,
+        "fields": {
+            "written": 1,
+            "destination_type": "piece",
+            "piece_dest": 3,
+            "is_default": true,
+            "order": 1,
+            "deleted": false
+        }
+    }
+]

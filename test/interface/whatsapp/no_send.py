@@ -4,7 +4,7 @@ import base64
 from typing import Optional
 
 from infrastructure.service.models import ApiRecord
-from interface.whatsapp.request import WhatsAppRequest
+from interface.whatsapp.request import RecordWhatsAppRequest, WhatsAppRequest
 from interface.whatsapp.response import WhatsAppResponse
 
 
@@ -41,5 +41,9 @@ class WhatsAppResponseNoSend(WhatsAppResponse):
 
 
 class WhatsAppRequestNoSend(WhatsAppRequest):
+    def __init__(self, raw_data: dict, debug=False) -> None:
+        self._contacts_data = {}
+        super().__init__(raw_data, debug=debug)
+
     def _set_status_read(self, message_id, pid, token) -> None:
         pass
