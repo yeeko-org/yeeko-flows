@@ -103,3 +103,24 @@ class MediaMessage(message_model.MediaMessage, InteractionMessage):
         self.save_content()
 
         return _record_interaction
+
+
+def model_to_model(
+    message: message_model.TextMessage | message_model.InteractiveMessage |
+    message_model.EventMessage | message_model.MediaMessage
+) -> TextMessage | InteractiveMessage | EventMessage | MediaMessage:
+
+    # Compatibilidad de los modelos de la libreria con los modelos de la aplicacion
+
+    if isinstance(message, message_model.TextMessage):
+        return TextMessage(**message.model_dump())
+    elif isinstance(message, message_model.InteractiveMessage):
+        interactive = InteractiveMessage(**message.model_dump())
+        interactive.get_built_reply()
+        return interactive
+    elif isinstance(message, (message_model.EventMessage, EventMessage)):
+        return EventMessage(**message.model_dump())
+    elif isinstance(message, message_model.MediaMessage):
+        return MediaMessage(**message.model_dump())
+
+    raise ValueError("Message not found")

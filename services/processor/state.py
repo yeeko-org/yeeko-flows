@@ -23,6 +23,9 @@ class StateProcessor(Processor):
 
     def process(self):
 
+        if not self.message.interaction:
+            return
+
         Event.objects.create(
             event_name=self.message.status,
             interaction=self.message.interaction,
