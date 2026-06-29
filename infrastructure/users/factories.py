@@ -15,7 +15,9 @@ class UserManagerFactory(DjangoModelFactory):
     password = factory.Faker('password')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
-    phone = factory.Faker('phone_number')
+    # Faker('phone_number') puede pasar de 20 caracteres y rompe el campo
+    # User.phone (max_length=20) de forma aleatoria. Lo acotamos.
+    phone = factory.Faker('numerify', text='+52##########')
     other_data = safe_pydict()
     gender = factory.Faker('random_element', elements=['Male', 'Female'])
     profile_image = factory.Faker('image_url')

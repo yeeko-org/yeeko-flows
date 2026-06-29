@@ -248,3 +248,8 @@ REST_FRAMEWORK = {
 # -------------------------------NOTIFICATIONS--------------------------------
 NOTIFICATION_LAPSE_MINUTES = getenv_int('NOTIFICATION_LAPSE_MINUTES', 15)
 # -----------------------------END NOTIFICATIONS------------------------------
+
+# ----------------------------------GEMINI (IA)-------------------------------
+GEMINI_API_KEY = getenv('GEMINI_API_KEY')
+GEMINI_MODEL = getenv('GEMINI_MODEL', 'gemini-3-flash-preview')
+# --------------------------------END GEMINI (IA)-----------------------------

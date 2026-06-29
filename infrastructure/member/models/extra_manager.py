@@ -48,7 +48,12 @@ class ExtraManager:
     ) -> "ExtraValue | None":
         if not extra:
             return
-        extra_value, _ = self.extra_vale_query.get_or_create(extra=extra)
+        # get_or_create sobre un queryset .filter(member=self) NO inyecta member
+        # al crear (solo lo usa para el get) y member es null=True: sin defaults
+        # la fila nace huérfana (member_id=NULL) y get_extra_values_data nunca la
+        # vuelve a ver. Lo fijamos explícito.
+        extra_value, _ = self.extra_vale_query.get_or_create(
+            extra=extra, defaults={"member": self})
 
         extra_value.set_value(value)
         extra_value.origin = origin
