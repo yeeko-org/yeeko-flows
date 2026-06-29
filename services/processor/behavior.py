@@ -1,4 +1,5 @@
 
+from importlib import import_module
 from typing import Optional
 from infrastructure.assign.models import ApplyBehavior
 
@@ -57,8 +58,7 @@ class BehaviorProcessor:
         piece_processor.process()
 
     def process_behavior_code(self):
-        from services import behavior
-        behavior_class = getattr(behavior, self.behavior, None)
+        behavior_class = self._resolve_behavior_class()
         if not behavior_class:
             raise Exception(
                 f"No se encontró la clase de comportamiento: {self.behavior}")
@@ -66,3 +66,21 @@ class BehaviorProcessor:
         self.parameters['response'] = self.response
 
         _ = behavior_class(**self.parameters)
+
+    def _resolve_behavior_class(self):
+        """Localiza la clase del behavior: primero entre los genéricos del
+        motor (services.behavior); si no está, en la app de su Collection vía
+        `app_label` (p. ej. projects.caceh.behaviors). Así el motor no importa
+        los proyectos de forma estática: el código de dominio se ubica por el
+        `app_label` que la colección declara en la BD."""
+        from services import behavior as generic
+        behavior_class = getattr(generic, self.behavior, None)
+        if behavior_class:
+            return behavior_class
+
+        collection = self.apply_behavior.behavior.collection
+        app_label = collection.app_label if collection else None
+        if not app_label:
+            return None
+        module = import_module(f"{app_label}.behaviors")
+        return getattr(module, self.behavior, None)

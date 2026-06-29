@@ -80,6 +80,8 @@ DOMICILIO_PROMPT = _PREAMBULO + (
     "municipio), lt_estado.\n"
     "- Todos son obligatorios MENOS lt_int. Si falta el código postal, la "
     "colonia o el municipio, pregúntalo.\n"
+    "- ciudad_firma: derivado, NO lo preguntes. Cópialo de lt_municipio "
+    "(donde se trabaja se firma); el usuario lo corrige luego en el resumen.\n"
 )
 
 
@@ -92,6 +94,10 @@ class Domicilio(BaseModel):
     lt_cp: Optional[str] = None
     lt_municipio: Optional[str] = None
     lt_estado: Optional[str] = None
+    # Derivado por la misma llamada (sustituye al behavior deriva_ciudad_firma).
+    # No bloquea ia_completed: si Gemini lo deja vacío, genera_pdf cae a
+    # lt_municipio.
+    ciudad_firma: Optional[str] = None
     ia_completed: Literal["si", "no"]
     ia_pregunta: Optional[str] = None
 
