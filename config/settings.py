@@ -61,6 +61,7 @@ INSTALLED_APPS = (
     'infrastructure.assign.apps.AssingConfig',
     'infrastructure.talk.apps.TalkConfig',
     'presentation',
+    'projects.caceh.apps.CacehConfig',
 )
 
 
