@@ -1,10 +1,12 @@
+import json
 from typing import Optional
 
 from django.conf import settings
 import requests
 from services.request import InputAccount, RequestAbc
 from services.request.message_model import (
-    InteractiveMessage, EventMessage, MediaMessage, TextMessage
+    InteractiveMessage, EventMessage, MediaMessage, TextMessage,
+    WaFormReplyMessage
 )
 
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
@@ -164,7 +166,8 @@ class WhatsAppRequest(RequestAbc):
 
     def data_to_class(
         self, data: dict, pid, token
-    ) -> TextMessage | InteractiveMessage | EventMessage | MediaMessage:
+    ) -> (TextMessage | InteractiveMessage | EventMessage | MediaMessage
+          | WaFormReplyMessage):
         type = data.get("type")
         if type == "text":
             message = self._create_text_message(data)
@@ -191,8 +194,14 @@ class WhatsAppRequest(RequestAbc):
             timestamp=int(timestamp)
         )
 
-    def _create_interactive_message(self, data: dict) -> InteractiveMessage:
+    def _create_interactive_message(
+        self, data: dict
+    ) -> InteractiveMessage | WaFormReplyMessage:
         interactive = data.get("interactive", {})
+
+        if interactive.get("type") == "nfm_reply":
+            return self._create_wa_form_reply(data, interactive)
+
         button_reply: dict = interactive.get(interactive.get("type"), {})
         interactive = InteractiveMessage(
             message_id=data.get("id", ""),
@@ -202,6 +211,27 @@ class WhatsAppRequest(RequestAbc):
         )
         interactive.get_built_reply()
         return interactive
+
+    def _create_wa_form_reply(
+        self, data: dict, interactive: dict
+    ) -> WaFormReplyMessage:
+        nfm_reply = interactive.get("nfm_reply", {})
+        try:
+            response = json.loads(nfm_reply.get("response_json") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            response = {}
+
+        selected = response.get("selection") or []
+        if not isinstance(selected, list):
+            selected = [selected]
+
+        return WaFormReplyMessage(
+            message_id=data.get("id", ""),
+            timestamp=int(data.get("timestamp", 0)),
+            flow_token=response.get("flow_token", ""),
+            selected=selected,
+            response=response,
+        )
 
     def _create_media_message(self, data: dict, pid, token) -> MediaMessage:
 

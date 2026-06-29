@@ -1,0 +1,67 @@
+{
+  "version": "7.0",
+  "screens": [
+    {
+      "id": "SELECT",
+      "title": "${data.title}",
+      "terminal": true,
+      "data": {
+        "title": {
+          "type": "string",
+          "__example__": "Selecciona las opciones"
+        },
+        "label": {
+          "type": "string",
+          "__example__": "Opciones"
+        },
+        "flow_token": {
+          "type": "string",
+          "__example__": "correlation-token"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "opt_1", "title": "Opción 1" },
+            { "id": "opt_2", "title": "Opción 2" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "flow_form",
+            "children": [
+              {
+                "type": "CheckboxGroup",
+                "name": "selection",
+                "label": "${data.label}",
+                "data-source": "${data.options}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Enviar",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "selection": "${form.selection}",
+                    "flow_token": "${data.flow_token}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

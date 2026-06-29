@@ -76,6 +76,21 @@ class InteractiveMessage(InteractionMessage):
         return super().record_interaction(api_record, member_account, self.payload)
 
 
+class WaFormReplyMessage(InteractionMessage):
+    """Incoming WhatsApp Flows ("WaForm") completion (``nfm_reply``).
+
+    ``flow_token`` correlates back to the ``BuiltReply`` created when the
+    form was sent; ``selected`` holds the chosen option ids.
+    """
+    flow_token: str
+    selected: list = []
+    response: dict = {}
+
+    def record_interaction(self, api_record, member_account):
+        return super().record_interaction(
+            api_record, member_account, json.dumps(self.response))
+
+
 class EventMessage(MessageBase):
     status: str
     emoji: Optional[str]

@@ -5,7 +5,9 @@ from infrastructure.service.models import ApiRecord
 from services.response import ResponseAbc
 import requests
 
-from services.response.models import Message, Section, SectionsMessage, ReplyMessage
+from services.response.models import (
+    Message, Section, SectionsMessage, ReplyMessage, WaFormMessage
+)
 
 FACEBOOK_API_VERSION = getattr(settings, 'FACEBOOK_API_VERSION', 'v13.0')
 
@@ -173,6 +175,29 @@ class WhatsAppResponse(ResponseAbc):
                 whatsapp_data_message["uuid_list"].append(item.payload)
 
         return whatsapp_data_message
+
+    def wa_form_to_data(self, message: WaFormMessage) -> dict:
+        parameters = {
+            "flow_message_version": "3",
+            "flow_token": message.flow_token,
+            "flow_id": message.flow_id,
+            "flow_cta": message.flow_cta[:20],
+            "flow_action": "navigate",
+            "flow_action_payload": {
+                "screen": message.screen,
+                "data": message.data,
+            },
+        }
+        interactive = self._message_to_data(message)
+        interactive.update({
+            "type": "flow",
+            "action": {
+                "name": "flow",
+                "parameters": parameters,
+            },
+        })
+        return self._base_data(
+            "interactive", interactive, fragment_id=message.fragment_id)
 
     def get_mid(self, body: Dict | None) -> str | None:
         if not body:

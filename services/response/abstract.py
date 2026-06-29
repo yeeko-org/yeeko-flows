@@ -13,7 +13,9 @@ from infrastructure.talk.models import BuiltReply, Interaction, Trigger
 from infrastructure.tool.models import Behavior
 from infrastructure.xtra.models import Extra
 from services.notification.member_manager import NotificationManager
-from services.response.models import MediaMessage, Message, SectionsMessage, ReplyMessage
+from services.response.models import (
+    MediaMessage, Message, SectionsMessage, ReplyMessage, WaFormMessage
+)
 from utilities.replacer_from_data import replace_parameter
 
 
@@ -87,6 +89,15 @@ class ResponseAbc(ABC, BaseModel):
         self.message_list.append(message_data)
 
     @exception_handler
+    def message_wa_form(self, message: WaFormMessage):
+        message.replace_text(self.sender.member.get_extra_values_data())
+
+        message_data = self.wa_form_to_data(message)
+        message_data["_standard_message"] = json.loads(
+            message.model_dump_json())
+        self.message_list.append(message_data)
+
+    @exception_handler
     def message_sections(self, message: SectionsMessage):
         message.replace_text(self.sender.member.get_extra_values_data())
 
@@ -141,6 +152,14 @@ class ResponseAbc(ABC, BaseModel):
     @abstractmethod
     def sections_to_data(self, message: SectionsMessage) -> dict:
         raise NotImplementedError
+
+    def wa_form_to_data(self, message: WaFormMessage) -> dict:
+        # Not abstract on purpose: WhatsApp Flows ("WaForm") is a
+        # WhatsApp-only capability, so other platforms stay importable.
+        raise NotImplementedError(
+            "WaForm (WhatsApp Flows) is not supported on "
+            f"{self.platform_name}"
+        )
 
     @abstractmethod
     def send_message(

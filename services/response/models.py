@@ -143,3 +143,26 @@ class MediaMessage(BaseModel):
     caption: str | None
     id: str | None
     link: str | None
+
+
+class WaFormMessage(Message):
+    """Outgoing WhatsApp Flows ("WaForm") interactive message.
+
+    `data` is the payload injected into the published Flow's first
+    screen (`flow_action_payload.data`): options, label, min/max and the
+    echoed `flow_token`. Keeping the catalog here lets a single static
+    Flow serve every multiple-select question.
+    """
+    flow_id: str
+    flow_token: str
+    flow_cta: str = "Seleccionar"
+    screen: str = "SELECT"
+    data: dict = {}
+
+    def replace_text(self, extra_values_data: dict):
+        super().replace_text(extra_values_data)
+
+        for key in ("title", "label"):
+            value = self.data.get(key)
+            if isinstance(value, str):
+                self.data[key] = replace_parameter(extra_values_data, value)

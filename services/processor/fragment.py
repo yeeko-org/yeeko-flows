@@ -38,8 +38,13 @@ class FragmentProcessor:
     ) -> None:
         self.response = response
         self.fragment = fragment
+        # addl_params (JSON) is the lowest-priority layer so behaviors can
+        # receive rich values (e.g. an options list) that don't fit the
+        # 255-char ParamValue string column.
+        merged = dict(fragment.addl_params or {})
+        merged.update(parameters)
         self.parameters = update_parameters(
-            fragment.values, parameters)  # type: ignore
+            fragment.values, merged)  # type: ignore
         self.reply_message = list(fragment.replies.order_by("order"))
 
     def _header_from_fragment(self) -> Optional[Header | str]:
