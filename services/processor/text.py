@@ -139,6 +139,7 @@ class TextMessageProcessor(TextProcessor):
     def __init__(
             self, message: TextMessage, response: ResponseAbc
     ) -> None:
+        self.message = message
         super().__init__(
             text=message.text, response=response,
             context_id=message.context_id, interaction_in=message.interaction
@@ -147,10 +148,11 @@ class TextMessageProcessor(TextProcessor):
     def process(self):
         super().process(call_default_text=False)
 
-        valid_time_interval = self.message.valid_time_interval(
-            raise_exception=False)
-
-        if valid_time_interval and self.process_written():
+        # Captura de texto tecleado SIN `context` de WhatsApp (Meta solo manda
+        # context en taps/reply-to). Con context, el padre ya resolvió
+        # process_written por la vía context_direct (text.py arriba), así que el
+        # hijo solo cubre el caso sin context y evita doble proceso.
+        if not self.context_direct and self.process_written():
             return
 
         self.call_behavior("default_text")

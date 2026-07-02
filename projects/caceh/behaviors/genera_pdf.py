@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 
 from infrastructure.persistent_media.models import Media
 from projects.caceh.behaviors.base import CacehBehaviorBase
-from projects.caceh.pdf import render_planta
+from projects.caceh.pdf import render_entrada_salida, render_planta
 
 _MESES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
@@ -40,7 +40,10 @@ class GeneraPdfBehavior(CacehBehaviorBase):
 
     def run(self) -> None:
         datos = self._build_datos()
-        pdf = render_planta(datos)
+        if self._read("tipo_contrato") == "entrada_salida":
+            pdf = render_entrada_salida(datos)
+        else:
+            pdf = render_planta(datos)
 
         media = Media(
             account=self.account,
@@ -82,6 +85,10 @@ class GeneraPdfBehavior(CacehBehaviorBase):
             "hora_entrada": self._read("hora_entrada", ""),
             "hora_salida": self._read("hora_salida", ""),
             "dias": self._read("dias_laborables") or [],
+            # Descanso: solo lo captura entrada por salida (OCTAVA); en planta
+            # la OCTAVA va fija por ley y estos quedan vacíos.
+            "descanso_tiempo": self._read("descanso_tiempo", ""),
+            "comidas_incluidas": self._read("comidas_incluidas") or [],
             "ciudad_firma": self._read(
                 "ciudad_firma", self._read("lt_municipio", "")),
             "firma_dia": hoy_dia,

@@ -133,6 +133,12 @@ class ApiRecord(models.Model):
     def __del__(self):
         if not getattr(self, "pk", None):
             return
+        # El GC puede recolectar este objeto mientras corre OTRA transacción
+        # (p. ej. otro test): si su fila ya no existe (rollback), un save()
+        # la REINSERTARÍA huérfana en esa transacción, rompiendo sus FKs. Solo
+        # se persiste si la fila sigue viva.
+        if not type(self).objects.filter(pk=self.pk).exists():
+            return
         self.success = not self.errors
         if self.errors:
             print("Error in API record: ")

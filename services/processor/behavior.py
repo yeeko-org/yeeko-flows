@@ -6,7 +6,7 @@ from infrastructure.assign.models import ApplyBehavior
 from infrastructure.talk.models import Interaction
 from services.response import ResponseAbc
 
-from django.db.models import Q
+from django.db.models import F, Q
 
 from utilities.parameters import update_parameters
 
@@ -30,7 +30,7 @@ class BehaviorProcessor:
             .filter(
                 Q(space=response.sender.account.space) |
                 Q(space__isnull=True)
-            ).order_by('-space').first()
+            ).order_by(F('space').desc(nulls_last=True)).first()
 
         if not apply_behavior:
             raise Exception(

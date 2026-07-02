@@ -205,6 +205,13 @@ class ResponseAbc(ABC, BaseModel):
             )
             return
 
+        # Interaction.trigger es OneToOne: si un response emite varios mensajes
+        # (auto-avance, p. ej. PDF + botones de oferta_mejora), solo la primera
+        # interacción puede portar el trigger; las demás lo dejan en null para
+        # no violar la unicidad. (Bug latente destapado por el arnés WP7.)
+        trigger = self.trigger
+        self.trigger = None
+
         interaction = Interaction.objects.create(
             mid=mid,
             interaction_type_id="default",
@@ -214,7 +221,7 @@ class ResponseAbc(ABC, BaseModel):
             raw_data_in=json.dumps(message_data),
             fragment_id=fragment_id,
             raw_data=standard_message,
-            trigger=self.trigger
+            trigger=trigger
         )
         if self.api_record_in:
             interaction.api_record_in.add(self.api_record_in)

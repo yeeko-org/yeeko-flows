@@ -11,6 +11,9 @@ from projects.caceh.behaviors.asigna_partes import (
 from projects.caceh.behaviors.calcula_salario_diario import (
     CalculaSalarioDiarioBehavior as calcula_salario_diario,
 )
+from projects.caceh.behaviors.valida_fecha_pasada import (
+    ValidaFechaPasadaBehavior as valida_fecha_pasada,
+)
 from projects.caceh.behaviors.registra_contrato import (
     RegistraContratoBehavior as registra_contrato,
 )

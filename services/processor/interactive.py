@@ -96,6 +96,7 @@ class InteractiveProcessor(ReplyProcessor, ContextMixing):
     def __init__(
         self, message: InteractiveMessage, response: ResponseAbc
     ) -> None:
+        self.message = message
         super().__init__(
             reply=message.built_reply.reply if message.built_reply else None,
             response=response, interaction_origin=message.interaction

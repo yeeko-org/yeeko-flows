@@ -9,7 +9,7 @@ flows/variables_v3.md).
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from services.behavior.ia_extrae import register_schema
 
@@ -64,13 +64,31 @@ PAGO_PROMPT = _PREAMBULO + (
 )
 
 
+_FRASE_PERIODICIDAD = {
+    "diaria": "al día",
+    "semanal": "a la semana",
+    "quincenal": "a la quincena",
+    "mensual": "al mes",
+}
+
+
 @register_schema("pago", PAGO_PROMPT)
 class Pago(BaseModel):
     monto_pago: Optional[int] = None
     pago_periodicidad: Optional[
         Literal["diaria", "semanal", "quincenal", "mensual"]] = None
+    # Derivado determinista para el texto de confirmación ("$550 a la semana").
+    # NO lo pide Gemini; lo calculamos de pago_periodicidad tras validar.
+    frase_periodicidad: Optional[str] = None
     ia_completed: Literal["si", "no"]
     ia_pregunta: Optional[str] = None
+
+    @model_validator(mode="after")
+    def set_frase_periodicidad(self):
+        if self.pago_periodicidad:
+            self.frase_periodicidad = _FRASE_PERIODICIDAD[
+                self.pago_periodicidad]
+        return self
 
 
 DOMICILIO_PROMPT = _PREAMBULO + (

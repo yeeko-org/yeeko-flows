@@ -75,6 +75,15 @@ class InteractiveMessage(InteractionMessage):
     def record_interaction(self, api_record, member_account):
         return super().record_interaction(api_record, member_account, self.payload)
 
+    @field_serializer('built_reply')
+    def serialize_built_reply(self, built_reply: BuiltReply | None, _info):
+        # `model_dump_json()` (record_interaction) no sabe serializar el objeto
+        # ORM BuiltReply; lo dejamos como su uuid. Sin esto, el tap real de un
+        # botón (interactive button_reply) revienta con PydanticSerializationError.
+        if isinstance(built_reply, BuiltReply):
+            return str(built_reply.uuid)
+        return built_reply
+
 
 class WaFormReplyMessage(InteractionMessage):
     """Incoming WhatsApp Flows ("WaForm") completion (``nfm_reply``).

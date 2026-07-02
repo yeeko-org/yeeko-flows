@@ -63,6 +63,14 @@ class ExtraManager:
         if interaction:
             extra_value.interactions.add(interaction)
 
+        # Mantener coherente el cache en memoria: si ya se materializó (vía
+        # get_extra_values_data), un render posterior en el MISMO request leería
+        # el valor viejo —p. ej. un behavior escribe ia_pregunta y la pieza que
+        # sigue la pinta vacía—. set_value normaliza (json/contador), por eso
+        # releemos con get_value en lugar de usar `value` crudo.
+        if hasattr(self, "_extra_values_data"):
+            self._extra_values_data[extra.name] = extra_value.get_value()
+
         return extra_value
 
     def add_circles(
@@ -73,13 +81,22 @@ class ExtraManager:
         for circle in circles:
             self.add_extra_value(circle, None, interaction, origin, list_by)
 
+    def _invalidate_extra_cache(self):
+        # Tras un borrado dejamos que el próximo get_extra_values_data refresque
+        # de DB: actualizar in situ no vale la pena para un evento poco frecuente.
+        if hasattr(self, "_extra_values_data"):
+            del self._extra_values_data
+
     def remove_extra(self, extra: "Extra | None"):
         if not extra:
             return
         self.extra_vale_query.filter(extra=extra).delete()
+        self._invalidate_extra_cache()
 
     def remove_extras(self, extras: "list[Extra] | QuerySet[Extra]"):
         self.extra_vale_query.filter(extra__in=extras).delete()
+        self._invalidate_extra_cache()
 
     def remove_all_extras(self):
         self.extra_vale_query.delete()
+        self._invalidate_extra_cache()

@@ -110,6 +110,22 @@ class IaExtraeTestCase(TestCase):
         # historial conservado para la siguiente vuelta
         self.assertEqual(data.get("_hist_jornada"), ["de lunes a viernes de 8 a 4"])
 
+    def test_extra_recien_escrito_visible_sin_refrest(self):
+        # Regresión: el render de la repregunta lee get_extra_values_data() SIN
+        # refrest. El extra que el behavior acaba de escribir debe verse en el
+        # cache; si no, el cuerpo del mensaje "{{ia_pregunta}}" sale vacío y
+        # Meta lo rechaza con 400 (bot mudo). Materializamos el cache antes de
+        # escribir, como hace el request real, para forzar el caso.
+        self.member.get_extra_values_data()
+        self._run({
+            "hora_entrada": None, "hora_salida": None,
+            "dias_laborables": ["lunes"], "ia_completed": "no",
+            "ia_pregunta": "¿A qué hora entraría y a qué hora saldría?"})
+        data = self.member.get_extra_values_data()  # SIN refrest: lee cache
+        self.assertEqual(
+            data.get("ia_pregunta"),
+            "¿A qué hora entraría y a qué hora saldría?")
+
     def test_validacion_pydantic_mas_de_seis_dias_se_vuelve_repregunta(self):
         self._run({
             "hora_entrada": "8:00", "hora_salida": "16:00",
@@ -125,6 +141,20 @@ class IaExtraeTestCase(TestCase):
         data = self._data()
         self.assertEqual(data["ia_completed"], "no")
         self.assertIn("forma", data["ia_pregunta"].lower())
+
+    def test_pago_deriva_frase_periodicidad(self):
+        # El esquema Pago calcula frase_periodicidad de pago_periodicidad (texto
+        # de confirmación "$550 al día"); Gemini no la manda.
+        from projects.caceh.schemas import Pago
+        casos = {"diaria": "al día", "semanal": "a la semana",
+                 "quincenal": "a la quincena", "mensual": "al mes"}
+        for periodicidad, frase in casos.items():
+            p = Pago(monto_pago=550, pago_periodicidad=periodicidad,
+                     ia_completed="si").model_dump()
+            self.assertEqual(p["frase_periodicidad"], frase)
+        # sin periodicidad no inventa frase
+        p = Pago(ia_completed="no").model_dump()
+        self.assertIsNone(p["frase_periodicidad"])
 
     def test_historial_acumula_entre_vueltas(self):
         incompleto = {

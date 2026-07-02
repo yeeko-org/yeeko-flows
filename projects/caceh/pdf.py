@@ -14,11 +14,24 @@ from pathlib import Path
 from jinja2 import Template
 from weasyprint import HTML
 
-_TEMPLATE_PATH = (
-    Path(__file__).parent / "templates" / "caceh" / "contrato_planta.html"
-)
+_TEMPLATES_DIR = Path(__file__).parent / "templates" / "caceh"
+_TEMPLATES = {
+    "planta": "contrato_planta.html",
+    "entrada_salida": "contrato_entrada_salida.html",
+}
+
+
+def build_html(datos: dict, tipo_contrato: str = "planta") -> str:
+    """Render del HTML del contrato según la modalidad. Separado de WeasyPrint
+    para poder afirmar el contenido en tests sin generar el PDF."""
+    name = _TEMPLATES.get(tipo_contrato, _TEMPLATES["planta"])
+    tpl = (_TEMPLATES_DIR / name).read_text(encoding="utf-8")
+    return Template(tpl).render(**datos)
 
 
 def render_planta(datos: dict) -> bytes:
-    html = Template(_TEMPLATE_PATH.read_text(encoding="utf-8")).render(**datos)
-    return HTML(string=html).write_pdf()
+    return HTML(string=build_html(datos, "planta")).write_pdf()
+
+
+def render_entrada_salida(datos: dict) -> bytes:
+    return HTML(string=build_html(datos, "entrada_salida")).write_pdf()

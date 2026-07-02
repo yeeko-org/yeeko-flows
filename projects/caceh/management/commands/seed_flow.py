@@ -56,9 +56,13 @@ EXTRAS = [
     ("mayor_edad", None),
     ("tipo_contrato", None),
     ("respuesta_jornada", None),
+    ("respuesta_descanso", None),
     ("ia_completed", None),
     ("ia_pregunta", None),
     ("es_retroactivo", None),
+    ("fecha_inicio", None),           # captura C2 / normalizada por C3
+    ("fecha_valida", None),           # valida_fecha_pasada (C3) -> "si"/"no"
+    ("fecha_error", None),            # valida_fecha_pasada (C3) -> reedición
     ("respuesta_pago", None),
     ("modo_pago", None),
     ("respuesta_lugar", None),
@@ -76,8 +80,12 @@ EXTRAS = [
     ("hora_salida", None),            # ia_extrae jornada (B2)
     ("dias_laborables", "json"),      # ia_extrae jornada (B2)
     ("_hist_jornada", "json"),        # historial transitorio de B2
+    ("descanso_tiempo", None),        # ia_extrae descanso (B7)
+    ("comidas_incluidas", "json"),    # ia_extrae descanso (B7)
+    ("_hist_descanso", "json"),       # historial transitorio de B7
     ("monto_pago", "int"),            # ia_extrae pago (C5)
     ("pago_periodicidad", None),      # ia_extrae pago (C5)
+    ("frase_periodicidad", None),     # derivado en el esquema Pago (C6)
     ("_hist_pago", "json"),           # historial transitorio de C5
     ("lt_calle", None),               # ia_extrae domicilio (C10)
     ("lt_ext", None),
@@ -122,6 +130,7 @@ class Command(BaseCommand):
         self._wire_section_b()
         self._wire_section_c()
         self._wire_section_d_e()
+        self._wire_entrypoint()
 
         self._report()
 
@@ -203,6 +212,15 @@ class Command(BaseCommand):
     def _buttons(self, piece, question, options, footer=None):
         # options: [(title, dest_piece, {extra_name: value})]. ≤3 → botones;
         # el motor pasa a lista solo con >3 o secciones.
+        # WhatsApp corta el título: 20 en botón, 24 en fila de lista. Pasarse
+        # hace que Meta rechace TODO el mensaje (400 131009) y el bot enmudezca,
+        # así que lo cazamos al sembrar en vez de en runtime.
+        limit = 20 if len(options) <= 3 else 24
+        for title, *_ in options:
+            if len(title) > limit:
+                raise ValueError(
+                    f"Título '{title}' ({len(title)}) excede {limit} "
+                    "caracteres (límite WhatsApp)")
         frag = self._msg(piece, question, footer=footer)
         for order, (title, dest, assigns) in enumerate(options):
             reply = Reply.objects.create(
@@ -290,6 +308,30 @@ class Command(BaseCommand):
                 fragment=frag, value=pvalue)
         self._embedded(piece, dest, order=1)
 
+    def _wa_form_step(self, piece_name, dest_piece, *, options, flow_id,
+                      body, extra, min=1):
+        """Pieza que MANDA un WhatsApp Flow multiselect y ESPERA el submit.
+
+        A diferencia de _behavior_step, NO lleva embedded de auto-avance: la
+        pieza termina tras enviar el formulario y se queda esperando. El
+        avance a `dest_piece` lo dispara WaFormReplyProcessor (vía
+        `dest_piece_pk`) cuando llega el `nfm_reply`. La lista de opciones va
+        en `fragment.addl_params` (JSON) porque no cabe en el ParamValue
+        (CharField 255)."""
+        piece = self.p[piece_name]
+        piece.piece_type = "content"
+        piece.config = {}
+        piece.save(update_fields=["piece_type", "config"])
+        behavior = self._ensure_behavior("multiple_select", generic=True)
+        Fragment.objects.create(
+            piece=piece, fragment_type="behavior", behavior=behavior,
+            order=0,
+            addl_params={
+                "flow_id": flow_id, "body": body, "extra": extra,
+                "dest_piece_pk": dest_piece.pk, "options": options,
+                "min": min,
+            })
+
     # -------------------------------------------------------------- piezas
     def _create_pieces(self):
         # Se crean todas primero para poder cablear destinos hacia adelante.
@@ -310,15 +352,25 @@ class Command(BaseCommand):
             ("a", "a_duerme", "A9 duerme en la casa", "content"),
             ("a", "a_tipo_empleadora", "A11 tipo de contrato (empleadora)",
              "content"),
+            ("a", "a_link_es",
+             "A10 link tras entrada-salida (varias empleadoras)", "content"),
             # §B
             ("b", "b_jornada_abierta", "B1 jornada (captura)", "content"),
             ("b", "b_ia_jornada", "B2 ia_extrae jornada (placeholder)", d),
             ("b", "b_checa_jornada", "B3 bifurca ia_completed", d),
             ("b", "b_repregunta_jornada", "B4 repregunta jornada", "content"),
             ("b", "b_bifurca_descanso", "B5 bifurca tipo_contrato", d),
+            ("b", "b_descanso_abierta",
+             "B6 descanso (captura, solo entrada por salida)", "content"),
+            ("b", "b_ia_descanso", "B7 ia_extrae descanso (placeholder)", d),
             ("b", "b_confirma_jornada", "B8 confirma jornada", "content"),
             # §C
             ("c", "c_relacion_previa", "C1 relación previa", "content"),
+            ("c", "c_fecha_inicio",
+             "C2 fecha de inicio (captura, solo retroactivo)", "content"),
+            ("c", "c_valida_fecha", "C3 valida_fecha_pasada (placeholder)", d),
+            ("c", "c_checa_fecha", "C3b bifurca fecha_valida", d),
+            ("c", "c_repregunta_fecha", "C3c reedita fecha", "content"),
             ("c", "c_pago_abierta", "C4 pago (captura)", "content"),
             ("c", "c_ia_pago", "C5 ia_extrae pago (placeholder)", d),
             ("c", "c_confirma_pago", "C6 confirma pago", "content"),
@@ -332,7 +384,9 @@ class Command(BaseCommand):
             ("c", "c_repregunta_lugar", "C12 repregunta lugar", "content"),
             ("c", "c_confirma_lugar", "C13 confirma lugar", "content"),
             # §D
-            ("d", "d_actividades", "D1 MultipleSelectFlow (placeholder)", d),
+            ("d", "d_actividades",
+             "D1 lista de actividades (stopgap nativo, selección única)",
+             "content"),
             ("d", "d_deriva_categoria", "D2 deriva_categoria (placeholder)",
              d),
             ("d", "d_check_tabulador", "D4 bifurca tabulador_activo", d),
@@ -352,8 +406,8 @@ class Command(BaseCommand):
             config = ({"wp6b_behavior": name.split("_", 1)[1]}
                       if ptype == "destinations" and name not in (
                           "a_bifurca_operador", "b_checa_jornada",
-                          "b_bifurca_descanso", "c_checa_lugar",
-                          "d_check_tabulador") else None)
+                          "b_bifurca_descanso", "c_checa_fecha",
+                          "c_checa_lugar", "d_check_tabulador") else None)
             self._piece(section, name, desc, ptype, config)
 
     # --------------------------------------------------------------- wiring
@@ -409,7 +463,8 @@ class Command(BaseCommand):
         self._buttons(p["a_mayor_edad"],
                       "Una pregunta importante: ¿{{pregunta_mayor_edad}}?", [
             ("Sí", p["a_num_empleadoras"], {"mayor_edad": "si"}),
-            ("No", p["a_menor"], {"mayor_edad": "no"}),
+            ("No", p["a_menor"],
+             {"mayor_edad": "no", "flujo_completado": "abandonado"}),
         ])
 
         self._msg(p["a_menor"], (
@@ -417,10 +472,12 @@ class Command(BaseCommand):
             "y este asistente todavía no puede hacer ese contrato. Acércate a "
             "CACEH para que te acompañen. 💚"))
 
+        # Varias empleadoras -> por fuerza entrada por salida; salta "¿duermes?"
+        # y entra a §B vía el link A10 (que retoma con el nombre de la parte).
         self._buttons(p["a_num_empleadoras"],
                       "¿Cuántas personas empleadoras tienes?", [
             ("Una persona", p["a_duerme"], None),
-            ("Varias", p["fuera_alcance"],
+            ("Varias", p["a_link_es"],
              {"tipo_contrato": "entrada_salida"}),
         ])
 
@@ -428,9 +485,15 @@ class Command(BaseCommand):
                       "¿Duermes en la casa donde trabajas?", [
             ("Sí, duermo ahí", p["b_jornada_abierta"],
              {"tipo_contrato": "planta"}),
-            ("No duermo ahí", p["fuera_alcance"],
+            ("No duermo ahí", p["b_jornada_abierta"],
              {"tipo_contrato": "entrada_salida"}),
         ])
+
+        # A10 link tras entrada por salida (rama varias): retoma hacia §B.
+        self._msg(p["a_link_es"], (
+            "Bien, sigamos con los datos para el contrato con "
+            "{{contraparte_nombre}}."))
+        self._embedded(p["a_link_es"], p["b_jornada_abierta"])
 
         self._buttons(p["a_tipo_empleadora"], (
             "¿Qué tipo de contrato necesitan?\n🏠 De planta: la persona vive "
@@ -438,7 +501,7 @@ class Command(BaseCommand):
             [
             ("De planta", p["b_jornada_abierta"],
              {"tipo_contrato": "planta"}),
-            ("Entrada por salida", p["fuera_alcance"],
+            ("Entrada por salida", p["b_jornada_abierta"],
              {"tipo_contrato": "entrada_salida"}),
         ])
 
@@ -465,11 +528,26 @@ class Command(BaseCommand):
             p["b_repregunta_jornada"], "{{ia_pregunta}}",
             "respuesta_jornada", p["b_ia_jornada"])
 
-        # Solo el camino planta está en el slice; entrada por salida queda fuera.
+        # B5: el descanso solo se pregunta en entrada por salida; en planta la
+        # SÉPTIMA va fija por ley y salta directo a confirmar.
         self._bifurcation(
             p["b_bifurca_descanso"], "tipo_contrato",
-            [("entrada_salida", p["fuera_alcance"])],
+            [("entrada_salida", p["b_descanso_abierta"])],
             default_dest=p["b_confirma_jornada"])
+
+        # B7 ⚙️ ia_extrae descanso -> confirma (el esquema no da ia_completed,
+        # así que no hay loop de repregunta; la validación ≥30 min queda como
+        # mejora posterior).
+        self._behavior_step(
+            "b_ia_descanso", "ia_extrae", p["b_confirma_jornada"], generic=True,
+            params={"esquema": "descanso",
+                    "entrada": "{{respuesta_descanso}}"})
+        self._capture(
+            p["b_descanso_abierta"],
+            "Durante la jornada, ¿cuál será el tiempo de descanso y qué "
+            "alimentos se le dan en ese rato? Ej.: \"1 hora, y se le da "
+            "comida\". ☕",
+            "respuesta_descanso", p["b_ia_descanso"])
 
         self._buttons(p["b_confirma_jornada"], (
             "Quedó así, échale un ojo 👀\n🗓️ Días: {{dias_laborables}}\n"
@@ -480,6 +558,10 @@ class Command(BaseCommand):
 
     def _wire_section_c(self):
         p = self.p
+        # C3 ⚙️ valida_fecha_pasada (proyecto, determinista) -> bifurcación
+        # fecha_valida; si rechaza, reedita; si valida, sigue a pago.
+        self._behavior_step(
+            "c_valida_fecha", "valida_fecha_pasada", p["c_checa_fecha"])
         # C5 ⚙️ ia_extrae pago (sin loop de repregunta en el slice: -> confirma).
         self._behavior_step(
             "c_ia_pago", "ia_extrae", p["c_confirma_pago"], generic=True,
@@ -491,13 +573,34 @@ class Command(BaseCommand):
         self._behavior_step(
             "c_ia_lugar", "ia_extrae", p["c_checa_lugar"], generic=True,
             params={"esquema": "domicilio", "entrada": "{{respuesta_lugar}}"})
-        # "Ya trabajábamos" (retroactivo) queda fuera del slice (sin antigüedad).
+        # "Ya trabajábamos" (retroactivo): captura la fecha de inicio, la valida
+        # y sigue a pago. La fecha alimenta la cláusula SEGUNDA del PDF
+        # (genera_pdf usa fecha_inicio si es_retroactivo).
+        # TODO(E1 calcula_vacaciones): las vacaciones retroactivas
+        # proporcionales (LFT 2023) dependen de la fórmula y de la redacción de
+        # la cláusula por el abogado; pendiente.
         self._buttons(p["c_relacion_previa"], (
             "¿El trabajo empieza ahora, o quieren poner por escrito una "
             "relación que ya existía antes?"), [
             ("Empieza ahora", p["c_pago_abierta"], {"es_retroactivo": "no"}),
-            ("Ya trabajábamos", p["fuera_alcance"], {"es_retroactivo": "si"}),
+            ("Ya trabajábamos", p["c_fecha_inicio"], {"es_retroactivo": "si"}),
         ])
+
+        self._capture(
+            p["c_fecha_inicio"],
+            "¿En qué fecha empezaron a trabajar juntos? Escríbela como "
+            "día/mes/año, por ejemplo 15/03/2023. Si no recuerdas el día "
+            "exacto, con el mes y el año basta (03/2023). 📅",
+            "fecha_inicio", p["c_valida_fecha"])
+
+        self._bifurcation(
+            p["c_checa_fecha"], "fecha_valida",
+            [("no", p["c_repregunta_fecha"])],
+            default_dest=p["c_pago_abierta"])
+
+        self._capture(
+            p["c_repregunta_fecha"], "{{fecha_error}}",
+            "fecha_inicio", p["c_valida_fecha"])
 
         self._capture(
             p["c_pago_abierta"],
@@ -514,7 +617,9 @@ class Command(BaseCommand):
 
         self._buttons(p["c_modo_pago"], "¿Y cómo se le paga?", [
             ("En efectivo", p["c_salario_diario"], {"modo_pago": "efectivo"}),
-            ("Transferencia o depósito", p["c_salario_diario"],
+            # WhatsApp limita el título de botón a 20 caracteres; "Transferencia
+            # o depósito" (24) lo rebasa y Meta rechaza el mensaje (400 131009).
+            ("Transferencia", p["c_salario_diario"],
              {"modo_pago": "transferencia"}),
         ])
 
@@ -543,10 +648,28 @@ class Command(BaseCommand):
 
     def _wire_section_d_e(self):
         p = self.p
-        # D1 (MultipleSelectFlow) y D2 (deriva_categoria) NO se cablean en
-        # WP6B: el primero es sesión paralela, el segundo solo aplica con
-        # tabulador activo (fuera del slice). Pasan de largo.
-        self._link(p["d_actividades"], p["d_deriva_categoria"])
+        # D1: WhatsApp Flow multiselect (FormWa) ya publicado en Meta. Para
+        # este test TODAS las opciones llevan al siguiente mensaje
+        # (dest_piece_pk = d_deriva_categoria, que pasa de largo a
+        # d_check_tabulador): aún no hay mapeo a categorías del tabulador
+        # (espera insumos de Nivo). La selección se escribe en {{actividades}}.
+        self._wa_form_step(
+            "d_actividades", p["d_deriva_categoria"],
+            flow_id="1308618661432871",
+            body="¿Cuáles actividades realiza la persona trabajadora? 🧹",
+            extra="actividades", min=1,
+            options=[
+                {"id": "limpieza_general", "title": "Limpieza general"},
+                {"id": "limpieza_profunda", "title": "Limpieza profunda"},
+                {"id": "cocina_sencilla", "title": "Cocina sencilla"},
+                {"id": "recamarera", "title": "Recamarera"},
+                {"id": "lavado", "title": "Lavado"},
+                {"id": "planchado", "title": "Planchado"},
+                {"id": "cuidado_personas", "title": "Cuidado de personas"},
+                {"id": "jardineria", "title": "Jardinería"},
+                {"id": "chofer", "title": "Chofer"},
+                {"id": "otra", "title": "Otra"},
+            ])
         self._link(p["d_deriva_categoria"], p["d_check_tabulador"])
         # §E en orden: E5 arma el PDF y deja {{pdf_contrato}}; E6 lo lee para
         # ligar el Media a la constancia y fija flujo_completado; E7 lo envía.
@@ -567,6 +690,9 @@ class Command(BaseCommand):
             "Esto es lo que tengo. Échale un último ojo 👀\n"
             "👥 {{trab_nombre_completo}} y {{empl_nombre_completo}}\n"
             "📄 Contrato {{tipo_contrato}}\n"
+            "🗓️ {{dias_laborables}}, de {{hora_entrada}} a {{hora_salida}}\n"
+            "🏠 {{lt_calle}} {{lt_ext}}, col. {{lt_colonia}}, "
+            "{{lt_municipio}}, {{lt_estado}}\n"
             "💵 ${{salario_diario}} al día, pago en {{modo_pago}}\n"
             "🖊️ Se firma en {{ciudad_firma}}, con fecha de hoy"), [
             ("Todo correcto", p["e_genera_pdf"], None),
@@ -595,6 +721,23 @@ class Command(BaseCommand):
         self._msg(p["fuera_alcance"], (
             "Esta parte del flujo todavía no está en el demo. 🛠️ Gracias por "
             "tu paciencia; pronto la tendremos lista."))
+
+    def _wire_entrypoint(self):
+        """Hace 'entrable' el flujo: cualquier mensaje de un usuario nuevo
+        dispara el behavior `start` (text.py), que debe rendir a_saludo. Se
+        apunta el ApplyBehavior **global** (space__isnull) a a_saludo: el motor
+        resuelve `start` con order_by('-space') y en Postgres los NULL ordenan
+        primero, así que prefiere el global sobre cualquier scoped. Sin esto, el
+        global con main_piece vacío recursiona. seed_welcome dejaba esta plomería
+        pendiente para el flujo real (WP6)."""
+        behavior, _ = Behavior.objects.get_or_create(
+            name="start", defaults={"in_code": True, "collection": None})
+        apply, _ = ApplyBehavior.objects.get_or_create(
+            behavior=behavior, space=None,
+            defaults={"main_piece": self.p["a_saludo"]})
+        if apply.main_piece_id != self.p["a_saludo"].id:
+            apply.main_piece = self.p["a_saludo"]
+            apply.save(update_fields=["main_piece"])
 
     # --------------------------------------------------------------- report
     def _report(self):

@@ -18,6 +18,9 @@ from projects.caceh.behaviors.calcula_salario_diario import (
     CalculaSalarioDiarioBehavior,
 )
 from projects.caceh.behaviors.registra_contrato import RegistraContratoBehavior
+from projects.caceh.behaviors.valida_fecha_pasada import (
+    ValidaFechaPasadaBehavior,
+)
 from projects.caceh.models import Contract
 
 
@@ -222,3 +225,41 @@ class RegistraContratoTestCase(CacehBehaviorTestBase):
 
         self.assertFalse(Contract.objects.exists())
         self.assertTrue(self.response.errors)
+
+
+class ValidaFechaPasadaTestCase(CacehBehaviorTestBase):
+    def setUp(self):
+        super().setUp()
+        for name in ("fecha_inicio", "fecha_valida", "fecha_error"):
+            self._extra(name)
+
+    def _run(self, fecha):
+        self._set("fecha_inicio", fecha)
+        ValidaFechaPasadaBehavior(self.response)
+        return self._data()
+
+    def test_fecha_pasada_completa_valida_y_normaliza(self):
+        data = self._run("15/03/2023")
+        self.assertEqual(data["fecha_valida"], "si")
+        self.assertEqual(data["fecha_inicio"], "15/03/2023")
+        self.assertEqual(self.response.errors, [])
+
+    def test_solo_mes_y_anio_asume_dia_uno(self):
+        data = self._run("03/2023")
+        self.assertEqual(data["fecha_valida"], "si")
+        self.assertEqual(data["fecha_inicio"], "01/03/2023")
+
+    def test_formato_iso_se_normaliza(self):
+        data = self._run("2023-03-15")
+        self.assertEqual(data["fecha_valida"], "si")
+        self.assertEqual(data["fecha_inicio"], "15/03/2023")
+
+    def test_fecha_futura_se_rechaza(self):
+        data = self._run("01/01/2999")
+        self.assertEqual(data["fecha_valida"], "no")
+        self.assertTrue(data["fecha_error"])
+
+    def test_texto_no_parseable_se_rechaza(self):
+        data = self._run("el año pasado")
+        self.assertEqual(data["fecha_valida"], "no")
+        self.assertTrue(data["fecha_error"])

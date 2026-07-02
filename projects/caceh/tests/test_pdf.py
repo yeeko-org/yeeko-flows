@@ -7,7 +7,8 @@ from unittest import mock
 
 from projects.caceh.behaviors.entrega_pdf import EntregaPdfBehavior
 from projects.caceh.behaviors.genera_pdf import GeneraPdfBehavior
-from projects.caceh.pdf import render_planta
+from projects.caceh.pdf import (
+    build_html, render_entrada_salida, render_planta)
 from projects.caceh.tests.test_behaviors import CacehBehaviorTestBase
 
 
@@ -41,6 +42,41 @@ class RenderPlantaTestCase(CacehBehaviorTestBase):
         pdf = render_planta(self._datos())
         # WeasyPrint produce binario; basta con que no truene y dé un PDF.
         self.assertTrue(pdf.startswith(b"%PDF"))
+
+
+class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
+    def _datos(self):
+        return {
+            "empl_nombre": "Marcela Ruiz Soto",
+            "trab_nombre": "Juana Pérez López",
+            "lt_calle": "Av. Reforma", "lt_ext": "100", "lt_int": "",
+            "lt_colonia": "Centro", "lt_cp": "06000",
+            "lt_municipio": "Cuauhtémoc", "lt_estado": "CDMX",
+            "inicio_dia": "1", "inicio_mes": "julio", "inicio_anio": "2026",
+            "actividades": ["limpieza_general"], "actividad_otra": "",
+            "periodicidad": "semanal", "salario_diario": "350.0",
+            "modo_pago": "efectivo",
+            "hora_entrada": "8:00", "hora_salida": "16:00",
+            "dias": ["lunes", "martes"],
+            "descanso_tiempo": "una hora", "comidas_incluidas": ["comida"],
+            "ciudad_firma": "Ciudad de México",
+            "firma_dia": "29", "firma_mes": "junio", "firma_anio": "2026",
+        }
+
+    def test_html_usa_clausulas_de_entrada_salida(self):
+        html = build_html(self._datos(), "entrada_salida")
+        self.assertIn("MODALIDAD DE ENTRADA Y SALIDA", html)
+        self.assertIn("OCTAVA. DEL DESCANSO", html)
+        self.assertIn("una hora", html)           # descanso_tiempo
+        self.assertIn("comida ( X )", html)        # marca la comida elegida
+        self.assertIn("desayuno (  )", html)       # las no elegidas, vacías
+        # No debe colarse la OCTAVA de planta (descanso nocturno/dormitorio).
+        self.assertNotIn("descanso nocturno", html)
+
+    def test_render_produce_bytes_pdf(self):
+        pdf = render_entrada_salida(self._datos())
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertGreater(len(pdf), 1000)
 
 
 class GeneraPdfTestCase(CacehBehaviorTestBase):
@@ -90,6 +126,22 @@ class GeneraPdfTestCase(CacehBehaviorTestBase):
         self.assertEqual(datos["dias"][0], "lunes")
         # ciudad_firma cae a lt_municipio (vacío aquí) si no se capturó
         self.assertIn("firma_mes", datos)
+
+    def test_entrada_salida_usa_render_entrada_salida(self):
+        self._extra("tipo_contrato")
+        self._set("tipo_contrato", "entrada_salida")
+        with mock.patch("projects.caceh.behaviors.genera_pdf.Media") as MM, \
+             mock.patch(
+                 "projects.caceh.behaviors.genera_pdf.render_entrada_salida",
+                 return_value=b"%PDF",) as mock_es, \
+             mock.patch(
+                 "projects.caceh.behaviors.genera_pdf.render_planta",
+                 return_value=b"%PDF",) as mock_planta:
+            MM.return_value.pk = 7
+            GeneraPdfBehavior(self.response)
+
+        mock_es.assert_called_once()
+        mock_planta.assert_not_called()
 
 
 class EntregaPdfTestCase(CacehBehaviorTestBase):
