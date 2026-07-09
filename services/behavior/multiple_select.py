@@ -24,7 +24,13 @@ def _normalize_options(options: list) -> List[dict]:
         title = option.get("title", option.get("label", option_id))
         if option_id is None:
             continue
-        normalized.append({"id": str(option_id), "title": str(title)})
+        item = {"id": str(option_id), "title": str(title)}
+        # Opcional: solo la entienden Flows cuyo schema declare
+        # description (p. ej. multiselect_desc.flow.json).
+        description = option.get("description")
+        if description:
+            item["description"] = str(description)
+        normalized.append(item)
     return normalized
 
 
@@ -49,7 +55,7 @@ class MultipleSelectBehavior:
             options_extra: Optional[str] = None,
             header: Optional[str] = None, footer: Optional[str] = None,
             flow_cta: str = "Seleccionar", screen: str = "SELECT",
-            min=None, max=None, **kwargs
+            min=None, max=None, fragment_id: Optional[int] = None, **kwargs
     ) -> None:
         self.response = response
 
@@ -104,6 +110,9 @@ class MultipleSelectBehavior:
             data["max"] = max_items
 
         message = WaFormMessage(
+            # Liga la Interaction saliente al fragment: sin esto el usuario
+            # queda "atorado" en la pieza anterior (at_piece/context).
+            fragment_id=fragment_id,
             flow_id=str(flow_id),
             flow_token=flow_token,
             flow_cta=flow_cta,

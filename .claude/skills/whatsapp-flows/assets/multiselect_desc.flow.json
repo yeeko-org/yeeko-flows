@@ -1,0 +1,65 @@
+{
+  "version": "7.3",
+  "screens": [
+    {
+      "id": "SELECT",
+      "title": "Selección",
+      "terminal": true,
+      "data": {
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "a", "title": "Opción A", "description": "Detalle de A" },
+            { "id": "b", "title": "Opción B", "description": "Detalle de B" }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "__example__": "Elige una o varias opciones"
+        },
+        "flow_token": { "type": "string", "__example__": "TOKEN" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "${data.label}"
+          },
+          {
+            "type": "Form",
+            "name": "form",
+            "children": [
+              {
+                "type": "CheckboxGroup",
+                "name": "selection",
+                "label": "Selecciona",
+                "data-source": "${data.options}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "selection": "${form.selection}",
+                    "flow_token": "${data.flow_token}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -109,10 +109,12 @@ class FlowE2ETest(TestCase):
                          "c_repregunta_lugar", LUGAR_ACLARA)
         d.tap("Sí, es correcta")         # confirma lugar -> lista actividades
         self.assertEqual(d.at_piece(), "d_actividades")
-        # D1: FormWa multiselect. El submit del Flow escribe {{actividades}} y
-        # avanza (dest_piece_pk) a d_deriva_categoria -> ... -> e_resumen.
-        d.submit_form(["limpieza_general", "lavado"])
-        self.assertEqual(d.at_piece(), "e_resumen")  # D2 + tabulador off
+        # D1: FormWa multiselect (items del tabulador). El submit escribe
+        # {{actividades}} y avanza a D4; con el tabulador encendido corre
+        # calcula_tabulador: labor_1/labor_2 -> sugerido 450, y el pago del
+        # caso queda dentro del margen de $100 -> sin aviso -> e_resumen.
+        d.submit_form(["labor_1", "labor_2"])
+        self.assertEqual(d.at_piece(), "e_resumen")
 
     # --------------------------------------------------------------- casos
     def test_p1_trabajadora_planta_hasta_pdf(self):
