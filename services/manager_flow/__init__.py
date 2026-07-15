@@ -50,8 +50,12 @@ class ManagerFlow(AbstractManagerFlow):
                 TextMessage, InteractiveMessage, MediaMessage,
                 WaFormReplyMessage
             ]:
-                message.record_interaction(  # type: ignore
+                is_new = message.record_interaction(  # type: ignore
                     api_record_in, input_sender.member)
+                # Reenvío de Meta de un mensaje ya registrado: procesarlo otra
+                # vez le mandaría al usuario la misma respuesta duplicada.
+                if not is_new:
+                    continue
 
             response = self._response_class(
                 sender=input_sender.member,

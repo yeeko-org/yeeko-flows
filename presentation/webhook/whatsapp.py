@@ -1,4 +1,6 @@
 import json
+import logging
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.views import generic
@@ -8,6 +10,8 @@ from interface.whatsapp.request import WhatsAppRequest
 from interface.whatsapp.response import WhatsAppResponse
 
 from services.manager_flow import ManagerFlow
+
+logger = logging.getLogger(__name__)
 
 
 class WhatsappMessageView(generic.View):
@@ -47,7 +51,9 @@ class WhatsappMessageView(generic.View):
             )
             manage()
 
-        except Exception as e:
-            raise e
+        except Exception:
+            # Nunca devolver != 2xx a Meta: reintenta el mismo webhook con
+            # backoff y un fallo puntual se vuelve un bucle de reenvíos.
+            logger.exception("Error al procesar el webhook de WhatsApp")
 
         return HttpResponse()

@@ -36,16 +36,22 @@ class InteractionMessage(MessageBase):
             original_dump["interaction"] = str(self.interaction)
         return original_dump
 
-    def record_interaction(self, api_record, member_account, raw_data_in):
-        self.interaction = Interaction.objects.create(
+    def record_interaction(self, api_record, member_account, raw_data_in) -> bool:
+        """Devuelve True si la interacción es nueva. `mid` es la PK y Meta
+        reenvía el mismo webhook cuando no recibe un 2xx a tiempo, así que un
+        reenvío debe reconocerse (y descartarse), no reventar por duplicado."""
+        self.interaction, created = Interaction.objects.get_or_create(
             mid=self.message_id,
-            interaction_type_id="default",
-            member_account=member_account,
-            timestamp=self.timestamp,
-            api_record_out=api_record,  # salida del servidor
-            raw_data_in=raw_data_in,
-            raw_data=json.loads(self.model_dump_json()),
+            defaults={
+                "interaction_type_id": "default",
+                "member_account": member_account,
+                "timestamp": self.timestamp,
+                "api_record_out": api_record,  # salida del servidor
+                "raw_data_in": raw_data_in,
+                "raw_data": json.loads(self.model_dump_json()),
+            },
         )
+        return created
 
     @field_serializer('interaction')
     def serialize_dt(self, interaction: Interaction | None, _info):

@@ -121,7 +121,9 @@ class Media(models.Model):
                 }
                 data = {
                     "messaging_product": "whatsapp",
-                    "type": f"{self.media_type}/{media_extension.lower()}"
+                    # Graph API espera un MIME real: "document/pdf" o
+                    # "sticker/webp" no lo son y Meta rechaza la subida.
+                    "type": mime_type,
                 }
 
                 response = requests.post(

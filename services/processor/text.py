@@ -3,7 +3,7 @@ from typing import Optional
 
 from infrastructure.box.models import Piece, Reply
 from infrastructure.talk.models import BuiltReply, Interaction
-from services.processor.behavior import BehaviorProcessor
+from services.processor.behavior import BehaviorNotFound, BehaviorProcessor
 from services.processor.context_mixin import ContextMixing
 from services.processor.interactive import ReplyProcessor
 from services.processor.written import WrittenProcessorFull
@@ -33,26 +33,30 @@ class TextProcessor(ContextMixing):
         self.do_written = do_written
         self.calculate_context_piece(self.response.sender, context_id)
 
-    def process(self, call_default_text=True):
-
+    def process(self, call_default_text=True) -> bool:
+        """Devuelve True si el mensaje ya quedó atendido, para que una
+        subclase no vuelva a procesarlo (ver TextMessageProcessor)."""
         if self.command_handler():
-            return
+            return True
 
         if self.context_direct and self.process_written():
-            return
+            return True
 
         if self.intent_to_contact_administrator():
-            return
+            return True
 
         if not self.last_interaction_out:
             self.call_behavior("start")
-            return
+            return True
 
         if self.check_buttons_text():
-            return
+            return True
 
         if call_default_text:
-            self.call_behavior("default_text", parameters={"text": self.text})
+            return self.call_behavior(
+                "default_text", parameters={"text": self.text}, optional=True)
+
+        return False
 
     def command_handler(self):
         if self.text.startswith("/"):
@@ -66,11 +70,26 @@ class TextProcessor(ContextMixing):
         self.call_behavior("admin_contact")
         return True
 
-    def call_behavior(self, behavior, parameters={}):
-        BehaviorProcessor(
-            behavior, self.response, parameters=parameters,
-            context_direct=self.context_direct,
-            interaction_in=self.interaction_in).process()
+    def call_behavior(
+        self, behavior, parameters={}, optional: bool = False
+    ) -> bool:
+        try:
+            behavior_processor = BehaviorProcessor(
+                behavior, self.response, parameters=parameters,
+                context_direct=self.context_direct,
+                interaction_in=self.interaction_in)
+        except BehaviorNotFound as e:
+            if not optional:
+                raise
+            # Sin `default_text` sembrado el bot calla; se deja constancia
+            # para que la falta de configuración no pase inadvertida.
+            if self.response.api_record_in:
+                self.response.api_record_in.add_error(
+                    {"method": "call_behavior", "behavior": behavior}, e=e)
+            return False
+
+        behavior_processor.process()
+        return True
 
     def process_written(self):
         if not self.do_written:
@@ -146,7 +165,8 @@ class TextMessageProcessor(TextProcessor):
         )
 
     def process(self):
-        super().process(call_default_text=False)
+        if super().process(call_default_text=False):
+            return
 
         # Captura de texto tecleado SIN `context` de WhatsApp (Meta solo manda
         # context en taps/reply-to). Con context, el padre ya resolvió
@@ -155,4 +175,5 @@ class TextMessageProcessor(TextProcessor):
         if not self.context_direct and self.process_written():
             return
 
-        self.call_behavior("default_text")
+        self.call_behavior(
+            "default_text", parameters={"text": self.text}, optional=True)

@@ -121,8 +121,13 @@ class FragmentProcessor:
                 raise Exception(
                     f"El fragmento {self.fragment} no tiene un comportamiento asociado"
                 )
+            # fragment_id viaja con los parámetros para que el behavior pueda
+            # ligar sus mensajes salientes a este fragment (sin él, la
+            # Interaction queda sin fragment y el contexto del usuario no
+            # avanza: calculate_context_piece solo mira salidas con fragment).
             behavior_processor = BehaviorProcessor(
-                self.fragment.behavior_id, self.response, self.parameters)  # type: ignore
+                self.fragment.behavior_id, self.response,  # type: ignore
+                {**self.parameters, "fragment_id": self.fragment.pk})
             behavior_processor.process()
 
         elif self.fragment.fragment_type == "embedded":

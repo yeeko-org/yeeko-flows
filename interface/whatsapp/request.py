@@ -78,7 +78,8 @@ class WhatsAppRequest(RequestAbc):
             #   "phone": "5215513375592", 
             #   "user_field_filter": "phone"
             # }
-            profile = contact.get("profile")
+            # Los webhooks de `statuses` traen contacts sin `profile`.
+            profile = contact.get("profile", {})
             sender_id = contact.get("wa_id")
             profile["phone"] = contact.get("wa_id")
             profile["user_field_filter"] = "phone"

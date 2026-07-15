@@ -26,6 +26,10 @@ code; it inherits message primitives from the `yeeko_abc` library.
 - Behavior params: `Fragment.addl_params` (JSON) is merged into behavior
   parameters as the low-priority layer, since `ParamValue.value` is only
   `varchar(255)` and can't hold rich data (e.g. an options list).
+  `FragmentProcessor` also injects `fragment_id`; behaviors that send
+  messages must forward it (e.g. `WaFormMessage(fragment_id=…)`) or the
+  outgoing `Interaction` has no fragment and the user's context piece
+  never advances.
 
 ## Conventions
 

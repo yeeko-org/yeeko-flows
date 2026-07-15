@@ -11,6 +11,12 @@ from django.db.models import F, Q
 from utilities.parameters import update_parameters
 
 
+class BehaviorNotFound(Exception):
+    """No hay `ApplyBehavior` para ese nombre en el space (ni global). Se
+    distingue de cualquier otro fallo para que un llamador pueda tratar
+    un behavior como opcional sin tragarse errores reales del behavior."""
+
+
 class BehaviorProcessor:
     behavior: str
     response: ResponseAbc
@@ -33,7 +39,7 @@ class BehaviorProcessor:
             ).order_by(F('space').desc(nulls_last=True)).first()
 
         if not apply_behavior:
-            raise Exception(
+            raise BehaviorNotFound(
                 f"No se encontró el comportamiento implementado: {behavior}"
             )
 
