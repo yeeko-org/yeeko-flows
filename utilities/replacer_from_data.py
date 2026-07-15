@@ -17,4 +17,7 @@ def replace_parameter(extra_values_data: dict, text: str, default: str = ""):
 
     result = re.sub(pattern, replace_match, text)
 
-    return re.sub(r'\s+', ' ', result.strip())
+    # `[^\S\n]` colapsa espacios/tabs horizontales (p. ej. el hueco que deja
+    # un {{var}} vacío) pero conserva `\n`: WhatsApp los renderiza como salto
+    # de línea y el viejo `\s+` los destruía (mensajes salían en un renglón).
+    return re.sub(r'[^\S\n]+', ' ', result.strip())

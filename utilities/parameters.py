@@ -28,4 +28,6 @@ def replace_parameter(parameters_dict: dict, text: str, default: str = ""):
 
     result = re.sub(pattern, replace_match, text)
 
-    return re.sub(r'\s+', ' ', result.strip())
+    # Gemela de replacer_from_data: `[^\S\n]` colapsa espacios horizontales
+    # pero conserva `\n`, para no aplanar los saltos que van al mensaje final.
+    return re.sub(r'[^\S\n]+', ' ', result.strip())

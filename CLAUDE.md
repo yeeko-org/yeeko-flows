@@ -44,3 +44,12 @@ code; it inherits message primitives from the `yeeko_abc` library.
   overflows `User.phone` (`varchar(20)`). In new tests, pin
   `UserFactory(phone="…")` and `gc.collect()` in `tearDown` of tests that
   exercise `ManagerFlow`. Run modules in isolation to confirm real status.
+- **Line breaks in message bodies:** the parameter replacer collapses
+  whitespace on every body (text, buttons, sections, WaForm). It must use
+  `re.sub(r'[^\S\n]+', ' ', …)` (horizontal-only) so `\n` survives and
+  WhatsApp renders line breaks. The old `\s+` ate every `\n` and flattened
+  each message to one line — **do not reintroduce it**. There are two twin
+  copies to keep in sync: `utilities/replacer_from_data.py` (message render)
+  and `utilities/parameters.py` (behavior params). No data-only workaround
+  exists from a seed: every whitespace char (incl. NBSP, U+2028) is
+  collapsed, and zero-width chars don't break lines — the fix must live here.
