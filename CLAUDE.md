@@ -20,6 +20,11 @@ code; it inherits message primitives from the `yeeko_abc` library.
   media, written, behavior, destination).
 - `services/behavior/` — in-code behaviors (`start`, `reset`, `insistent`,
   `multiple_select`, …), keyed by name in `__init__.py`.
+- `services/seeder/` — `FlowSeeder`: idempotent flow seeding (upsert by
+  natural keys + prune; never delete-and-recreate — piece/fragment/reply
+  PKs must survive a reseed or interaction history and live sessions
+  break). Guide: `.claude/skills/flow-seeder`; consumer:
+  `projects/caceh/seed/`.
 - `interface/whatsapp/` — WhatsApp send (`response.py`) and receive
   (`request.py`); `*_to_data` methods build the Graph API payloads.
 - `infrastructure/` — Django models (box, talk, xtra, tool, assign, …).
