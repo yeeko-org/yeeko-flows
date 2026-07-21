@@ -7,14 +7,20 @@
   body { font-family: "DejaVu Serif", serif; font-size: 11pt;
          line-height: 1.4; text-align: justify; color: #111; }
   h1 { font-size: 12pt; text-align: center; margin: 0 0 .6em; }
-  h2 { font-size: 11pt; margin: 1em 0 .3em; }
+  h2 { font-size: 11pt; margin: 1em 0 .3em; text-align: center;
+       letter-spacing: .35em; }
   p { margin: .5em 0; }
   .clausula { margin-top: .6em; }
   .firma { margin-top: 2.2em; }
-  .firmas-tabla { width: 100%; margin-top: 3em; border-collapse: collapse;
-                  text-align: center; font-size: 10pt; }
+  .firmas-tabla { width: 100%; margin-top: 3em;
+                  border-collapse: separate; border-spacing: 2em 0;
+                  text-align: center; font-size: 10pt;
+                  page-break-inside: avoid; }
   .firmas-tabla td { border-top: 1px solid #111; padding-top: .4em;
-                     width: 33%; vertical-align: top; }
+                     width: 50%; vertical-align: top; }
+  .firmas-tabla .firma-testigo td { border-top: none; padding-top: 3em; }
+  .firmas-tabla .linea-testigo { border-top: 1px solid #111; padding-top: .4em;
+                                 width: 50%; margin: 0 auto; }
   .notas { margin-top: 2em; font-size: 8.5pt; color: #444; }
   small { font-size: 8.5pt; }
 </style>
@@ -22,10 +28,10 @@
 <body>
 
 <h1>CONTRATO INDIVIDUAL DE TRABAJO POR TIEMPO INDETERMINADO,
-EN SU «MODALIDAD DE ENTRADA Y SALIDA»<sup>1</sup></h1>
+EN SU «MODALIDAD DE ENTRADA POR SALIDA»<sup>1</sup></h1>
 
 <p>Que celebran por una parte <strong>{{ empl_nombre }}</strong> a quien en lo
-sucesivo se le denominará como <strong>«EL EMPLEADOR/A»</strong> y por otra parte
+sucesivo se le denominará como <strong>«LA PERSONA EMPLEADORA»</strong> y por otra parte
 <strong>{{ trab_nombre }}</strong> a quien en lo sucesivo se le denominará como
 <strong>«LA PERSONA TRABAJADORA DEL HOGAR»</strong>, al tenor de las siguientes:</p>
 
@@ -49,12 +55,12 @@ C.P. {{ trab_dom_cp }} alcaldía/municipio {{ trab_dom_municipio }} Estado
 {{ trab_dom_estado }}.</p>
 {% endif %}
 
-<p><strong>C)</strong> Que conoce las labores que «EL EMPLEADOR/A» requiere y que
+<p><strong>C)</strong> Que conoce las labores que «LA PERSONA EMPLEADORA» requiere y que
 cuenta con los conocimientos, la capacidad y los recursos necesarios para
 desarrollarlas y dar cabal cumplimiento a las obligaciones contenidas en el
 presente contrato.</p>
 
-<p><strong>II.</strong> Declara «EL EMPLEADOR/A»:</p>
+<p><strong>II.</strong> Declara «LA PERSONA EMPLEADORA»:</p>
 
 <p><strong>A)</strong> Ser una persona física{% if empl_nacionalidad %} de
 nacionalidad {{ empl_nacionalidad }}{% endif %}{% if empl_edad %}, tener la edad
@@ -69,7 +75,7 @@ capacidad legal para celebrar el presente contrato.</p>
 alcaldía/municipio {{ lt_municipio }} Estado {{ lt_estado }}.</p>
 
 <p><strong>C)</strong> Que requiere de los servicios de «LA PERSONA TRABAJADORA
-DEL HOGAR», la cual reconoce es apta para el desarrollo de las actividades del
+DEL HOGAR», de la cual reconoce que es apta para el desarrollo de las actividades del
 trabajo en el hogar en términos de lo dispuesto por la Ley Federal del Trabajo,
 en lo sucesivo «LFT».</p>
 
@@ -89,10 +95,11 @@ relación de trabajo el {{ inicio_dia }} de {{ inicio_mes }} del {{ inicio_anio 
 <p class="clausula"><strong>TERCERA. DEL LUGAR DE PRESTACIÓN DE SERVICIOS.</strong>
 «LAS PARTES» acuerdan que «LA PERSONA TRABAJADORA DEL HOGAR» prestará sus
 servicios en el domicilio descrito en la declaración B) de «LA PERSONA
-EMPLEADORA». En caso de cambio o traslado a otro domicilio, será bajo el
-consentimiento de «LA PERSONA TRABAJADORA DEL HOGAR» previo aviso de 8 días de
-anticipación, en cuyo caso «LA PERSONA EMPLEADORA» pagará los gastos por concepto
-de viáticos, hospedaje o alimentación.</p>
+EMPLEADORA». En caso de cambio o traslado a otro domicilio, será con el
+consentimiento expreso y por escrito de «LA PERSONA TRABAJADORA DEL HOGAR»
+previo aviso por escrito con al menos 8 días hábiles de anticipación, en cuyo
+caso «LA PERSONA EMPLEADORA» pagará los gastos por concepto de viáticos,
+hospedaje o alimentación.</p>
 
 <p class="clausula"><strong>CUARTA. DE LAS ACTIVIDADES.</strong> Las labores que
 desarrollará «LA PERSONA TRABAJADORA DEL HOGAR» serán las siguientes:
@@ -126,7 +133,7 @@ en que el pago de los salarios deberá retribuirse de forma:
 diaria ( {% if periodicidad == 'diaria' %}X{% endif %} ),
 semanal ( {% if periodicidad == 'semanal' %}X{% endif %} ) o
 quincenal ( {% if periodicidad == 'quincenal' %}X{% endif %} ), pactando un
-SALARIO DIARIO<sup>2</sup> de ${{ salario_diario }}, el cual se compromete «LA
+SALARIO DIARIO de ${{ salario_diario }}, el cual se compromete «LA
 PERSONA EMPLEADORA» a garantizarlo y pagarlo de manera puntual e inmediata, en su
 totalidad y no fraccionado, sin ningún descuento o embargo por concepto de
 alimentos, instrumentos de trabajo, materia prima, deudas u otro concepto.</p>
@@ -146,7 +153,7 @@ miércoles ( {% if 'miércoles' in dias %}X{% endif %} ),
 jueves ( {% if 'jueves' in dias %}X{% endif %} ),
 viernes ( {% if 'viernes' in dias %}X{% endif %} ),
 sábados ( {% if 'sábado' in dias %}X{% endif %} ),
-domingos ( {% if 'domingo' in dias %}X{% endif %} )<sup>3</sup>. Además, gozará
+domingos ( {% if 'domingo' in dias %}X{% endif %} )<sup>2</sup>. Además, gozará
 del disfrute de los días de descanso obligatorio previstos en el artículo 74 de
 la LFT y en caso de que «LA PERSONA TRABAJADORA DEL HOGAR» labore el día de su
 descanso o en días de descanso obligatorio, «LA PERSONA EMPLEADORA» le pagará el
@@ -156,7 +163,7 @@ salario ordinario, así como el tiempo extra que llegue a laborar de conformidad
 con la LFT.</p>
 
 <p class="clausula"><strong>OCTAVA. DEL DESCANSO.</strong> «LA PERSONA EMPLEADORA»
-acuerda otorgar como tiempo de descanso de {{ descanso_tiempo }}<sup>4</sup>, y
+acuerda otorgar como tiempo de descanso de {{ descanso_tiempo }}<sup>3</sup>, y
 proporcionar a «LA PERSONA TRABAJADORA DEL HOGAR» durante ese periodo un
 desayuno ( {% if 'desayuno' in comidas_incluidas %}X{% endif %} ),
 comida ( {% if 'comida' in comidas_incluidas %}X{% endif %} ) o
@@ -170,10 +177,12 @@ En todo caso no le será cubierto el pago del día que no acudió, salvo pacto e
 contrario. En caso de que «LA PERSONA EMPLEADORA» no requiera el servicio pactado
 por causa de fuerza mayor grave, deberá avisar al menos con 24 horas de
 anticipación a «LA PERSONA TRABAJADORA DEL HOGAR» y a menos que no exista dicha
-circunstancia, deberá cubrir el salario íntegro de ese día. «EL EMPLEADOR/A»
-dará tres días hábiles de permiso con goce de sueldo a «LA PERSONA TRABAJADORA
-DEL HOGAR» en caso de fallecimiento de un familiar de primer grado: padre, madre,
-cónyuge, hija(s) o hijo(s), previo aviso de «LA PERSONA TRABAJADORA DEL HOGAR».</p>
+circunstancia, deberá cubrir el salario íntegro de ese día.</p>
+
+<p>«LA PERSONA EMPLEADORA», dará tres días hábiles de permiso con goce de sueldo
+a «LA PERSONA TRABAJADORA DEL HOGAR» en caso de fallecimiento de un familiar de
+primer grado: padre, madre, cónyuge, hija(s) o hijo(s), previo aviso de «LA
+PERSONA TRABAJADORA DEL HOGAR».</p>
 
 <p class="clausula"><strong>DÉCIMA. VACACIONES Y PRIMA VACACIONAL.</strong> «LA
 PERSONA TRABAJADORA DEL HOGAR» disfrutará de un período anual de vacaciones
@@ -183,17 +192,20 @@ vacacional de al menos el 25% del salario base que le corresponda durante el
 periodo de vacaciones. Las vacaciones de «LA PERSONA EMPLEADORA» no serán
 consideradas vacaciones de «LA PERSONA TRABAJADORA DEL HOGAR», salvo pacto en
 contrario, debiendo pagar su salario íntegro y no existirá obligación de prestar
-sus servicios en un domicilio diferente al contratado, salvo pacto en contrario.</p>
+sus servicios en un domicilio diferente al contratado, salvo pacto en contrario.
+En ese caso, deberá estarse a lo establecido en la cláusula TERCERA del presente
+contrato.</p>
 
 <p class="clausula"><strong>DÉCIMA PRIMERA. AGUINALDO.</strong> «LA PERSONA
 TRABAJADORA DEL HOGAR» gozará del pago de al menos 15 días de salario por concepto
-de aguinaldo, y de manera proporcional si tiene menos de un año, y que le será
-cubierto a más tardar el día 20 de diciembre de cada año.</p>
+de aguinaldo, y de manera proporcional, si tiene menos de un año de antigüedad,
+y que le será cubierto a más tardar el día 20 de diciembre de cada año.</p>
 
 <p class="clausula"><strong>DÉCIMA SEGUNDA. DE LA CAPACITACIÓN Y
 ADIESTRAMIENTO.</strong> «LA PERSONA EMPLEADORA» proporcionará capacitación y
 adiestramiento a «LA PERSONA TRABAJADORA DEL HOGAR», para el manejo de aparatos
-electrodomésticos, equipos y utensilios, así como en las actividades a realizar
+electrodomésticos, equipos y utensilios necesarios para la realización de sus
+funciones, así como en las actividades a realizar
 para el mejor funcionamiento del hogar.</p>
 
 <p class="clausula"><strong>DÉCIMA TERCERA. DE LA SEGURIDAD SOCIAL Y LA
@@ -234,10 +246,10 @@ obligación de vestirlo se reduce a la jornada de trabajo.</p>
 CONTRATO DE TRABAJO.</strong> «EL CONTRATO» podrá ser rescindido o terminado por
 alguna de las causales establecidas en la LFT. En cualquier caso «LA PERSONA
 EMPLEADORA» pagará a «LA PERSONA TRABAJADORA DEL HOGAR» las prestaciones que en
-derecho proceda. «LAS PARTES» conjunta o individualmente podrán dar por terminada
+derecho procedan. «LAS PARTES» conjunta o individualmente podrán dar por terminada
 la relación de trabajo, dando un aviso con ocho días de anticipación, en cuyo
 caso «LA PERSONA EMPLEADORA» pagará a «LA PERSONA TRABAJADORA DEL HOGAR» las
-prestaciones que en derecho proceda.</p>
+prestaciones que en derecho procedan.</p>
 
 <p class="clausula"><strong>DÉCIMA SÉPTIMA. DE LOS CONFLICTOS DE TRABAJO.</strong>
 Para el caso de que se suscitaran conflictos entre las partes que pudieran dar
@@ -256,22 +268,23 @@ de {{ firma_mes }} del año {{ firma_anio }}.</p>
 
 <table class="firmas-tabla">
   <tr>
-    <td>{{ empl_nombre }}<br><small>«EL EMPLEADOR/A»</small></td>
+    <td>{{ empl_nombre }}<br><small>«PERSONA EMPLEADORA»</small></td>
     <td>{{ trab_nombre }}<br><small>«PERSONA TRABAJADORA DEL HOGAR»</small></td>
-    <td><br><small>«EL TESTIGO»</small></td>
+  </tr>
+  <tr class="firma-testigo">
+    <td colspan="2">
+      <div class="linea-testigo"><small>«EL TESTIGO»</small></div>
+    </td>
   </tr>
 </table>
 
 <div class="notas">
   <p><sup>1</sup> El trabajo de entrada por salida es aquel que realiza «LA
   PERSONA TRABAJADORA DEL HOGAR», en jornada previamente pactada, con hora de
-  entrada y de salida el mismo día y sin habitar en el domicilio de «EL
-  EMPLEADOR/A».</p>
-  <p><sup>2</sup> El salario pactado no debe ser menor al establecido por la
-  Comisión Nacional de los Salarios Mínimos para las personas trabajadoras del
-  hogar, sujeto a actualización anual.</p>
-  <p><sup>3</sup> Seleccionar máximo 6 días de trabajo.</p>
-  <p><sup>4</sup> De conformidad con lo establecido en el artículo 63 de la LFT,
+  entrada y de salida el mismo día y sin habitar en el domicilio de «LA PERSONA
+  EMPLEADORA».</p>
+  <p><sup>2</sup> Seleccionar máximo 6 días de trabajo.</p>
+  <p><sup>3</sup> De conformidad con lo establecido en el artículo 63 de la LFT,
   el tiempo de descanso no podrá ser menor de 30 minutos.</p>
 </div>
 

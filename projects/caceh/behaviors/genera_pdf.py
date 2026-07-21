@@ -17,6 +17,24 @@ _MESES = [
     "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ]
 
+_DIAS_SEMANA = [
+    "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo",
+]
+
+
+def _dias_descanso(dias_laborables: list) -> str:
+    """Días de la semana no laborables, como texto ('sábado y domingo').
+    Vacío si no hay días capturados (la plantilla imprime la línea en
+    blanco para llenar a mano)."""
+    if not dias_laborables:
+        return ""
+    libres = [d for d in _DIAS_SEMANA if d not in dias_laborables]
+    if not libres:
+        return ""
+    if len(libres) == 1:
+        return libres[0]
+    return ", ".join(libres[:-1]) + " y " + libres[-1]
+
 
 def _fecha_partes(valor) -> tuple[str, str, str]:
     """(día, mes en palabra, año) de un date o texto 'd/m/Y'. Si no se puede
@@ -85,8 +103,13 @@ class GeneraPdfBehavior(CacehBehaviorBase):
             "hora_entrada": self._read("hora_entrada", ""),
             "hora_salida": self._read("hora_salida", ""),
             "dias": self._read("dias_laborables") or [],
+            # OCTAVA de planta (versión 2026): días de descanso convenidos,
+            # derivados como complemento de los laborables (el flujo no
+            # pregunta horarios de descanso en planta).
+            "dias_descanso": _dias_descanso(
+                self._read("dias_laborables") or []),
             # Descanso: solo lo captura entrada por salida (OCTAVA); en planta
-            # la OCTAVA va fija por ley y estos quedan vacíos.
+            # estos quedan vacíos.
             "descanso_tiempo": self._read("descanso_tiempo", ""),
             "comidas_incluidas": self._read("comidas_incluidas") or [],
             "ciudad_firma": self._read(

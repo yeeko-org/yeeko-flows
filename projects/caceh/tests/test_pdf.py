@@ -65,7 +65,7 @@ class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
 
     def test_html_usa_clausulas_de_entrada_salida(self):
         html = build_html(self._datos(), "entrada_salida")
-        self.assertIn("MODALIDAD DE ENTRADA Y SALIDA", html)
+        self.assertIn("MODALIDAD DE ENTRADA POR SALIDA", html)
         self.assertIn("OCTAVA. DEL DESCANSO", html)
         self.assertIn("una hora", html)           # descanso_tiempo
         self.assertIn("comida ( X )", html)        # marca la comida elegida
