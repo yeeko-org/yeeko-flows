@@ -15,9 +15,13 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from infrastructure.box.models import Piece
-from infrastructure.member.factories import MemberFactory
+from infrastructure.box.models import Destination, Fragment, Piece, Reply
+from infrastructure.member.factories import (
+    MemberAccountFactory, MemberFactory)
 from infrastructure.place.factories import SpaceFactory
+from infrastructure.service.factories import (
+    ApiRecordFactory, InteractionTypeFactory)
+from infrastructure.talk.models import Interaction
 from infrastructure.xtra.models import Extra, Format
 
 from services.processor.fragment import FragmentProcessor
@@ -125,3 +129,62 @@ class SeedFlowBehaviorHarness(TestCase):
         args = MockG.return_value.extract.call_args.args
         self.assertEqual(args[2].__name__, "Jornada")          # schema
         self.assertIn("de lunes a viernes de 8 a 4", args[1])  # entrada
+
+
+class SeedIdempotencyTests(TestCase):
+    """El seed es upsert, no rebuild: resembrar conserva los PKs de
+    Piece/Fragment/Reply (sobreviven el historial de Interaction, los
+    BuiltReply de mensajes ya enviados y las sesiones en curso) y regresa
+    la BD al estado declarado."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.space = SpaceFactory()
+        Format.objects.get_or_create(name="json")
+        Format.objects.get_or_create(name="int")
+        call_command("seed_flow", space=cls.space.pk)
+
+    def _snapshot(self) -> dict[str, set]:
+        pieces = Piece.objects.filter(crate__flow__space=self.space)
+        frags = Fragment.objects.filter(piece__in=pieces)
+        return {
+            "pieces": set(pieces.values_list("id", flat=True)),
+            "fragments": set(frags.values_list("id", flat=True)),
+            "replies": set(Reply.objects.filter(fragment__in=frags)
+                           .values_list("id", flat=True)),
+            "destinations": set(
+                Destination.objects.filter(piece_dest__in=pieces)
+                .values_list("id", flat=True)),
+        }
+
+    def test_resembrar_conserva_pks_y_no_duplica(self):
+        before = self._snapshot()
+        call_command("seed_flow", space=self.space.pk)
+        self.assertEqual(self._snapshot(), before)
+
+    def test_resembrar_conserva_interacciones(self):
+        # Interaction.fragment es CASCADE: con el rebuild viejo esta
+        # interacción moría en cada resiembra.
+        frag = Piece.objects.get(
+            crate__flow__space=self.space,
+            name="a_saludo").fragments.first()
+        # A mano (InteractionFactory está desactualizada: pasa raw_payload,
+        # campo que ya no existe en el modelo).
+        interaction = Interaction.objects.create(
+            mid="wamid.test-idempotencia", is_incoming=False,
+            interaction_type=InteractionTypeFactory(),
+            member_account=MemberAccountFactory(),
+            api_record_out=ApiRecordFactory(), fragment=frag)
+        call_command("seed_flow", space=self.space.pk)
+        self.assertTrue(
+            Interaction.objects.filter(pk=interaction.pk).exists())
+
+    def test_resembrar_regresa_al_estado_declarado(self):
+        frag = Piece.objects.get(
+            crate__flow__space=self.space,
+            name="a_menor").fragments.get(fragment_type="message")
+        frag.body = "texto editado a mano en la BD"
+        frag.save(update_fields=["body"])
+        call_command("seed_flow", space=self.space.pk)
+        frag.refresh_from_db()
+        self.assertIn("menores de 18", frag.body)
