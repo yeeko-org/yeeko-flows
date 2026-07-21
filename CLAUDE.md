@@ -5,11 +5,11 @@ the DB (`Flow → Crate → Piece → Fragment → Reply → Destination`), with
 message primitives from the sibling `yeeko_abc` library. This branch is
 the ground-up rebuild of the engine, started 2026-07-21 from `develop`.
 
-**Start here:** read `.claude/rebuilding/` (README → decisiones.md →
-backlog.md) before any rebuild work. It holds the methodology, ADRs,
-session backlog and research reports. Every feature enters through
-design dialogue → Ricardo's explicit approval → implementation
-(ADR-001); no code lands without his full understanding.
+**Start here:** read `.claude/rebuilding/CLAUDE.md` (the rebuild
+contract: structure, session protocol) before any rebuild work; each
+session then begins at its `sesiones/<sN>/contexto.md`. Every feature
+enters through design dialogue → Ricardo's explicit approval →
+implementation (ADR-001); no code lands without his full understanding.
 
 ## Commands
 
