@@ -4,12 +4,11 @@ from infrastructure.box.models import Piece
 from projects.caceh import tabulador
 from services.seeder import FlowSeeder
 
-# Flow con description por opción (multiselect_desc.flow.json). PENDIENTE
-# de publicar en Meta (bloqueado 2026-07-08: requiere OK explícito); al
-# publicarlo, pegar aquí el flow_id. Mientras sea None se usa el Flow
-# genérico (solo id/title, inmutable) y se recortan las descripciones,
-# porque su schema no las declara.
-FLOW_ID_DESC = None
+# Flow con description por opción (multiselect_desc.flow.json), publicado
+# en Meta el 2026-07-09. Si se vuelve None se cae al Flow genérico (solo
+# id/title, inmutable) y se recortan las descripciones, porque su schema
+# no las declara.
+FLOW_ID_DESC = "2057389525199733"
 _FLOW_ID_LEGACY = "1308618661432871"
 
 
