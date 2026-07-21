@@ -61,11 +61,12 @@ class ResponseAbc(ABC, BaseModel):
     # @exception_handler
     def message_multimedia(
         self, media_type: str, url_media: str = "", media_id: str = "", caption: str = "",
-        fragment_id: Optional[int] = None
+        fragment_id: Optional[int] = None, filename: str = ""
     ):
         caption = _rep_text(caption, self.sender)
         message_data = self.multimedia_to_data(
-            url_media, media_id, media_type, caption, fragment_id=fragment_id)
+            url_media, media_id, media_type, caption, fragment_id=fragment_id,
+            filename=filename)
         message_data["_standard_message"] = json.loads(MediaMessage(
             caption=caption, id=media_id, link=url_media).model_dump_json())
         self.message_list.append(message_data)
@@ -137,7 +138,7 @@ class ResponseAbc(ABC, BaseModel):
     @abstractmethod
     def multimedia_to_data(
         self, url_media: str, media_id: str, media_type: str, caption: str,
-        fragment_id: Optional[int] = None
+        fragment_id: Optional[int] = None, filename: str = ""
     ) -> dict:
         raise NotImplementedError
 
