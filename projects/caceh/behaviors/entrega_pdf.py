@@ -26,5 +26,17 @@ class EntregaPdfBehavior(CacehBehaviorBase):
                 "message": "Media no encontrado"})
             return
 
+        # get_media_id puede regresar None (subida a WhatsApp fallida);
+        # message_multimedia sin id lanza ValueError y NO está envuelto en
+        # exception_handler: mataría el resto del turno (E7 y siguientes).
+        media_id = media.get_media_id()
+        if not media_id:
+            self.response.add_error({
+                "behavior": self.behavior_name, "pdf_contrato": pk,
+                "message": "Media sin media_id: la subida a WhatsApp falló"})
+            return
+
         self.response.message_multimedia(
-            media_type="document", media_id=media.get_media_id())
+            media_type="document", media_id=media_id,
+            fragment_id=self.params.get("fragment_id"),
+            filename="Contrato de trabajo del hogar.pdf")
