@@ -8,7 +8,7 @@ Resumen y propósito de la suite de pruebas automatizadas del proyecto.
 
 ```
 test/
-├── infrastructure/
+├── Infrastructure/
 │   └── assign/
 │       └── test_cr_evalue.py
 ├── interface/
@@ -30,7 +30,7 @@ test/
 
 ## Descripción por archivo
 
-### `infrastructure/assign/test_cr_evalue.py`
+### `test/Infrastructure/assign/test_cr_evalue.py`
 
 **Propósito:** Verifica la lógica de evaluación del modelo `ConditionRule`.
 
@@ -47,7 +47,7 @@ Prueba los métodos de evaluación que determinan si una regla de condición se 
 
 ---
 
-### `interface/whatsapp/test_flow_status.py`
+### `test/interface/whatsapp/test_flow_status.py`
 
 **Propósito:** Test de integración del flujo completo de un mensaje entrante de WhatsApp.
 
@@ -61,7 +61,7 @@ Usa `WhatsAppResponseNoSend` para simular el envío sin llamadas reales a la API
 
 ---
 
-### `interface/whatsapp/test_manager_flow.py`
+### `test/interface/whatsapp/test_manager_flow.py`
 
 **Propósito:** Verifica el pipeline completo `request → procesamiento → response` de `ManagerFlow`.
 
@@ -69,7 +69,7 @@ Comprueba que al ejecutar el flujo con un payload de tipo `"started"` se genere 
 
 ---
 
-### `interface/whatsapp/test_request.py`
+### `test/interface/whatsapp/test_request.py`
 
 **Propósito:** Verifica el parseo de un payload de WhatsApp en `WhatsAppRequest`.
 
@@ -80,7 +80,7 @@ Comprueba que la jerarquía de objetos resultante sea correcta:
 
 ---
 
-### `interface/whatsapp/test_send_message.py`
+### `test/interface/whatsapp/test_send_message.py`
 
 **Propósito:** Verifica la construcción de payloads para todos los tipos de mensaje de `WhatsAppResponse`.
 
@@ -94,7 +94,7 @@ Comprueba que la jerarquía de objetos resultante sea correcta:
 
 ---
 
-### `interface/whatsapp/test_written.py`
+### `test/interface/whatsapp/test_written.py`
 
 **Propósito:** Verifica el flujo de respuesta a un mensaje de texto para un `MemberAccount` preexistente.
 
@@ -102,7 +102,7 @@ Usa fixtures de cuenta básica y una pieza escrita (`written_piece`). Aísla la 
 
 ---
 
-### `presentation/views/test_whatsapp.py`
+### `test/presentation/views/test_whatsapp.py`
 
 **Propósito:** Test de integración del endpoint webhook de WhatsApp (`webhook_meta_whatsapp`).
 
@@ -113,7 +113,7 @@ Usa fixtures de cuenta básica y una pieza escrita (`written_piece`). Aísla la 
 
 ---
 
-### `services/request/test_init.py`
+### `test/services/request/test_init.py`
 
 **Propósito:** Verifica el comportamiento de la clase abstracta base `RequestAbc`.
 
