@@ -96,7 +96,6 @@ class GeneraPdfBehavior(CacehBehaviorBase):
             "inicio_mes": ini_mes,
             "inicio_anio": ini_anio,
             "actividades": self._read("actividades") or [],
-            "actividad_otra": self._read("actividad_otra", ""),
             "periodicidad": self._read("pago_periodicidad", ""),
             "salario_diario": self._read("salario_diario", ""),
             "modo_pago": self._read("modo_pago", ""),

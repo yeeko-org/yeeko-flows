@@ -86,16 +86,9 @@ ITEMS = [
      "comunicación y coordinación, tareas ligeras del hogar", 904.00),
 ]
 
-# "Otra" se mantiene como escape de la lista cerrada (CUARTA: "otra,
-# especificar"); sin salario, así que nunca gana el max.
-OTRA = ("otra", "Otra actividad",
-        "Algo que haces y no aparece en esta lista")
-
 SALARIOS = {item_id: salario for item_id, _, _, salario in ITEMS}
 
 
 def opciones() -> list[dict]:
     """Opciones [{id,title,description}] para el multiselect de D1."""
-    opts = [{"id": i, "title": t, "description": d} for i, t, d, _ in ITEMS]
-    opts.append({"id": OTRA[0], "title": OTRA[1], "description": OTRA[2]})
-    return opts
+    return [{"id": i, "title": t, "description": d} for i, t, d, _ in ITEMS]

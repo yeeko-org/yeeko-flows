@@ -13,7 +13,7 @@ _FLOW_ID_LEGACY = "1308618661432871"
 
 
 def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
-    # D1 ☑️ los 20 items del tabulador + "otra"; el submit escribe la lista
+    # D1 ☑️ los 20 items del tabulador; el submit escribe la lista
     # de ids en {{actividades}} y avanza directo a D4 (deriva_categoria
     # murió: ya no hay categorías, la regla es max en calcula_tabulador).
     options = tabulador.opciones()

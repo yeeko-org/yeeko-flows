@@ -31,7 +31,7 @@ class CalculaTabuladorBehavior(CacehBehaviorBase):
         salarios = [tabulador.SALARIOS[a] for a in actividades
                     if a in tabulador.SALARIOS]
         if not salarios:
-            # Solo "otra" (o nada): no hay referencia -> sin aviso.
+            # Sin actividades reconocidas: no hay referencia -> sin aviso.
             self._write("salario_bajo", "no")
             return
 

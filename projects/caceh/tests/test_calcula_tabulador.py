@@ -59,8 +59,8 @@ class CalculaTabuladorTestCase(CacehBehaviorTestBase):
 
         self.assertEqual(self._data()["salario_bajo"], "no")
 
-    def test_solo_otra_sin_referencia(self):
-        self._set("actividades", ["otra"])
+    def test_sin_actividades_sin_referencia(self):
+        self._set("actividades", [])
         self._set("salario_diario", "300.0")
 
         CalculaTabuladorBehavior(self.response)
@@ -81,6 +81,9 @@ class CalculaTabuladorTestCase(CacehBehaviorTestBase):
             for e in self.response.errors))
 
     def test_titulos_respetan_limite_checkbox(self):
+        # Meta corta el CheckboxGroup en 20 opciones: la lista está justo
+        # en el límite, agregar una labor obliga a fusionar otra.
+        self.assertLessEqual(len(tabulador.opciones()), 20)
         for opcion in tabulador.opciones():
             self.assertLessEqual(len(opcion["title"]), 30, opcion["id"])
             self.assertLessEqual(len(opcion["description"]), 300)
