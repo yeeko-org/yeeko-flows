@@ -25,21 +25,19 @@ The engine sends Flows with `flow_action: "navigate"` and passes the catalog
   This keeps hosting cost at zero — important for the CACEH ~15 MXN ceiling.
 - Dynamic options are fine: they ride in the navigate payload, not a server.
 
-## The published Flow (Space "Yeeko", WABA `3449947368500778`)
+## The published Flow
 
-| Item | Value |
-|---|---|
-| **flow_id** | **`1308618661432871`** (status `PUBLISHED`) |
-| WABA id | `3449947368500778` |
-| Account pid (token source) | `1128183617053069` ("CACEH demo (WP7 code)") |
-| Flow JSON | `assets/multiselect.flow.json` (version `7.3`) |
-| Graph API version used | `v21.0` |
+The concrete operational data of CACEH's published Flow (flow_id, WABA, account,
+Meta's CheckboxGroup limits) is **not kept here** — it lives with the product,
+in ~/dev/yeeko/bot_caceh/docs/reference/2026-08-18-whatsapp-flow-publicado.md.
+Keeping it in one place avoids the two copies drifting apart.
 
-The Flow has one terminal screen `SELECT` with a `CheckboxGroup` bound to
-`${data.options}` and a Footer whose `complete` payload returns
-`{ selection, flow_token }`. That is exactly what the engine expects back.
+What is generic and stays here: one **static published Flow** with a single
+terminal screen `SELECT`, a `CheckboxGroup` bound to `${data.options}` and a
+Footer whose `complete` payload returns `{ selection, flow_token }` — which is
+exactly what the engine expects back.
 
-> **Reuse:** this single Flow backs *any* multiple-select question — pass a
+> **Reuse:** a single Flow backs *any* multiple-select question — pass a
 > different `options`/`body`/`extra` when wiring. You do not publish a new Flow
 > per question.
 
@@ -77,16 +75,18 @@ The "WP7 code" account token has both scopes; the "stepper" token is a fake.
 
 ## Wiring a multiselect question into a flow
 
-Two ends must agree — see **[references/wiring-seed.md](references/wiring-seed.md)**
-for the exact `_behavior_step` call and the `dest_piece_pk` gotcha. The engine
-contract (what `WaFormMessage` sends and what `nfm_reply` must return) is in
-**[references/motor-contract.md](references/motor-contract.md)**.
+Two ends must agree. The engine contract (what `WaFormMessage` sends and what
+`nfm_reply` must return) is in
+**[references/motor-contract.md](references/motor-contract.md)**. Seed the piece
+with `FlowSeeder.wa_form_step`, which deliberately omits the auto-advance
+fragment: the piece must send the form and *wait*; `WaFormReplyProcessor` fires
+`dest_piece_pk` when the `nfm_reply` arrives.
 
 Short version — the `multiple_select` behavior needs these params:
 
 | Param | Meaning |
 |---|---|
-| `flow_id` | `1308618661432871` (the published Flow above) |
+| `flow_id` | the published Flow id (see bot_caceh reference above) |
 | `body` | the question text (also used as the CheckboxGroup label) |
 | `extra` | name of the JSON extra to write the chosen ids into (as a list) |
 | `dest_piece_pk` | piece to advance to after submit |
