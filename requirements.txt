@@ -15,6 +15,7 @@ Django==4.2.9
 django-cors-headers==4.3.1
 django-storages==1.14.4
 djangorestframework==3.14.0
+docopt==0.6.2
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl#sha256=86cc141f63942d4b2c5fcee06630fd6f904788d2f0ab005cce45aadb8fb73889
 factory-boy==3.3.0
 Faker==22.6.0
@@ -30,6 +31,7 @@ markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
 murmurhash==1.0.10
+num2words==0.5.14
 numpy==1.24.3
 packaging==24.1
 pathlib_abc==0.1.1
