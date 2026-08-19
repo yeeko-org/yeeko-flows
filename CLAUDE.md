@@ -6,6 +6,7 @@ code; it inherits message primitives from the `yeeko_abc` library.
 
 ## Commands
 
+- Testing levels, commands and covered e2e flows: `TESTING.md`.
 - `python manage.py test --noinput` — run tests (Postgres test DB; use
   `--noinput` to auto-drop a leftover test DB).
 - `python manage.py runserver` — also registers in-code behaviors via
