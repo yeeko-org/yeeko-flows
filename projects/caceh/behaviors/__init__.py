@@ -29,3 +29,6 @@ from projects.caceh.behaviors.entrega_pdf import (
 from projects.caceh.behaviors.reinicia_contrato import (
     ReiniciaContratoBehavior as reinicia_contrato,
 )
+from projects.caceh.behaviors.default_text import (
+    DefaultTextBehavior as default_text,
+)

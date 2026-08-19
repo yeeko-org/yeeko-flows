@@ -61,10 +61,15 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
          {"mayor_edad": "no", "flujo_completado": "abandonado"}),
     ])
 
-    sdr.msg(p["a_menor"], (
+    # Salida por minoría de edad: era terminal y dejaba a la persona sin
+    # ninguna acción posible. Lleva el mismo botón que la despedida para
+    # que un contrato con otra persona no exija reescribir a un bot mudo.
+    sdr.buttons(p["a_menor"], (
         "Para personas menores de 18 años la ley pide cuidados especiales "
-        "y este asistente todavía no puede hacer ese contrato. Acércate a "
-        "CACEH para que te acompañen. 💚"))
+        "y este contrato no aplica. Acércate a CACEH para que te "
+        "acompañen. 💚"), [
+        ("Hacer otro contrato", p["e_reinicia"], None),
+    ])
 
     # Varias empleadoras -> por fuerza entrada por salida; salta "¿duermes?"
     # y entra a §B vía el link A10 (que retoma con el nombre de la parte).

@@ -52,6 +52,11 @@ class Command(BaseCommand):
         for module in (section_a, section_b, section_c, section_de):
             module.wire(sdr, p)
         sdr.wire_global_start(p["a_saludo"])
+        # Sin `default_text` sembrado el motor calla ante cualquier texto que
+        # no espera (text.py lo llama como opcional). Va sin `main_piece` a
+        # propósito: el behavior de CACEH repite la pieza pendiente en vez de
+        # rendir una fija, que se volvería el contexto de la conversación.
+        sdr.ensure_behavior("default_text", generic=False)
 
         stats = sdr.finalize()
         self._report(sdr, stats)
