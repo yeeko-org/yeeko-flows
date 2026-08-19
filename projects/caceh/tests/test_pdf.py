@@ -79,6 +79,36 @@ class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
         self.assertGreater(len(pdf), 1000)
 
 
+class MontoEnLetrasTestCase(CacehBehaviorTestBase):
+    def test_montos_a_letras_y_formato(self):
+        from projects.caceh.pdf import monto_en_letras, monto_formateado
+        casos = [
+            ("350.0", "trescientos cincuenta pesos 00/100 M.N", "350.00"),
+            (2800.5, "dos mil ochocientos pesos 50/100 M.N", "2800.50"),
+            ("$1,250.75", "mil doscientos cincuenta pesos 75/100 M.N",
+             "1250.75"),
+            (1, "un peso 00/100 M.N", "1.00"),
+            (21, "veintiún pesos 00/100 M.N", "21.00"),
+        ]
+        for valor, letras, monto in casos:
+            with self.subTest(valor=valor):
+                self.assertEqual(monto_en_letras(valor), letras)
+                self.assertEqual(monto_formateado(valor), monto)
+        for invalido in ("", None, "abc", 0, -5):
+            with self.subTest(valor=invalido):
+                self.assertEqual(monto_en_letras(invalido), "")
+                self.assertEqual(monto_formateado(invalido), "")
+
+    def test_monto_invalido_no_deja_parentesis_ni_signo(self):
+        from projects.caceh.pdf import build_html
+        html = build_html({"salario_diario": ""}, "planta")
+        self.assertNotIn("()", html)
+        self.assertNotIn("de $,", html)
+        con_monto = build_html({"salario_diario": "350.0"}, "planta")
+        self.assertIn("$350.00", con_monto)
+        self.assertIn("(trescientos cincuenta pesos 00/100 M.N)", con_monto)
+
+
 class TextoDescansoTestCase(CacehBehaviorTestBase):
     def test_minutos_a_texto(self):
         casos = {

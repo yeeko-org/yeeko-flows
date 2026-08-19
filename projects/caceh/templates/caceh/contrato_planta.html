@@ -133,7 +133,7 @@ en que el pago de los salarios deberá retribuirse de forma:
 diaria ( {% if periodicidad == 'diaria' %}X{% endif %} ),
 semanal ( {% if periodicidad == 'semanal' %}X{% endif %} ) o
 quincenal ( {% if periodicidad == 'quincenal' %}X{% endif %} ), pactando un
-SALARIO DIARIO de ${{ salario_diario }}{% if salario_letras %}
+SALARIO DIARIO de {% if salario_monto %}${{ salario_monto }}{% endif %}{% if salario_letras %}
 ({{ salario_letras }}){% endif %}, el cual se compromete «LA
 PERSONA EMPLEADORA» a garantizarlo y pagarlo de manera puntual e inmediata, en su
 totalidad y no fraccionado, sin ningún descuento o embargo por concepto de

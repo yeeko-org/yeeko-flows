@@ -28,15 +28,29 @@ def _apocope(palabras: str) -> str:
     return palabras
 
 
+def _parse_monto(valor):
+    """Decimal positivo o None: la misma noción de «monto usable» para el
+    número formateado y su versión en letras."""
+    try:
+        monto = Decimal(str(valor).replace("$", "").replace(",", "").strip())
+    except (InvalidOperation, ValueError):
+        return None
+    return monto if monto > 0 else None
+
+
+def monto_formateado(valor) -> str:
+    """'350.00': dos decimales fijos para la QUINTA. Vacía si no hay monto,
+    para que la plantilla omita también el signo $."""
+    monto = _parse_monto(valor)
+    return f"{monto:.2f}" if monto is not None else ""
+
+
 def monto_en_letras(valor) -> str:
     """Monto en palabras para la QUINTA, en el formato del contrato original:
     'trescientos cincuenta pesos 00/100 M.N'. Cadena vacía si no hay monto
     usable: lo no capturado se omite, nunca se imprime una línea en blanco."""
-    try:
-        monto = Decimal(str(valor).replace("$", "").replace(",", "").strip())
-    except (InvalidOperation, ValueError):
-        return ""
-    if monto <= 0:
+    monto = _parse_monto(valor)
+    if monto is None:
         return ""
     pesos, centavos = divmod(int(monto.scaleb(2).to_integral_value()), 100)
     letras = _apocope(num2words(pesos, lang="es"))
@@ -52,6 +66,7 @@ def build_html(datos: dict, tipo_contrato: str = "planta") -> str:
     # El monto en letras se deriva aquí y no en genera_pdf para que valga
     # igual en cualquier ruta de render (incluidas las pruebas del HTML).
     datos = {**datos,
+             "salario_monto": monto_formateado(datos.get("salario_diario")),
              "salario_letras": monto_en_letras(datos.get("salario_diario"))}
     return Template(tpl).render(**datos)
 
