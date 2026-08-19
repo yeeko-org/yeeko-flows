@@ -79,11 +79,39 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
         ("Corregir algo", p["e_corrige"], None),
     ])
 
-    # E4 corrección: stub mínimo que vuelve al resumen (la lista completa de
-    # campos editables se afina luego).
-    sdr.buttons(p["e_corrige"],
-                "¿Qué quieres corregir? (por ahora volvemos al resumen)",
-                [("Volver al resumen", p["e_resumen"], None)])
+    # E4 corrección por IA (task-27): texto libre -> corrige_por_ia escribe
+    # los extras corregidos -> se recalcula el diario y el veredicto del
+    # tabulador (sin aviso) -> el resumen se re-pinta. Si la persona quiere
+    # cambiar actividades se reabre el Flow de D1, cuya cadena ya desemboca
+    # en el resumen.
+    sdr.capture(
+        p["e_corrige"],
+        "Dime qué está mal y cómo debe quedar. Escríbelo con tus palabras. "
+        "Puedes incluir todas las correcciones en un solo mensaje: nombres, "
+        "montos, actividades, horarios, lugar de trabajo, etc.",
+        "respuesta_correccion", p["e_ia_corrige"])
+    sdr.behavior_step(
+        p["e_ia_corrige"], "corrige_por_ia", p["e_checa_correccion"])
+    sdr.bifurcation(
+        p["e_checa_correccion"], "ia_completed",
+        [("no", p["e_repregunta_correccion"])],
+        default_dest=p["e_recalcula"])
+    sdr.capture(
+        p["e_repregunta_correccion"], "{{ia_pregunta}}",
+        "respuesta_correccion", p["e_ia_corrige"])
+    # El diario se recalcula siempre (también antes de reabrir actividades,
+    # por si en el mismo texto cambió el pago); el tabulador, solo en la
+    # ruta de texto: la de actividades ya lo recorre con D4-D6.
+    sdr.behavior_step(
+        p["e_recalcula"], "calcula_salario_diario",
+        p["e_bifurca_correccion"])
+    sdr.bifurcation(
+        p["e_bifurca_correccion"], "correccion_destino",
+        [("actividades", p["d_actividades"])],
+        default_dest=p["e_recalcula_tabulador"])
+    sdr.behavior_step(
+        p["e_recalcula_tabulador"], "calcula_tabulador", p["e_resumen"],
+        params={"silencioso": "si"})
 
     sdr.buttons(p["e_despedida"], (
         "Imprímanlo dos veces y fírmenlo: quien emplea, la persona "

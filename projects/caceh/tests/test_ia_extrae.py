@@ -85,7 +85,7 @@ class IaExtraeTestCase(TestCase):
     def _run_descanso(self, result, entrada="una hora para comer"):
         # Los extras propios de descanso se crean aquí y no en setUp: solo los
         # usa el caso de entrada por salida.
-        self._extra("descanso_tiempo")
+        self._extra("descanso_minutos", self.fmt_int)
         self._extra("comidas_incluidas", self.fmt_json)
         self._extra("_hist_descanso", self.fmt_json)
         return IaExtraeBehavior(
@@ -160,10 +160,26 @@ class IaExtraeTestCase(TestCase):
         # Mismo riesgo en la OCTAVA de entrada por salida: la plantilla marca
         # las casillas comparando 'desayuno'/'comida'/'cena' exactos.
         self._run_descanso({
-            "descanso_tiempo": "1 hora",
+            "descanso_minutos": 60,
             "comidas_incluidas": ["almuerzo"],
             "ia_completed": "si", "ia_pregunta": None})
         self.assertEqual(self._data()["ia_completed"], "no")
+
+    def test_descanso_menor_a_treinta_minutos_se_vuelve_repregunta(self):
+        self._run_descanso({
+            "descanso_minutos": 15, "comidas_incluidas": ["comida"],
+            "ia_completed": "si", "ia_pregunta": None})
+        data = self._data()
+        self.assertEqual(data["ia_completed"], "no")
+        self.assertIn("30 minutos", data["ia_pregunta"])
+
+    def test_descanso_de_treinta_minutos_pasa(self):
+        self._run_descanso({
+            "descanso_minutos": 30, "comidas_incluidas": [],
+            "ia_completed": "si", "ia_pregunta": None})
+        data = self._data()
+        self.assertEqual(data["ia_completed"], "si")
+        self.assertEqual(data["descanso_minutos"], 30)
 
     def test_dia_no_reconocible_se_vuelve_repregunta(self):
         self._run({

@@ -32,3 +32,6 @@ from projects.caceh.behaviors.reinicia_contrato import (
 from projects.caceh.behaviors.default_text import (
     DefaultTextBehavior as default_text,
 )
+from projects.caceh.behaviors.corrige_por_ia import (
+    CorrigePorIaBehavior as corrige_por_ia,
+)

@@ -23,6 +23,7 @@ from infrastructure.persistent_media.models import Media
 from infrastructure.place.models import Space
 from infrastructure.xtra.models import Format
 from projects.caceh.flow_driver import FlowDriver, gemini_fake, media_offline
+from projects.caceh.tests.seed_titles import title_of
 
 WA_ID = "5215500000009"
 _MEDIA_TMP = tempfile.mkdtemp(prefix="caceh-diag-media-")
@@ -39,22 +40,22 @@ class _Resp:
 
 def _drive_to_resumen(d: FlowDriver) -> None:
     d.send("hola")
-    d.send("¡Empecemos!")
-    d.send("Trabajadora")
+    d.tap(title_of("a_saludo", "a_quien_eres"))
+    d.tap(title_of("a_quien_eres", operador="trabajadora"))
     d.send("Juana Pérez López")
     d.send("Marcela Ruiz Soto")
-    d.send("Sí")
-    d.send("Una persona")
-    d.send("Sí, duermo ahí")
+    d.tap(title_of("a_mayor_edad", mayor_edad="si"))
+    d.tap(title_of("a_num_empleadoras", "a_duerme"))
+    d.tap(title_of("a_duerme", tipo_contrato="planta"))
     d.send("jornada")            # gemini fake: contesta datos canónicos
-    d.send("Sí, así es")
-    d.send("Empieza ahora")
+    d.tap(title_of("b_confirma_jornada", "c_relacion_previa"))
+    d.tap(title_of("c_relacion_previa", "c_pago_abierta"))
     d.send("2500 a la semana")
-    d.send("Sí, así es")
-    d.send("En efectivo")
+    d.tap(title_of("c_confirma_pago", "c_modo_pago"))
+    d.tap(title_of("c_modo_pago", modo_pago="efectivo"))
     d.send("domicilio")
-    d.send("Sí, es correcta")
-    d.submit_form(["limpieza_general", "lavado"])
+    d.tap(title_of("c_confirma_lugar", "d_actividades"))
+    d.submit_form(["labor_1", "labor_2"])
     assert d.at_piece() == "e_resumen", d.at_piece()
 
 
@@ -78,7 +79,7 @@ class PdfDeliveryDiagnosis(TestCase):
         with media_offline(), gemini_fake():
             d = FlowDriver(WA_ID)
             _drive_to_resumen(d)
-            d.send("Todo correcto")
+            d.tap(title_of("e_resumen", "e_genera_pdf"))
         self.assertEqual(d.at_piece(), "e_despedida")
         docs = self._document_msgs(d)
         self.assertEqual(len(docs), 1)
@@ -94,7 +95,7 @@ class PdfDeliveryDiagnosis(TestCase):
                 return_value=rejected):
             d = FlowDriver(WA_ID)
             _drive_to_resumen(d)
-            d.send("Todo correcto")
+            d.tap(title_of("e_resumen", "e_genera_pdf"))
         # Sin media_id no hay documento, pero el turno sigue completo.
         self.assertEqual(d.at_piece(), "e_despedida")
         self.assertEqual(self._document_msgs(d), [])
@@ -108,7 +109,7 @@ class PdfDeliveryDiagnosis(TestCase):
                 return_value=ok) as mock_post:
             d = FlowDriver(WA_ID)
             _drive_to_resumen(d)
-            d.send("Todo correcto")
+            d.tap(title_of("e_resumen", "e_genera_pdf"))
 
         self.assertEqual(d.at_piece(), "e_despedida")
         docs = self._document_msgs(d)

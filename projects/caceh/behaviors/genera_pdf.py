@@ -37,6 +37,25 @@ def _dias_descanso(dias_laborables: list) -> str:
     return ", ".join(libres[:-1]) + " y " + libres[-1]
 
 
+def _texto_descanso(minutos) -> str:
+    """Minutos como texto para la OCTAVA: 30 -> '30 minutos', 60 -> '1 hora',
+    90 -> '1 hora y 30 minutos'. Vacío si no hay dato (planta no lo
+    captura)."""
+    try:
+        minutos = int(minutos)
+    except (TypeError, ValueError):
+        return ""
+    if minutos <= 0:
+        return ""
+    horas, resto = divmod(minutos, 60)
+    partes = []
+    if horas:
+        partes.append("1 hora" if horas == 1 else f"{horas} horas")
+    if resto:
+        partes.append("1 minuto" if resto == 1 else f"{resto} minutos")
+    return " y ".join(partes)
+
+
 def _fecha_partes(valor) -> tuple[str, str, str]:
     """(día, mes en palabra, año) de un date o texto 'd/m/Y'. Si no se puede
     parsear, cae a hoy (el inicio retroactivo está fuera del slice)."""
@@ -114,7 +133,8 @@ class GeneraPdfBehavior(CacehBehaviorBase):
                 self._read("dias_laborables") or []),
             # Descanso: solo lo captura entrada por salida (OCTAVA); en planta
             # estos quedan vacíos.
-            "descanso_tiempo": self._read("descanso_tiempo", ""),
+            "descanso_texto": _texto_descanso(
+                self._read("descanso_minutos")),
             "comidas_incluidas": self._read("comidas_incluidas") or [],
             "ciudad_firma": self._read(
                 "ciudad_firma", self._read("lt_municipio", "")),

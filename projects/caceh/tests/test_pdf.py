@@ -6,7 +6,8 @@ Correr: .venv/bin/python manage.py test projects.caceh
 from unittest import mock
 
 from projects.caceh.behaviors.entrega_pdf import EntregaPdfBehavior
-from projects.caceh.behaviors.genera_pdf import GeneraPdfBehavior
+from projects.caceh.behaviors.genera_pdf import (
+    GeneraPdfBehavior, _texto_descanso)
 from projects.caceh.pdf import (
     build_html, render_entrada_salida, render_planta)
 from projects.caceh.tests.test_behaviors import CacehBehaviorTestBase
@@ -57,7 +58,7 @@ class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
             "modo_pago": "efectivo",
             "hora_entrada": "8:00", "hora_salida": "16:00",
             "dias": ["lunes", "martes"],
-            "descanso_tiempo": "una hora", "comidas_incluidas": ["comida"],
+            "descanso_texto": "1 hora", "comidas_incluidas": ["comida"],
             "ciudad_firma": "Ciudad de México",
             "firma_dia": "29", "firma_mes": "junio", "firma_anio": "2026",
         }
@@ -66,7 +67,7 @@ class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
         html = build_html(self._datos(), "entrada_salida")
         self.assertIn("MODALIDAD DE ENTRADA POR SALIDA", html)
         self.assertIn("OCTAVA. DEL DESCANSO", html)
-        self.assertIn("una hora", html)           # descanso_tiempo
+        self.assertIn("descanso de 1 hora", html)  # descanso_texto
         self.assertIn("comida ( X )", html)        # marca la comida elegida
         self.assertIn("desayuno (  )", html)       # las no elegidas, vacías
         # No debe colarse la OCTAVA de planta (descanso nocturno/dormitorio).
@@ -76,6 +77,19 @@ class RenderEntradaSalidaTestCase(CacehBehaviorTestBase):
         pdf = render_entrada_salida(self._datos())
         self.assertTrue(pdf.startswith(b"%PDF"))
         self.assertGreater(len(pdf), 1000)
+
+
+class TextoDescansoTestCase(CacehBehaviorTestBase):
+    def test_minutos_a_texto(self):
+        casos = {
+            30: "30 minutos", 45: "45 minutos", 60: "1 hora",
+            90: "1 hora y 30 minutos", 120: "2 horas",
+            150: "2 horas y 30 minutos", "60": "1 hora",
+            None: "", "": "", 0: "",
+        }
+        for minutos, esperado in casos.items():
+            with self.subTest(minutos=minutos):
+                self.assertEqual(_texto_descanso(minutos), esperado)
 
 
 class GeneraPdfTestCase(CacehBehaviorTestBase):

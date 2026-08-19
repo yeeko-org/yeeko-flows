@@ -32,6 +32,9 @@ EXTRAS = [
     ("salario_sugerido", None),       # calcula_tabulador (D5): max de items
     ("salario_bajo", None),           # calcula_tabulador (D5) -> "si"/"no"
     ("enviar_contacto_caceh", None),  # botón "Sí, contactar" (D7)
+    ("respuesta_correccion", None),   # captura E4 (texto libre)
+    ("correccion_destino", None),     # corrige_por_ia -> resumen|actividades
+    ("_hist_correccion", "json"),     # historial transitorio de E4
     # --- salidas de los behaviors de WP5 + campos de los esquemas de IA que
     # ia_extrae escribe (nombre de campo Pydantic = clave del extra).
     ("trab_nombre_completo", None),   # asigna_partes (A5)
@@ -41,7 +44,7 @@ EXTRAS = [
     ("hora_salida", None),            # ia_extrae jornada (B2)
     ("dias_laborables", "json"),      # ia_extrae jornada (B2)
     ("_hist_jornada", "json"),        # historial transitorio de B2
-    ("descanso_tiempo", None),        # ia_extrae descanso (B7)
+    ("descanso_minutos", "int"),      # ia_extrae descanso (B7)
     ("comidas_incluidas", "json"),    # ia_extrae descanso (B7)
     ("_hist_descanso", "json"),       # historial transitorio de B7
     ("monto_pago", "int"),            # ia_extrae pago (C5)

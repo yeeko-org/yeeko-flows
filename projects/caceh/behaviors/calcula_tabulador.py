@@ -50,7 +50,9 @@ class CalculaTabuladorBehavior(CacehBehaviorBase):
 
         bajo = diario < sugerido - tabulador.MARGEN_MXN
         self._write("salario_bajo", "si" if bajo else "no")
-        if bajo:
+        # silencioso="si" (E4 recálculo tras corregir): el veredicto se
+        # reescribe pero el aviso no se muestra, y la imagen es parte de él.
+        if bajo and self.params.get("silencioso") != "si":
             self._envia_imagen(sugerido)
 
     def _envia_imagen(self, sugerido: float) -> None:
