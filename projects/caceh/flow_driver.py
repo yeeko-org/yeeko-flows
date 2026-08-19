@@ -175,9 +175,12 @@ class FlowDriver:
         self.member_account = None
         self.last_turn: list[dict] = []
 
-    def send(self, body: str) -> list[dict]:
-        payload = text_payload(self.wa_id, body, self.pid,
-                               context_id=self._last_out_mid())
+    # WhatsApp real solo manda `context` cuando la persona cita el mensaje del
+    # bot; `with_context=False` reproduce el caso normal (escribir sin citar).
+    def send(self, body: str, with_context: bool = True) -> list[dict]:
+        payload = text_payload(
+            self.wa_id, body, self.pid,
+            context_id=self._last_out_mid() if with_context else None)
         return self._run(payload)
 
     # Botón = título como texto (lo resuelve check_buttons_text).

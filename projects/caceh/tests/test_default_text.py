@@ -89,6 +89,21 @@ class DefaultTextTest(TestCase):
         self.assertEqual(d.extras().get("operador_nombre"), "Hola")
         self.assertEqual(d.at_piece(), "a_nombre_contraparte")
 
+    def test_texto_sin_context_id_sigue_capturando(self):
+        """WhatsApp solo manda `context` si la persona cita el mensaje del bot;
+        lo normal es escribir sin citar. La captura debe funcionar igual."""
+        d = self.d
+        d.send("hola")
+        d.tap("¡Empecemos!")
+        d.tap("Trabajadora")
+        self.assertEqual(d.at_piece(), "a_nombre_operador")
+
+        d.send("Juana Pérez López", with_context=False)
+        self.assertNotIn("No entendí", " ".join(d.bot_texts()))
+        self.assertEqual(d.extras().get("operador_nombre"),
+                         "Juana Pérez López")
+        self.assertEqual(d.at_piece(), "a_nombre_contraparte")
+
     def test_texto_tras_la_despedida_reofrece_empezar_otro(self):
         """El caso del correo de Fósforo: terminado un contrato, «Hola» ya no
         cae en el vacío — vuelve la despedida y con ella su botón."""

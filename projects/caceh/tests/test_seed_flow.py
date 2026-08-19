@@ -22,7 +22,7 @@ from infrastructure.place.factories import SpaceFactory
 from infrastructure.service.factories import (
     ApiRecordFactory, InteractionTypeFactory)
 from infrastructure.talk.models import Interaction
-from infrastructure.xtra.models import Extra, Format
+from infrastructure.xtra.models import Extra
 
 from services.processor.fragment import FragmentProcessor
 
@@ -58,11 +58,6 @@ class SeedFlowBehaviorHarness(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.space = SpaceFactory()
-        # Los Format que el seed asigna a los extras de lista/entero; en la BD
-        # de test no vienen por defecto (los crea get_or_create, como en los
-        # demás tests). Deben existir ANTES de sembrar.
-        Format.objects.get_or_create(name="json")
-        Format.objects.get_or_create(name="int")
         call_command("seed_flow", space=cls.space.pk)
 
     def setUp(self):
@@ -140,8 +135,6 @@ class SeedIdempotencyTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.space = SpaceFactory()
-        Format.objects.get_or_create(name="json")
-        Format.objects.get_or_create(name="int")
         call_command("seed_flow", space=cls.space.pk)
 
     def _snapshot(self) -> dict[str, set]:

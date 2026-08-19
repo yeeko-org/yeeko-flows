@@ -101,8 +101,15 @@ class FlowSeeder:
             name=classify_name,
             defaults={"public_name": classify_public or classify_name,
                       "description": classify_description})
+        # The Format catalogue does not travel in fixtures: a missing row used
+        # to seed the extra with format=None silently, breaking the flow later,
+        # when the value was read.
+        for fmt_name in {fmt for _, fmt in pairs if fmt}:
+            Format.objects.get_or_create(name=fmt_name)
         formats = {f.name: f for f in Format.objects.all()}
         for name, fmt in pairs:
+            if fmt and fmt not in formats:
+                raise ValueError(f"Format '{fmt}' no existe ni pudo crearse")
             extra, _ = Extra.objects.update_or_create(
                 space=self.space, name=name,
                 defaults={"classify": classify,
