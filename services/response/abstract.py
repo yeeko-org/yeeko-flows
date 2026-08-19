@@ -207,7 +207,7 @@ class ResponseAbc(ABC, BaseModel):
             return
 
         # Interaction.trigger es OneToOne: si un response emite varios mensajes
-        # (auto-avance, p. ej. PDF + botones de oferta_mejora), solo la primera
+        # (auto-avance, p. ej. PDF + botones de la despedida), solo la primera
         # interacción puede portar el trigger; las demás lo dejan en null para
         # no violar la unicidad. (Bug latente destapado por el arnés WP7.)
         trigger = self.trigger

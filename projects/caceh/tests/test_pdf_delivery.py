@@ -4,7 +4,7 @@ mataba Media.save() y el PDF nunca nacía.
 
 Caso 1 (offline feliz): media_offline como el e2e; sanity del encadenado.
 Caso 2 (Meta rechaza la subida): el flujo degrada con error registrado, sin
-matar el turno (e_oferta_mejora sí sale, documento no).
+matar el turno (e_despedida sí sale, documento no).
 Caso 3 (camino real): storage a disco + subida a Meta OK (mock 200); el
 documento sale con media_id, fragment_id ligado y MIME application/pdf.
 
@@ -79,7 +79,7 @@ class PdfDeliveryDiagnosis(TestCase):
             d = FlowDriver(WA_ID)
             _drive_to_resumen(d)
             d.send("Todo correcto")
-        self.assertEqual(d.at_piece(), "e_oferta_mejora")
+        self.assertEqual(d.at_piece(), "e_despedida")
         docs = self._document_msgs(d)
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0]["document"]["id"], "FAKEMEDIAID-WP7")
@@ -96,7 +96,7 @@ class PdfDeliveryDiagnosis(TestCase):
             _drive_to_resumen(d)
             d.send("Todo correcto")
         # Sin media_id no hay documento, pero el turno sigue completo.
-        self.assertEqual(d.at_piece(), "e_oferta_mejora")
+        self.assertEqual(d.at_piece(), "e_despedida")
         self.assertEqual(self._document_msgs(d), [])
         self.assertEqual(d.extras().get("flujo_completado"), "completo")
 
@@ -110,7 +110,7 @@ class PdfDeliveryDiagnosis(TestCase):
             _drive_to_resumen(d)
             d.send("Todo correcto")
 
-        self.assertEqual(d.at_piece(), "e_oferta_mejora")
+        self.assertEqual(d.at_piece(), "e_despedida")
         docs = self._document_msgs(d)
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0]["document"]["id"], "MEDIA-REAL-OK")

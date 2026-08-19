@@ -130,7 +130,7 @@ class FlowE2ETest(TestCase):
         self._jornada_pago_lugar_hasta_resumen()
 
         d.tap("Todo correcto")           # genera_pdf + registra + entrega
-        self.assertEqual(d.at_piece(), "e_oferta_mejora")
+        self.assertEqual(d.at_piece(), "e_despedida")
 
         extras = d.extras()
         self.assertEqual(extras.get("flujo_completado"), "completo")
@@ -138,9 +138,6 @@ class FlowE2ETest(TestCase):
         self.assertTrue(extras.get("pdf_contrato"))
         self.assertEqual(Contract.objects.count(), 1)
         self.assertTrue(Contract.objects.first().folio)
-
-        d.tap("Así está bien")
-        self.assertEqual(d.at_piece(), "e_despedida")
 
     def test_p2_empleadora_planta_hasta_pdf(self):
         d = self.d
@@ -152,9 +149,20 @@ class FlowE2ETest(TestCase):
         self._jornada_pago_lugar_hasta_resumen()
 
         d.tap("Todo correcto")
-        self.assertEqual(d.at_piece(), "e_oferta_mejora")
+        self.assertEqual(d.at_piece(), "e_despedida")
         self.assertEqual(d.extras().get("flujo_completado"), "completo")
         self.assertEqual(Contract.objects.count(), 1)
+
+        # E10: el botón de la despedida borra los datos del contrato y
+        # devuelve a la persona al saludo, lista para empezar otro.
+        d.tap("Hacer otro contrato")
+        self.assertEqual(d.at_piece(), "a_saludo")
+        # Quedan los datos de perfil del miembro (username, first_name…),
+        # que no son extras del flujo: del contrato no sobrevive nada.
+        extras = d.extras()
+        for name in ("flujo_completado", "tipo_contrato", "salario_diario",
+                     "operador_nombre", "pdf_contrato", "registro_id"):
+            self.assertNotIn(name, extras)
 
     def test_p3_menor_de_edad_termina(self):
         d = self.d

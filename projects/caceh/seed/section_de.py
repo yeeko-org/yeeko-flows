@@ -64,7 +64,7 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     sdr.behavior_step(p["e_registra"], "registra_contrato",
                       p["e_entrega_pdf"])
     sdr.behavior_step(p["e_entrega_pdf"], "entrega_pdf",
-                      p["e_oferta_mejora"])
+                      p["e_despedida"])
 
     sdr.buttons(p["e_resumen"], (
         "Esto es lo que tengo. Échale un último ojo 👀\n"
@@ -85,19 +85,15 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
                 "¿Qué quieres corregir? (por ahora volvemos al resumen)",
                 [("Volver al resumen", p["e_resumen"], None)])
 
-    sdr.buttons(p["e_oferta_mejora"], (
-        "Con esto ya tienen un contrato que vale. 💪 Se puede hacer más "
-        "riguroso agregando datos como la CURP o el domicilio. ¿Quieres "
-        "mejorarlo ahora?"), [
-        ("Sí, vamos", p["fuera_alcance"], None),
-        ("Así está bien", p["e_despedida"], None),
-    ])
-
-    sdr.msg(p["e_despedida"], (
+    sdr.buttons(p["e_despedida"], (
         "Imprímanlo dos veces y fírmenlo: quien emplea, la persona "
         "trabajadora y un testigo. Guarda bien tu copia: es tu "
-        "comprobante. 💚"))
+        "comprobante. 💚\n\n"
+        "Si necesitas otro contrato, con otra persona, aquí sigo."), [
+        ("Hacer otro contrato", p["e_reinicia"], None),
+    ])
 
-    sdr.msg(p["fuera_alcance"], (
-        "Esta parte del flujo todavía no está en el demo. 🛠️ Gracias por "
-        "tu paciencia; pronto la tendremos lista."))
+    # E10: el behavior borra los datos del contrato anterior y el embedded
+    # rinde el saludo, así que la persona reaparece en A1 desde cero
+    # (adr-0013: una sesión, un contrato; nada se acumula).
+    sdr.behavior_step(p["e_reinicia"], "reinicia_contrato", p["a_saludo"])

@@ -26,3 +26,6 @@ from projects.caceh.behaviors.genera_pdf import (
 from projects.caceh.behaviors.entrega_pdf import (
     EntregaPdfBehavior as entrega_pdf,
 )
+from projects.caceh.behaviors.reinicia_contrato import (
+    ReiniciaContratoBehavior as reinicia_contrato,
+)
