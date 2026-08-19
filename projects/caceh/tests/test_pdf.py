@@ -126,6 +126,32 @@ class GeneraPdfTestCase(CacehBehaviorTestBase):
         # ciudad_firma cae a lt_municipio (vacío aquí) si no se capturó
         self.assertIn("firma_mes", datos)
 
+    def test_actividades_del_flow_marcan_casillas_de_la_cuarta(self):
+        # Regresión: el multiselect guarda ids del tabulador y la cláusula
+        # CUARTA usa otro vocabulario; sin traducción salen todas vacías.
+        self._extra("actividades", self.fmt_json)
+        self._set("actividades", ["labor_3", "labor_19"])
+        with mock.patch("projects.caceh.behaviors.genera_pdf.Media") as MM, \
+             mock.patch(
+                 "projects.caceh.behaviors.genera_pdf.render_planta",
+                 return_value=b"%PDF",) as mock_render:
+            MM.return_value.pk = 1
+            GeneraPdfBehavior(self.response)
+
+        datos = mock_render.call_args.args[0]
+        self.assertEqual(
+            datos["actividades"],
+            ["limpieza_profunda", "cuidado_personas", "acompanamiento"])
+
+        html = build_html(datos, "planta")
+        for texto in ("limpieza profunda ( X )", "cuidado de personas ( X )",
+                      "acompañamiento y/o asistencia personal ( X )"):
+            self.assertIn(texto, html)
+        # Ninguna otra casilla de la CUARTA queda marcada.
+        cuarta = html.split("CUARTA. DE LAS ACTIVIDADES")[1].split(
+            "podrá desempeñar")[0]
+        self.assertEqual(cuarta.count("( X )"), 3)
+
     def test_entrada_salida_usa_render_entrada_salida(self):
         self._extra("tipo_contrato")
         self._set("tipo_contrato", "entrada_salida")

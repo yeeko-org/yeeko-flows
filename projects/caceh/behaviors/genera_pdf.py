@@ -9,6 +9,7 @@ from datetime import date, datetime
 from django.core.files.base import ContentFile
 
 from infrastructure.persistent_media.models import Media
+from projects.caceh import tabulador
 from projects.caceh.behaviors.base import CacehBehaviorBase
 from projects.caceh.pdf import render_entrada_salida, render_planta
 
@@ -95,7 +96,11 @@ class GeneraPdfBehavior(CacehBehaviorBase):
             "inicio_dia": ini_dia,
             "inicio_mes": ini_mes,
             "inicio_anio": ini_anio,
-            "actividades": self._read("actividades") or [],
+            # El multiselect guarda ids del tabulador (labor_N) y la
+            # cláusula CUARTA se marca con su propio vocabulario: aquí se
+            # traduce, es el único punto donde conviven los dos.
+            "actividades": tabulador.casillas_contrato(
+                self._read("actividades") or []),
             "periodicidad": self._read("pago_periodicidad", ""),
             "salario_diario": self._read("salario_diario", ""),
             "modo_pago": self._read("modo_pago", ""),

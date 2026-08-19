@@ -37,12 +37,19 @@ JORNADA_PROMPT = _PREAMBULO + (
     "será el día de descanso.\n"
 )
 
+# El PDF compara los días por texto exacto y con acento: un «miercoles» pelón
+# deja la casilla de la SÉPTIMA vacía y encima cuenta como día de descanso en
+# la OCTAVA. Como Literal viaja a Gemini como enum dentro del
+# response_json_schema, el catálogo se impone en la generación, no después.
+DiaSemana = Literal[
+    "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
 
 @register_schema("jornada", JORNADA_PROMPT)
 class Jornada(BaseModel):
     hora_entrada: Optional[str] = None
     hora_salida: Optional[str] = None
-    dias_laborables: Optional[list[str]] = None
+    dias_laborables: Optional[list[DiaSemana]] = None
     ia_completed: Literal["si", "no"]
     ia_pregunta: Optional[str] = None
 
@@ -137,9 +144,14 @@ DESCANSO_PROMPT = _PREAMBULO + (
 )
 
 
+# La OCTAVA de entrada por salida marca las casillas comparando estos tres
+# textos exactos; cualquier sinónimo («almuerzo») saldría sin marcar.
+Comida = Literal["desayuno", "comida", "cena"]
+
+
 @register_schema("descanso", DESCANSO_PROMPT)
 class Descanso(BaseModel):
     descanso_tiempo: Optional[str] = None
-    comidas_incluidas: Optional[list[str]] = None
+    comidas_incluidas: Optional[list[Comida]] = None
     ia_completed: Literal["si", "no"]
     ia_pregunta: Optional[str] = None

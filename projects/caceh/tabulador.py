@@ -88,7 +88,54 @@ ITEMS = [
 
 SALARIOS = {item_id: salario for item_id, _, _, salario in ITEMS}
 
+# La cláusula CUARTA del contrato tiene sus propias 20 casillas, que NO son
+# los 20 items del tabulador: son otro vocabulario y no hay correspondencia
+# 1:1 (un item puede marcar varias casillas y varios items pueden marcar la
+# misma). Sin esta tabla el PDF sale con todas las casillas vacías.
+# Propuesta nuestra, aprobada por Ricardo el 2026-08-18 y PENDIENTE de
+# validación con CACEH: las casillas tienen efecto legal.
+# Seis casillas de la cláusula no las alimenta ningún item y por diseño
+# quedan siempre vacías: recamarera, mantenimiento, vigilancia,
+# cuidado_casa, limpieza_mascotas, diversos_domicilios.
+CASILLAS_CONTRATO: dict[str, tuple[str, ...]] = {
+    "labor_1": ("limpieza_general",),
+    "labor_2": ("lavado", "planchado"),
+    "labor_3": ("limpieza_profunda",),
+    "labor_4": ("limpieza_profunda",),
+    "labor_5": ("limpieza_profunda",),
+    "labor_6": ("jardineria",),
+    "labor_7": ("cuidado_mascotas",),
+    "labor_8": ("cocina_sencilla",),
+    "labor_9": ("cocina_sencilla",),
+    "labor_10": ("chofer",),
+    "labor_11": ("cuidado_personas",),
+    "labor_12": ("cuidado_personas",),
+    "labor_13": ("cuidado_personas",),
+    "labor_14": ("ama_llaves",),
+    "labor_15": ("ama_llaves",),
+    "labor_16": ("mayordomo",),
+    "labor_17": ("mayordomo",),
+    "labor_18": ("mayordomo",),
+    "labor_19": ("cuidado_personas", "acompanamiento"),
+    "labor_20": ("cuidado_personas", "acompanamiento"),
+}
+
 
 def opciones() -> list[dict]:
     """Opciones [{id,title,description}] para el multiselect de D1."""
     return [{"id": i, "title": t, "description": d} for i, t, d, _ in ITEMS]
+
+
+def casillas_contrato(actividades: list[str]) -> list[str]:
+    """Casillas de la cláusula CUARTA que marcan los items elegidos en D1.
+
+    Sin duplicados y en el orden en que aparecen los items; un id que no sea
+    del tabulador se ignora, para que un vocabulario equivocado se vea como
+    casillas vacías y no como una casilla marcada de más.
+    """
+    casillas: list[str] = []
+    for item_id in actividades:
+        for casilla in CASILLAS_CONTRATO.get(item_id, ()):
+            if casilla not in casillas:
+                casillas.append(casilla)
+    return casillas

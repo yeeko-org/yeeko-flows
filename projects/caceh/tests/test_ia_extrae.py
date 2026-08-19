@@ -82,6 +82,16 @@ class IaExtraeTestCase(TestCase):
             client=FakeGemini(result))
         return behavior
 
+    def _run_descanso(self, result, entrada="una hora para comer"):
+        # Los extras propios de descanso se crean aquí y no en setUp: solo los
+        # usa el caso de entrada por salida.
+        self._extra("descanso_tiempo")
+        self._extra("comidas_incluidas", self.fmt_json)
+        self._extra("_hist_descanso", self.fmt_json)
+        return IaExtraeBehavior(
+            self.response, esquema="descanso", entrada=entrada,
+            client=FakeGemini(result))
+
     def test_extraccion_completa_escribe_extras_y_limpia_historial(self):
         self._run({
             "hora_entrada": "8:00", "hora_salida": "16:00",
@@ -135,6 +145,34 @@ class IaExtraeTestCase(TestCase):
         data = self._data()
         self.assertEqual(data["ia_completed"], "no")
         self.assertIn("descanso", data["ia_pregunta"].lower())
+
+    def test_dia_sin_acento_se_vuelve_repregunta(self):
+        # Regresión reportada por la clienta: el miércoles no salía marcado en
+        # el PDF porque Gemini escribió «miercoles» sin acento. Fuera de
+        # catálogo se repregunta; nunca se firma un contrato mal llenado.
+        self._run({
+            "hora_entrada": "8:00", "hora_salida": "16:00",
+            "dias_laborables": ["lunes", "miercoles"],
+            "ia_completed": "si", "ia_pregunta": None})
+        self.assertEqual(self._data()["ia_completed"], "no")
+
+    def test_comida_fuera_de_catalogo_se_vuelve_repregunta(self):
+        # Mismo riesgo en la OCTAVA de entrada por salida: la plantilla marca
+        # las casillas comparando 'desayuno'/'comida'/'cena' exactos.
+        self._run_descanso({
+            "descanso_tiempo": "1 hora",
+            "comidas_incluidas": ["almuerzo"],
+            "ia_completed": "si", "ia_pregunta": None})
+        self.assertEqual(self._data()["ia_completed"], "no")
+
+    def test_dia_no_reconocible_se_vuelve_repregunta(self):
+        self._run({
+            "hora_entrada": "8:00", "hora_salida": "16:00",
+            "dias_laborables": ["lunes", "quincena"],
+            "ia_completed": "si", "ia_pregunta": None})
+        data = self._data()
+        self.assertEqual(data["ia_completed"], "no")
+        self.assertTrue(data["ia_pregunta"])
 
     def test_gemini_falla_degrada_a_repregunta_suave(self):
         self._run(None)
