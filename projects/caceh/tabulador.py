@@ -94,9 +94,11 @@ SALARIOS = {item_id: salario for item_id, _, _, salario in ITEMS}
 # misma). Sin esta tabla el PDF sale con todas las casillas vacías.
 # Propuesta nuestra, aprobada por Ricardo el 2026-08-18 y PENDIENTE de
 # validación con CACEH: las casillas tienen efecto legal.
-# Seis casillas de la cláusula no las alimenta ningún item y por diseño
+# Ocho casillas de la cláusula no las alimenta ningún item y por diseño
 # quedan siempre vacías: recamarera, mantenimiento, vigilancia,
-# cuidado_casa, limpieza_mascotas, diversos_domicilios.
+# cuidado_casa, limpieza_mascotas, diversos_domicilios, cocina_intermedia
+# y alta_cocina (el tabulador trae dos actividades de cocina, ambas del
+# nivel de cocina sencilla).
 CASILLAS_CONTRATO: dict[str, tuple[str, ...]] = {
     "labor_1": ("limpieza_general",),
     "labor_2": ("lavado", "planchado"),
