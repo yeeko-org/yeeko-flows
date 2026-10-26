@@ -4,11 +4,13 @@ from infrastructure.box.models import Piece
 from projects.caceh import tabulador
 from services.seeder import FlowSeeder
 
-# Flow con description por opción (multiselect_desc.flow.json), publicado
-# en Meta el 2026-07-09. Si se vuelve None se cae al Flow genérico (solo
+# Flow con description por opción (multiselect_desc.flow.json). Los Flows
+# son por WABA: este id es el publicado en la WABA de CACEH
+# (1628687012322287). Si se vuelve None se cae al Flow genérico (solo
 # id/title, inmutable) y se recortan las descripciones, porque su schema
-# no las declara.
-FLOW_ID_DESC = "2057389525199733"
+# no las declara; ese legacy vive en la WABA de Yeeko y no sirve desde el
+# número de CACEH.
+FLOW_ID_DESC = "2196589514546823"
 _FLOW_ID_LEGACY = "1308618661432871"
 
 
