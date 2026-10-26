@@ -4,14 +4,10 @@ from infrastructure.box.models import Piece
 from projects.caceh import tabulador
 from services.seeder import FlowSeeder
 
-# Flow con description por opción (multiselect_desc.flow.json). Los Flows
-# son por WABA: este id es el publicado en la WABA de CACEH
-# (1628687012322287). Si se vuelve None se cae al Flow genérico (solo
-# id/title, inmutable) y se recortan las descripciones, porque su schema
-# no las declara; ese legacy vive en la WABA de Yeeko y no sirve desde el
-# número de CACEH.
+# Flow con description por opción (multiselect_desc.flow.json),
+# publicado en la WABA de CACEH (1628687012322287): los Flows
+# son por WABA, así que un número de otra cuenta no lo abre.
 FLOW_ID_DESC = "2196589514546823"
-_FLOW_ID_LEGACY = "1308618661432871"
 
 
 def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
@@ -19,11 +15,9 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     # de ids en {{actividades}} y avanza directo a D4 (deriva_categoria
     # murió: ya no hay categorías, la regla es max en calcula_tabulador).
     options = tabulador.opciones()
-    if not FLOW_ID_DESC:
-        options = [{"id": o["id"], "title": o["title"]} for o in options]
     sdr.wa_form_step(
         p["d_actividades"], p["d_check_tabulador"],
-        flow_id=FLOW_ID_DESC or _FLOW_ID_LEGACY,
+        flow_id=FLOW_ID_DESC,
         body="¿Cuáles actividades realiza la persona trabajadora? 🧹",
         extra="actividades", min=1,
         options=options)
