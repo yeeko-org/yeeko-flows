@@ -13,7 +13,9 @@ repo.
 Usage:
     python publish_flow.py --json assets/multiselect.flow.json \\
         --name "Multiselect genérico" --categories OTHER \\
-        --waba 3449947368500778 --pid 1128183617053069 --publish
+        --waba <WABA_ID> --pid <ACCOUNT_PID> --publish
+    WA_TOKEN=... python publish_flow.py --json ... --name ... \\
+        --waba <WABA_ID> --publish
 """
 import argparse
 import json

@@ -19,7 +19,7 @@ Verified against the code. Files involved:
 {
   "flow_message_version": "3",
   "flow_token": "<BuiltReply uuid>",
-  "flow_id": "1308618661432871",
+  "flow_id": "<published flow id>",
   "flow_cta": "Seleccionar",          // truncated to 20 chars
   "flow_action": "navigate",
   "flow_action_payload": {

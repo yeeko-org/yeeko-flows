@@ -45,18 +45,32 @@ exactly what the engine expects back.
 
 `scripts/publish_flow.py` does create-as-DRAFT → fetch `validation_errors` →
 publish only if clean (a published Flow **cannot be edited**, only cloned or
-deleted). The token is read from `Account.token` by `--pid` and never printed.
+deleted). The token comes from one of two sources, never printed: `--pid`
+reads `Account.token` from the DB the script's Django settings point at (so the
+Account must exist there), and without `--pid` it reads the `WA_TOKEN` env var —
+the way to publish from local when the token of the target account is not in
+the local DB.
 
 ```bash
-# Validate a draft (no publish):
+# Validate a draft (no publish), token from an Account row:
 .venv/bin/python .claude/skills/whatsapp-flows/scripts/publish_flow.py \
-  --json .claude/skills/whatsapp-flows/assets/multiselect.flow.json \
-  --name "Multiselect genérico" --categories OTHER \
-  --waba 3449947368500778 --pid 1128183617053069
+  --json .claude/skills/whatsapp-flows/assets/multiselect_desc.flow.json \
+  --name "Multiselect con descripción" --categories OTHER \
+  --waba <WABA_ID> --pid <ACCOUNT_PID>
+
+# Same, token from a local secret file instead of the DB:
+WA_TOKEN="$(tr -d '\n\r ' < ~/.secrets/<token_file>)" \
+  .venv/bin/python .claude/skills/whatsapp-flows/scripts/publish_flow.py \
+  --json … --name … --waba <WABA_ID>
 
 # Publish an already-validated draft:
-… --flow-id <DRAFT_ID> --waba 3449947368500778 --pid 1128183617053069 --publish
+… --flow-id <DRAFT_ID> --waba <WABA_ID> --pid <ACCOUNT_PID> --publish
 ```
+
+`<WABA_ID>` is the WABA of the number that will send the Flow (see the gotcha
+on WABAs below); the ids in use are in the bot_caceh reference above.
+`multiselect.flow.json` is the plain variant; `multiselect_desc.flow.json` adds
+a `description` per option.
 
 Categories must be from Meta's closed list (`OTHER`, `SURVEY`, …). To change a
 published Flow, clone it (new id) — you cannot edit in place.
@@ -71,7 +85,8 @@ Publishing needs the scope **`whatsapp_business_management`** (sending only need
 GET https://graph.facebook.com/v21.0/debug_token?input_token=TOKEN&access_token=TOKEN
 ```
 
-The "WP7 code" account token has both scopes; the "stepper" token is a fake.
+Its `target_ids` must include the WABA you publish into; a token of another
+business cannot create Flows there.
 
 ## Wiring a multiselect question into a flow
 
@@ -103,6 +118,13 @@ Short version — the `multiple_select` behavior needs these params:
 - **Extra data keys are harmless.** The behavior also sends `title`/`max` in
   `data`; the Flow ignores keys it doesn't declare. Only `options`, `label` and
   `flow_token` are actually bound.
+- **Flows belong to a WABA.** A number of another WABA cannot open the Flow
+  even though the id is valid. Moving the bot to another account means
+  republishing the Flow in the new WABA and swapping the `flow_id` in two
+  places: the constant in the seed code, and — in an already-seeded DB — the
+  `Fragment.addl_params["flow_id"]` of the `order=0` fragment of the
+  multiselect piece — in CACEH, `d_actividades` — (or reseed with the new
+  code).
 - **Published Flows are immutable.** Edit `assets/multiselect.flow.json`, then
   publish a *new* Flow and swap the `flow_id` in the wiring.
 - **`flow_token` correlation.** The behavior creates a `BuiltReply`; its uuid is
