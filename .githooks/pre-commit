@@ -9,7 +9,10 @@ if [[ ! -f "$VALIDADOR" ]]; then
     exit 0
 fi
 
-if ! node "$VALIDADOR"; then
+# From the repo root, not docs/: only there are the paths cited in code
+# and in the harness checked too. Without git's relative GIT_INDEX_FILE: with
+# it the validator lists no file of the docs submodule and passes on nothing
+if ! env -u GIT_INDEX_FILE node "$VALIDADOR"; then
     echo
     echo "El commit se detuvo por los errores de arriba."
     echo "Si sabes lo que haces:  git commit --no-verify"

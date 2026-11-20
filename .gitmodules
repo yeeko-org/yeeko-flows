@@ -1,0 +1,3 @@
+[submodule "docs"]
+	path = docs
+	url = git@github.com:yeeko-org/yeeko-flows-docs.git
