@@ -44,7 +44,14 @@ code; it inherits message primitives from the `yeeko_abc` library.
   avoid colliding with the conversational `Flow` model. Never name a new
   symbol `Flow*`. Author-facing behavior is named by function
   (`multiple_select`), not by transport. Adding a multiple-select question:
-  see `docs/wa_form_multiple_select.md`.
+  see `docs/reference/2026-06-29-preguntas-de-seleccion-multiple-whatsapp-flows.md`.
+
+## Process docs and the CACEH product
+
+- `docs/` is a submodule of the **private** repo `yeeko-org/yeeko-flows-docs`: the engine's documenter graph, shared with the sibling worktree `../yeeko-chat-flow-rebuilding`. Every engine decision is documented there, whichever branch it is born on. Without access the folder stays empty and the code still works; with access: `git submodule update --init --checkout docs`, then `git -C docs checkout main`.
+- Submodule routine: `docs/` always stays on `main`. Each worktree has its own clone, so before creating nodes run `git -C docs pull --ff-only` (offline: `git -C docs fetch sibling && git -C docs merge --ff-only sibling/main`) or two sessions mint the same task id. Doc commits go inside `docs/`; a doc-only change does not pin the pointer in this repo.
+- This repo is public: nothing of the graph, of a client, or of a credential is committed outside `docs/`.
+- The CACEH product (domain canon, flow description, what was agreed with the client) is documented in the sibling repo `../bot_caceh`; read its CLAUDE.md first for a CACEH topic. Shared topics have one home node and at most one mirror (`## Espejo`), per the frontier-and-mirror decision in `../bot_caceh/docs/decisions/`. Cross-repo mentions are plain text in a fixed form — «task-N de bot_caceh», «adr-N de yeeko-chat-flow» — never `[[links]]`. When a task touches CACEH, one single opening explorer reads both graphs. At close, grep the touched nodes for `bot_caceh` and update the home or the mirror on that side.
 
 ## Gotchas
 
