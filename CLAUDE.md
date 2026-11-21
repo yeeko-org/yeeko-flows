@@ -8,7 +8,6 @@ Django engine for WhatsApp/Messenger conversational flows, defined in the DB (`F
 
 - **Submodule routine:** `docs/` always stays on `main`. Each worktree has its own clone, so before creating nodes run `git -C docs pull --ff-only` (offline: `git -C docs fetch sibling && git -C docs merge --ff-only sibling/main`) or two sessions mint the same task id; commit inside `docs/` and push it at close, or the other clone never sees the new ids. `submodule.docs.update` is `none` in the local git config so `git submodule update` never detaches `docs/` from `main`. Doc commits go inside `docs/`, where a pre-commit hook runs the validator from this root; a doc-only change does not pin the pointer here.
 
-
 ## Commands
 
 - `python manage.py test --noinput` — run tests (Postgres test DB; `--noinput` auto-drops a leftover test DB).
