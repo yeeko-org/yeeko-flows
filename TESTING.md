@@ -1,6 +1,6 @@
 # TESTING
 
-Qué se prueba, cómo se corre y qué ruido es normal. La referencia larga (mecánica del arnés, punto ciego conocido, scripts contra WhatsApp real) está en el repo `bot_caceh`: `docs/reference/2026-08-18-arnes-e2e-y-como-correr-las-pruebas.md`.
+Qué se prueba, cómo se corre y qué ruido es normal. La referencia larga (mecánica del arnés, punto ciego conocido, scripts contra WhatsApp real) es la reference `2026-08-18-arnes-e2e-y-como-correr-las-pruebas` de bot_caceh.
 
 ## Niveles montados (`projects/caceh/tests/`)
 
@@ -42,4 +42,4 @@ Solo `GEMINI_API_KEY` en `config/.env`. WhatsApp siempre va mockeado (`media_off
 
 ## Pruebas del motor fuera de `projects/caceh`
 
-Viven en `test/` (modelos de `infrastructure`, `interface/whatsapp`, `presentation/views`, `services/request` y `services/behavior/test_multiple_select.py`). Se corren con `.venv/bin/python manage.py test --noinput` (toda la suite) o `.venv/bin/python manage.py test test.interface.whatsapp --noinput` por paquete. Son flaky por diseño previo (ver «Gotchas» en `CLAUDE.md`): confirmar el estado real corriendo módulos aislados.
+Viven en `test/` (modelos de `infrastructure`, `interface/whatsapp`, `presentation/views`, `services/request` y `test/services/behavior/test_multiple_select.py`). Se corren con `.venv/bin/python manage.py test --noinput` (toda la suite) o `.venv/bin/python manage.py test test.interface.whatsapp --noinput` por paquete. Son flaky por diseño previo (ver «Gotchas» en `CLAUDE.md`): confirmar el estado real corriendo módulos aislados.

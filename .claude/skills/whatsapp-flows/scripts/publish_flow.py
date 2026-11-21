@@ -11,7 +11,7 @@ printed) or the ``WA_TOKEN`` env var as a fallback for use outside this
 repo.
 
 Usage:
-    python publish_flow.py --json assets/multiselect.flow.json \\
+    python publish_flow.py --json ../assets/multiselect.flow.json \\
         --name "Multiselect genérico" --categories OTHER \\
         --waba <WABA_ID> --pid <ACCOUNT_PID> --publish
     WA_TOKEN=... python publish_flow.py --json ... --name ... \\

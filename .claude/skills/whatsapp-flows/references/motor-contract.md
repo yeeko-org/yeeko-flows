@@ -36,7 +36,7 @@ Verified against the code. Files involved:
 ```
 
 Only `options`, `label` and `flow_token` are declared in
-`assets/multiselect.flow.json` and therefore actually bind; `title`/`min`/`max`
+`assets/multiselect.flow.json` and therefore actually bind; `title`/`min`/`max` <!-- nopath: relative to the skill folder -->
 are tolerated extra keys.
 
 ## Incoming — what the Flow must return
