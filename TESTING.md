@@ -15,7 +15,11 @@ Qué se prueba, cómo se corre y qué ruido es normal. La referencia larga (mec�
 cd ~/dev/yeeko/yeeko-chat-flow && .venv/bin/python manage.py test projects.caceh --noinput
 ```
 
-Línea base al 2026-08-19: 75 pruebas, 75 verdes, ~24 s (9 llaman a Gemini real).
+Línea base al 2026-11-24: 78 pruebas, OK, ~7 s sin clave de Gemini (10 se omiten: las de Gemini real). Para saltarse las de Gemini real aunque `config/.env` tenga la clave (`load_dotenv` no pisa una variable ya puesta):
+
+```bash
+cd ~/dev/yeeko/yeeko-chat-flow && GEMINI_API_KEY= .venv/bin/python manage.py test projects.caceh --noinput
+```
 
 Gotchas del entorno:
 

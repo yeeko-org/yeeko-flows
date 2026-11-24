@@ -78,7 +78,7 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     # Varias empleadoras -> por fuerza entrada por salida; salta "¿duermes?"
     # y entra a §B vía el link A10 (que retoma con el nombre de la parte).
     sdr.buttons(p["a_num_empleadoras"], (
-        "Además de {{contraparte_nombre}} ¿Trabajas con más personas?"), [
+        "Además de {{contraparte_nombre}}, ¿trabajas con más personas?"), [
         ("Solo con esa persona", p["a_duerme"], None),
         ("Con varias personas", p["a_link_es"],
          {"tipo_contrato": "entrada_salida"}),

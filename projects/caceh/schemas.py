@@ -203,7 +203,7 @@ CORRECCION_PROMPT = (
     "mandar la lista) e ia_completed='si'.\n"
     "- tipo_contrato y la fecha de inicio NO se corrigen aquí: si es lo "
     "único que pide, pon ia_completed='no' y explica en ia_pregunta que eso "
-    "se cambia con «Hacer otro contrato» al final, y pregunta si hay algo "
+    "se cambia con «Crear otro contrato» al final, y pregunta si hay algo "
     "más que corregir.\n"
 )
 
