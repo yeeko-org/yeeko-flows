@@ -114,8 +114,21 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
         "trabajadora y un testigo. Guarda bien tu copia: es tu "
         "comprobante. 💚\n\n"
         "Si necesitas otro contrato, con otra persona, aquí sigo."), [
-        ("Hacer otro contrato", p["e_reinicia"], None),
+        ("Crear otro contrato", p["e_reinicia"], None),
     ])
+    # Fragment de la misma pieza y no pieza aparte: así e_despedida sigue
+    # siendo el contexto y un «Hola» posterior repite la despedida con su
+    # botón.
+    sdr.msg(p["e_despedida"], (
+        "Y recuerda: todas las personas trabajadoras del hogar tienen "
+        "derecho a la seguridad social. 🏥\n\n"
+        "La Ley del Seguro Social dice que la persona empleadora es quien "
+        "debe hacer el registro en el IMSS. Aquí se hace: "
+        "https://www.imss.gob.mx/personas-trabajadoras-hogar\n\n"
+        "El seguro social del IMSS incluye consultas, medicinas, pago "
+        "durante una incapacidad, guardería y ahorro para la pensión y la "
+        "vivienda. También cubre a la familia de la persona trabajadora."),
+        order=1)
 
     # E10: el behavior borra los datos del contrato anterior y el embedded
     # rinde el saludo, así que la persona reaparece en A1 desde cero

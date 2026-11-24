@@ -43,7 +43,6 @@ class DefaultTextTest(TestCase):
     @staticmethod
     def _empleadora_hasta_resumen(d: FlowDriver) -> None:
         d.send("hola")
-        d.tap("¡Empecemos!")
         d.tap("Empleadora")
         d.send("Marcela Ruiz Soto")
         d.send("Juana Pérez López")
@@ -62,7 +61,6 @@ class DefaultTextTest(TestCase):
     def test_texto_fuera_de_guion_repite_la_pregunta_pendiente(self):
         d = self.d
         d.send("hola")                   # sin historial: dispara `start`
-        d.tap("¡Empecemos!")
         self.assertEqual(d.at_piece(), "a_quien_eres")
 
         d.send("¿esto cuánto cuesta?")
@@ -80,7 +78,6 @@ class DefaultTextTest(TestCase):
         del motor, no algo que introduzca `default_text`."""
         d = self.d
         d.send("hola")
-        d.tap("¡Empecemos!")
         d.tap("Trabajadora")
         self.assertEqual(d.at_piece(), "a_nombre_operador")
 
@@ -94,7 +91,6 @@ class DefaultTextTest(TestCase):
         lo normal es escribir sin citar. La captura debe funcionar igual."""
         d = self.d
         d.send("hola")
-        d.tap("¡Empecemos!")
         d.tap("Trabajadora")
         self.assertEqual(d.at_piece(), "a_nombre_operador")
 
@@ -117,6 +113,7 @@ class DefaultTextTest(TestCase):
             self.assertIn("No entendí", " ".join(d.bot_texts()))
             self.assertEqual(d.at_piece(), "e_despedida")
 
-            d.tap("Hacer otro contrato")
-            self.assertEqual(d.at_piece(), "a_saludo")
+            d.tap("Crear otro contrato")
+            self.assertIn("Dignas firma", " ".join(d.bot_texts()))
+            self.assertEqual(d.at_piece(), "a_quien_eres")
             self.assertNotIn("tipo_contrato", d.extras())

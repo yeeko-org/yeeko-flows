@@ -40,7 +40,6 @@ class _Resp:
 
 def _drive_to_resumen(d: FlowDriver) -> None:
     d.send("hola")
-    d.tap(title_of("a_saludo", "a_quien_eres"))
     d.tap(title_of("a_quien_eres", operador="trabajadora"))
     d.send("Juana Pérez López")
     d.send("Marcela Ruiz Soto")

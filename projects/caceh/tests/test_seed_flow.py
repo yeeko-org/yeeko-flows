@@ -180,4 +180,4 @@ class SeedIdempotencyTests(TestCase):
         frag.save(update_fields=["body"])
         call_command("seed_flow", space=self.space.pk)
         frag.refresh_from_db()
-        self.assertIn("menores de 18", frag.body)
+        self.assertIn("menores de edad", frag.body)

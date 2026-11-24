@@ -71,8 +71,8 @@ class FlowE2ETest(TestCase):
     def _saludo_a_quien_eres(self):
         d = self.d
         d.send("hola")
-        self.assertEqual(d.at_piece(), "a_saludo")
-        d.tap(title_of("a_saludo", "a_quien_eres"))
+        # El saludo y la pregunta de rol salen en el mismo envío.
+        self.assertIn("Dignas firma", " ".join(d.bot_texts()))
         self.assertEqual(d.at_piece(), "a_quien_eres")
 
     def _nombres(self, rol):
@@ -187,7 +187,8 @@ class FlowE2ETest(TestCase):
         # E10: el botón de la despedida borra los datos del contrato y
         # devuelve a la persona al saludo, lista para empezar otro.
         d.tap(title_of("e_despedida", "e_reinicia"))
-        self.assertEqual(d.at_piece(), "a_saludo")
+        self.assertIn("Dignas firma", " ".join(d.bot_texts()))
+        self.assertEqual(d.at_piece(), "a_quien_eres")
         # Quedan los datos de perfil del miembro (username, first_name…),
         # que no son extras del flujo: del contrato no sobrevive nada.
         extras = d.extras()
