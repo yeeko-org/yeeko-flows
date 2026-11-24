@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from infrastructure.xtra.models import Extra
 from projects.caceh.behaviors.base import CacehBehaviorBase
 from projects.caceh.schemas import CORRECCION_PROMPT, Correccion
+from services.behavior.ia_extrae import repregunta_de_error
 from utilities.gemini_client import GeminiClient
 
 # Campos que Gemini puede reescribir (= campos del esquema Correccion).
@@ -67,8 +68,8 @@ class CorrigePorIaBehavior(CacehBehaviorBase):
         except ValidationError as e:
             # A diferencia de ia_extrae no se persiste nada del dict inválido:
             # aquí pisaríamos un dato bueno con uno malo.
-            self._repregunta(data.get("ia_pregunta") or e.errors()[0].get(
-                "msg", "Revisa ese dato, por favor."))
+            self._repregunta(
+                data.get("ia_pregunta") or repregunta_de_error(e))
             return
 
         cambios = {k: v for k, v in data.items()

@@ -14,6 +14,24 @@ from utilities.parameters import replace_parameter
 # el contenido de dominio se "enchufa" al cargar.
 SCHEMA_REGISTRY: dict[str, tuple[Type[BaseModel], str]] = {}
 
+PREGUNTA_GENERICA = "Perdón, no te entendí bien. ¿Me lo dices de otra forma?"
+
+
+def repregunta_de_error(e: ValidationError) -> str:
+    """Texto que la persona recibe cuando la validación Pydantic falla.
+
+    Solo un `value_error` lo redactamos nosotros (un ValueError de un
+    validador del proyecto); se toma de `ctx` porque `msg` le antepone
+    «Value error, ». Cualquier otro tipo trae el mensaje de Pydantic en
+    inglés, así que va la pregunta genérica.
+    """
+    for err in e.errors():
+        if err.get("type") == "value_error":
+            propio = str(err.get("ctx", {}).get("error", "")).strip()
+            if propio:
+                return propio
+    return PREGUNTA_GENERICA
+
 
 def register_schema(name: str, system_prompt: str):
     """Decorador para registrar un esquema de extracción bajo `name`."""
@@ -68,9 +86,7 @@ class IaExtraeBehavior:
             system_prompt, "\n".join(historial), schema_cls)
         if data is None:
             self._write("ia_completed", "no")
-            self._write(
-                "ia_pregunta",
-                "Perdón, no te entendí bien. ¿Me lo dices de otra forma?")
+            self._write("ia_pregunta", PREGUNTA_GENERICA)
             return
 
         data = self._validate(schema_cls, data)
@@ -87,8 +103,7 @@ class IaExtraeBehavior:
         except ValidationError as e:
             data["ia_completed"] = "no"
             if not data.get("ia_pregunta"):
-                data["ia_pregunta"] = e.errors()[0].get(
-                    "msg", "Revisa ese dato, por favor.")
+                data["ia_pregunta"] = repregunta_de_error(e)
             return data
 
     def _persist(self, data: dict):
