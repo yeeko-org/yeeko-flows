@@ -22,7 +22,7 @@ Django engine for WhatsApp conversational flows. Flows are defined in the DB (`F
 
 - **WhatsApp Flows = `WaForm` namespace.** All Meta-Flows code is prefixed `WaForm` (`WaFormMessage`, `WaFormReplyProcessor`, `wa_form_to_data`) to avoid colliding with the conversational `Flow` model. Never name a new symbol `Flow*`. Author-facing behavior is named by function (`multiple_select`), not by transport. Adding a multiple-select question: see `docs/reference/2026-06-29-preguntas-de-seleccion-multiple-whatsapp-flows.md`.
 
-- **Names stored as rows are identifiers: English.** Behaviors, parameters and slots follow the code-naming rule even though they live in the DB (`esquema`, `entrada`, `silencioso` slipped in Spanish). The contract variables of a project (`monto_pago`, `fecha_inicio`) are domain vocabulary and stay as they are.
+- **Names stored as rows — behaviors, parameters, slots — are identifiers: English.** The contract variables of a project (`monto_pago`, `fecha_inicio`) are domain vocabulary and stay as they are.
 
 ## Process docs and the CACEH product
 
