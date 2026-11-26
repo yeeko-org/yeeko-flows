@@ -61,3 +61,49 @@ class SeccionATest(TestCase):
         pregunta = d.bot_texts()[-1]
         self.assertIn("Marcela Ruiz Soto", pregunta)
         self.assertNotIn("{{", pregunta)
+
+    def _trabajadora_hasta_a8(self, wa_id: str) -> FlowDriver:
+        d = FlowDriver(wa_id)
+        d.send("hola")
+        d.tap(title_of("a_quien_eres", operador="trabajadora"))
+        d.send("Juana Pérez López")
+        d.send("Marcela Ruiz Soto")
+        d.tap(title_of("a_mayor_edad", mayor_edad="si"))
+        return d
+
+    def test_linea_de_modalidad_solo_para_la_trabajadora(self):
+        es = "de entrada por salida"
+        una_casa = title_of("a_num_empleadoras", "a_duerme")
+        casos = [
+            ("planta",
+             [una_casa, title_of("a_duerme", tipo_contrato="planta")],
+             ["a_modalidad_planta", "b_jornada_abierta"], "de planta"),
+            ("una casa",
+             [una_casa, title_of("a_duerme", tipo_contrato="entrada_salida")],
+             ["a_modalidad_es", "b_jornada_abierta"], es),
+            ("varias casas",
+             [title_of("a_num_empleadoras", "a_modalidad_es_varias")],
+             ["a_modalidad_es_varias", "a_link_es", "b_jornada_abierta"], es),
+        ]
+        for i, (caso, botones, piezas, modalidad) in enumerate(casos):
+            with self.subTest(trabajadora=caso):
+                d = self._trabajadora_hasta_a8(f"52155000001{i:02d}")
+                for boton in botones:
+                    d.tap(boton)
+                self.assertEqual(self._piezas(d.last_turn), piezas)
+                self.assertEqual(d.extras().get("modalidad_texto"),
+                                 modalidad)
+
+        for i, (clave, modalidad) in enumerate(
+                [("planta", "de planta"), ("entrada_salida", es)]):
+            with self.subTest(empleadora=clave):
+                d = FlowDriver(f"52155000002{i:02d}")
+                d.send("hola")
+                d.tap(title_of("a_quien_eres", operador="empleadora"))
+                d.send("Marcela Ruiz Soto")
+                d.send("Juana Pérez López")
+                d.tap(title_of("a_tipo_empleadora", tipo_contrato=clave))
+                self.assertEqual(self._piezas(d.last_turn),
+                                 ["b_jornada_abierta"])
+                self.assertEqual(d.extras().get("modalidad_texto"),
+                                 modalidad)

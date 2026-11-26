@@ -129,6 +129,16 @@ class DefaultTextTest(TestCase):
         return [Fragment.objects.get(pk=m["_fragment_id"]).piece.name
                 if m.get("_fragment_id") else None for m in turn]
 
+    def test_resumen_dice_la_modalidad_en_palabras(self):
+        d = self.d
+        with gemini_fake():
+            self._empleadora_hasta_resumen(d)
+        resumen = d.bot_texts()[-1]
+        self.assertEqual(self._piezas(d.last_turn)[-1], "e_resumen")
+        self.assertIn("Contrato de planta", resumen)
+        self.assertNotIn("Contrato planta", resumen)
+        self.assertNotIn("{{", resumen)
+
     def test_cierre_seguro_social_antes_de_la_despedida(self):
         """La despedida con su botón cierra la pantalla; por eso es lo único
         que un «Hola» posterior repite, sin volver a mandar lo del IMSS."""

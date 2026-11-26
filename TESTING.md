@@ -7,7 +7,7 @@ Qué se prueba, cómo se corre y qué ruido es normal. La referencia larga (mec�
 - **Unitario, sin red**: behaviors deterministas (`test_behaviors.py`, `test_calcula_tabulador.py`), esquemas y behaviors de IA con Gemini fake (`test_ia_extrae.py`, `test_corrige_por_ia.py`), texto por defecto (`test_default_text.py`), render del PDF con WeasyPrint (`test_pdf.py`).
 - **Cableado del seed**: `test_seed_flow.py` siembra el flujo y confirma que un paso dispara su behavior por el motor real.
 - **E2E por el motor in-process**: `test_flow_e2e.py` mete payloads de WhatsApp por `ManagerFlow` con `projects/caceh/flow_driver.py`; los botones se contestan por título, leído del seed con `tests/seed_titles.py::title_of`. Gemini es real: la clase lleva `@skipUnless(bool(settings.GEMINI_API_KEY), …)` y se salta entera sin la clave.
-- **§A y cierre por el motor, sin Gemini**: `test_seccion_a.py` (la explicación de CACEH desde el saludo, A8 con el nombre de la contraparte) y, en `test_default_text.py`, el orden del cierre (PDF, seguridad social, despedida). Un botón de una pieza que ya no es el contexto se pulsa con `FlowDriver.press` (payload real del `button_reply`), no con `tap`.
+- **§A y cierre por el motor, sin Gemini**: `test_seccion_a.py` (la explicación de CACEH desde el saludo, A8 con el nombre de la contraparte, la línea de modalidad que solo oye la trabajadora) y, en `test_default_text.py`, la modalidad en palabras en el resumen y el orden del cierre (PDF, seguridad social, despedida). Un botón de una pieza que ya no es el contexto se pulsa con `FlowDriver.press` (payload real del `button_reply`), no con `tap`.
 - **Entrega del PDF**: `test_pdf_delivery.py`, tramo E5→E7 (genera, registra, entrega) con Gemini fake y subida a Meta mockeada.
 
 ## Comando
@@ -16,7 +16,7 @@ Qué se prueba, cómo se corre y qué ruido es normal. La referencia larga (mec�
 cd ~/dev/yeeko/yeeko-chat-flow && .venv/bin/python manage.py test projects.caceh --noinput
 ```
 
-Línea base al 2026-11-26: 86 pruebas, OK, ~9 s sin clave de Gemini (10 se omiten: las de Gemini real); con la clave, las 86 en ~26 s. Para saltarse las de Gemini real aunque `config/.env` tenga la clave (`load_dotenv` no pisa una variable ya puesta):
+Línea base al 2026-11-26: 88 pruebas, OK, ~10 s sin clave de Gemini (10 se omiten: las de Gemini real); con la clave, las 88. Para saltarse las de Gemini real aunque `config/.env` tenga la clave (`load_dotenv` no pisa una variable ya puesta):
 
 ```bash
 cd ~/dev/yeeko/yeeko-chat-flow && GEMINI_API_KEY= .venv/bin/python manage.py test projects.caceh --noinput
