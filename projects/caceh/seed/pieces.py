@@ -37,6 +37,11 @@ PIECES = [
      "content"),
     ("a", "a_link_es",
      "A10 link tras entrada-salida (varias empleadoras)", "content"),
+    ("a", "a_modalidad_planta", "A9b explica modalidad: planta", "content"),
+    ("a", "a_modalidad_es",
+     "A9c explica modalidad: entrada por salida (una casa)", "content"),
+    ("a", "a_modalidad_es_varias",
+     "A8b explica modalidad: entrada por salida (varias casas)", "content"),
     # §B
     ("b", "b_jornada_abierta", "B1 jornada (captura)", "content"),
     ("b", "b_ia_jornada", "B2 ⚙️ ia_extrae jornada", "content"),

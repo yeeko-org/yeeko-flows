@@ -16,6 +16,7 @@ EXTRAS = [
     ("pregunta_mayor_edad", None),
     ("mayor_edad", None),
     ("tipo_contrato", None),
+    ("modalidad_texto", None),        # tipo_contrato en palabras (resumen)
     ("respuesta_jornada", None),
     ("respuesta_descanso", None),
     ("ia_completed", None),

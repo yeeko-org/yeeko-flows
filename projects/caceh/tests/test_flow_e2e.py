@@ -213,8 +213,8 @@ class FlowE2ETest(TestCase):
         self._nombres("trabajadora")
         d.tap(title_of("a_mayor_edad", mayor_edad="si"))
         self.assertEqual(d.at_piece(), "a_num_empleadoras")
-        # A10 link auto-avanza a §B
-        d.tap(title_of("a_num_empleadoras", "a_link_es"))
+        # A8b (modalidad) y el link A10 auto-avanzan a §B
+        d.tap(title_of("a_num_empleadoras", "a_modalidad_es_varias"))
         self.assertEqual(d.at_piece(), "b_jornada_abierta")
         self.assertEqual(d.extras().get("tipo_contrato"), "entrada_salida")
         # entrada_salida añade descanso: jornada cierra en b_descanso_abierta.

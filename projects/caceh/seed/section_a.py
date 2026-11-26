@@ -36,9 +36,7 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
             "pregunta_mayor_edad": "tienes 18 años o más"}),
         ("Empleadora", p["a_nombre_operador"], {
             "operador": "empleadora",
-            "etiqueta_contraparte": "trabajadora",
-            "pregunta_mayor_edad":
-                "la persona trabajadora tiene 18 años o más"}),
+            "etiqueta_contraparte": "trabajadora"}),
     ])
 
     sdr.capture(
@@ -75,21 +73,41 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
         ("Crear otro contrato", p["e_reinicia"], None),
     ])
 
+    # tipo_contrato es la clave que leen templates y bifurcaciones;
+    # modalidad_texto es la misma modalidad dicha a la persona (resumen).
+    planta = {"tipo_contrato": "planta", "modalidad_texto": "de planta"}
+    entrada_salida = {"tipo_contrato": "entrada_salida",
+                      "modalidad_texto": "de entrada por salida"}
+
     # Varias empleadoras -> por fuerza entrada por salida; salta "¿duermes?"
     # y entra a §B vía el link A10 (que retoma con el nombre de la parte).
     sdr.buttons(p["a_num_empleadoras"], (
         "Además de {{contraparte_nombre}}, ¿trabajas con más personas?"), [
         ("Solo con esa persona", p["a_duerme"], None),
-        ("Con varias personas", p["a_link_es"],
-         {"tipo_contrato": "entrada_salida"}),
+        ("Con varias personas", p["a_modalidad_es_varias"], entrada_salida),
     ])
 
     sdr.buttons(p["a_duerme"], "¿Duermes en la casa donde trabajas?", [
-        ("Sí, duermo ahí", p["b_jornada_abierta"],
-         {"tipo_contrato": "planta"}),
-        ("No duermo ahí", p["b_jornada_abierta"],
-         {"tipo_contrato": "entrada_salida"}),
+        ("Sí, duermo ahí", p["a_modalidad_planta"], planta),
+        ("No duermo ahí", p["a_modalidad_es"], entrada_salida),
     ])
+
+    # Solo la trabajadora oye por qué le toca su modalidad: a la empleadora
+    # ya se la explica la pregunta de A11.
+    sdr.msg(p["a_modalidad_planta"], (
+        "Entonces tu contrato es de planta 🏠: vives en la casa donde "
+        "trabajas."))
+    sdr.embedded(p["a_modalidad_planta"], p["b_jornada_abierta"])
+
+    sdr.msg(p["a_modalidad_es"], (
+        "Entonces tu contrato es de entrada por salida 🚪: trabajas en una "
+        "sola casa y duermes en la tuya."))
+    sdr.embedded(p["a_modalidad_es"], p["b_jornada_abierta"])
+
+    sdr.msg(p["a_modalidad_es_varias"], (
+        "Entonces tu contrato es de entrada por salida 🚪: cada casa lleva "
+        "su propio contrato."))
+    sdr.embedded(p["a_modalidad_es_varias"], p["a_link_es"])
 
     # A10 link tras entrada por salida (rama varias): retoma hacia §B.
     sdr.msg(p["a_link_es"], (
@@ -100,7 +118,6 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     sdr.buttons(p["a_tipo_empleadora"], (
         "¿Qué tipo de contrato necesitan?\n*🏠 De planta:* la persona vive "
         "en la casa.\n*🚪 Entrada por salida:* llega y se va el mismo día."), [
-        ("🏠 De planta", p["b_jornada_abierta"], {"tipo_contrato": "planta"}),
-        ("🚪 Entrada por salida", p["b_jornada_abierta"],
-         {"tipo_contrato": "entrada_salida"}),
+        ("🏠 De planta", p["b_jornada_abierta"], planta),
+        ("🚪 Entrada por salida", p["b_jornada_abierta"], entrada_salida),
     ])

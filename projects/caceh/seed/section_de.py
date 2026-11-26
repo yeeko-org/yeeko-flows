@@ -79,7 +79,7 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     sdr.buttons(p["e_resumen"], (
         "Esto es lo que tengo. Échale un último ojo 👀\n"
         "👥 {{trab_nombre_completo}} y {{empl_nombre_completo}}\n"
-        "📄 Contrato {{tipo_contrato}}\n"
+        "📄 Contrato {{modalidad_texto}}\n"
         "🗓️ {{dias_laborables}}, de {{hora_entrada}} a {{hora_salida}}\n"
         "🏠 {{lt_calle}} {{lt_ext}}, col. {{lt_colonia}}, "
         "{{lt_municipio}}, {{lt_estado}}\n"

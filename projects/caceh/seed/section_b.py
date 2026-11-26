@@ -12,9 +12,9 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
 
     sdr.capture(
         p["b_jornada_abierta"],
-        "Hablemos de los días y horarios. ¿Qué días trabajas y en qué "
-        "horario? Escríbelo con tus palabras. 😉 Ej.: \"de lunes a "
-        "viernes, de 8 a 4\".",
+        "Hablemos de los días y horarios. ¿Qué días se trabaja y a qué "
+        "hora se entra y se sale? Escríbelo con tus palabras. 😉 Ej.: "
+        "\"de lunes a viernes, de 8am a 4pm\".",
         "respuesta_jornada", p["b_ia_jornada"])
 
     sdr.bifurcation(
