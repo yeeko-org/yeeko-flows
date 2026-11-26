@@ -10,9 +10,12 @@ Correr:
     .venv/bin/python manage.py test \
         projects.caceh.tests.test_default_text --noinput
 """
+import gc
+
 from django.core.management import call_command
 from django.test import TestCase
 
+from infrastructure.box.models import Fragment
 from infrastructure.place.models import Space
 from infrastructure.xtra.models import Format
 from projects.caceh.flow_driver import FlowDriver, gemini_fake, media_offline
@@ -36,6 +39,9 @@ class DefaultTextTest(TestCase):
         cm.__enter__()
         self.addCleanup(cm.__exit__, None, None, None)
         self.d = FlowDriver(WA_ID)
+
+    def tearDown(self):
+        gc.collect()
 
     # La rama de la empleadora se escribe aquí y no se reusa la de
     # test_pdf_delivery porque aquella pasa por los botones de §A que hoy
@@ -117,3 +123,30 @@ class DefaultTextTest(TestCase):
             self.assertIn("Dignas firma", " ".join(d.bot_texts()))
             self.assertEqual(d.at_piece(), "a_quien_eres")
             self.assertNotIn("tipo_contrato", d.extras())
+
+    @staticmethod
+    def _piezas(turn: list[dict]) -> list:
+        return [Fragment.objects.get(pk=m["_fragment_id"]).piece.name
+                if m.get("_fragment_id") else None for m in turn]
+
+    def test_cierre_seguro_social_antes_de_la_despedida(self):
+        """La despedida con su botón cierra la pantalla; por eso es lo único
+        que un «Hola» posterior repite, sin volver a mandar lo del IMSS."""
+        d = self.d
+        with gemini_fake():
+            self._empleadora_hasta_resumen(d)
+            d.send("Todo correcto")
+            self.assertEqual(
+                [m["type"] for m in d.last_turn],
+                ["document", "text", "interactive"])
+            self.assertEqual(
+                self._piezas(d.last_turn),
+                ["e_entrega_pdf", "e_seguro_social", "e_despedida"])
+            self.assertEqual(d.bot_buttons(), ["Crear otro contrato"])
+
+            d.send("Hola")
+            self.assertNotIn("e_seguro_social", self._piezas(d.last_turn))
+            self.assertEqual(self._piezas(d.last_turn)[-1], "e_despedida")
+            self.assertEqual(d.last_turn[-1]["type"], "interactive")
+            self.assertEqual(d.bot_buttons(), ["Crear otro contrato"])
+            self.assertEqual(d.at_piece(), "e_despedida")

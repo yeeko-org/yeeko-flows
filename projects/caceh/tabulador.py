@@ -8,6 +8,9 @@ $900 que CACEH mandó en labor_16-18 eran typo, todo el nivel vale $904).
 """
 
 MARGEN_MXN = 100
+# Salario mínimo diario que citan los contratos de CACEH (= el nivel más
+# bajo): el aviso salta debajo de él aunque el margen dé un umbral menor.
+SALARIO_MINIMO = 342.47
 
 # Salario del nivel -> name del Media (imagen con salario + IMSS/INFONAVIT)
 # y archivo esperado en projects/caceh/assets/tablas/<name>.png.

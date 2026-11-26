@@ -1,6 +1,7 @@
-"""Tests de calcula_tabulador (D5): regla max, margen $100 y degradación
-sin imagen. Sin red: no hay PNGs en assets/tablas, así que la rama "bajo"
-registra el faltante de imagen en vez de subir un Media a WhatsApp.
+"""Tests de calcula_tabulador (D5): regla max, margen $100, piso del salario
+mínimo y degradación sin imagen. Sin red: no hay PNGs en assets/tablas, así
+que la rama "bajo" registra el faltante de imagen en vez de subir un Media a
+WhatsApp.
 
 Correr: .venv/bin/python manage.py test projects.caceh
 """
@@ -59,15 +60,34 @@ class CalculaTabuladorTestCase(CacehBehaviorTestBase):
 
         self.assertEqual(self._data()["salario_bajo"], "no")
 
-    def test_sin_actividades_sin_referencia(self):
+    def test_limpieza_general_avisa_debajo_del_minimo(self):
+        # 342.47 - 100 dejaría pasar 300: el mínimo legal es el piso.
+        self._set("actividades", ["labor_1"])
+        self._set("salario_diario", "300.0")
+
+        CalculaTabuladorBehavior(self.response)
+
+        data = self._data()
+        self.assertEqual(data["salario_sugerido"], "342.47")
+        self.assertEqual(data["salario_bajo"], "si")
+
+    def test_limpieza_general_en_el_minimo_no_avisa(self):
+        self._set("actividades", ["labor_1"])
+        self._set("salario_diario", "342.47")
+
+        CalculaTabuladorBehavior(self.response)
+
+        self.assertEqual(self._data()["salario_bajo"], "no")
+
+    def test_sin_actividades_compara_contra_el_minimo(self):
         self._set("actividades", [])
         self._set("salario_diario", "300.0")
 
         CalculaTabuladorBehavior(self.response)
 
         data = self._data()
-        self.assertEqual(data["salario_bajo"], "no")
-        self.assertIsNone(data.get("salario_sugerido"))
+        self.assertEqual(data["salario_bajo"], "si")
+        self.assertEqual(data["salario_sugerido"], "342.47")
 
     def test_sin_salario_diario_error_y_no_avisa(self):
         self._set("actividades", ["labor_19"])

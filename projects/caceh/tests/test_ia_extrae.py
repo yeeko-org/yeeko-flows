@@ -8,14 +8,17 @@ from types import SimpleNamespace
 from unittest import skipUnless
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
+from pydantic import BaseModel, ValidationError
 
 from infrastructure.member.factories import MemberFactory
 from infrastructure.place.factories import SpaceFactory
 from infrastructure.xtra.factories import ClassifyExtraFactory, ExtraFactory
 from infrastructure.xtra.models import Format
 
-from services.behavior.ia_extrae import IaExtraeBehavior
+from services.behavior.ia_extrae import (
+    PREGUNTA_GENERICA, IaExtraeBehavior, repregunta_de_error,
+)
 from projects.caceh import schemas  # noqa: F401 — puebla el registro
 
 
@@ -194,7 +197,7 @@ class IaExtraeTestCase(TestCase):
         self._run(None)
         data = self._data()
         self.assertEqual(data["ia_completed"], "no")
-        self.assertIn("forma", data["ia_pregunta"].lower())
+        self.assertEqual(data["ia_pregunta"], PREGUNTA_GENERICA)
 
     def test_pago_deriva_frase_periodicidad(self):
         # El esquema Pago calcula frase_periodicidad de pago_periodicidad (texto
@@ -228,6 +231,38 @@ class IaExtraeTestCase(TestCase):
         self.assertTrue(
             any(e.get("esquema") == "inexistente"
                 for e in self.response.errors))
+
+
+class RepreguntaDeErrorTestCase(SimpleTestCase):
+    """Qué texto recibe la persona cuando el esquema rechaza lo que Gemini
+    extrajo y Gemini no mandó su propia `ia_pregunta`."""
+
+    @staticmethod
+    def _error(schema: type[BaseModel], **data) -> ValidationError:
+        try:
+            schema(**data)
+        except ValidationError as e:
+            return e
+        raise AssertionError("el esquema debía rechazar los datos")
+
+    def test_cp_de_cuatro_digitos_sin_prefijo_value_error(self):
+        e = self._error(schemas.Domicilio, lt_cp="1234",
+                        ia_completed="si", ia_pregunta=None)
+        self.assertEqual(repregunta_de_error(e),
+                         "El código postal son 5 dígitos. ¿Me lo repites?")
+
+    def test_valor_fuera_de_literal_da_la_pregunta_generica(self):
+        e = self._error(schemas.Jornada, dias_laborables=["lunez"],
+                        ia_completed="si")
+        self.assertEqual(repregunta_de_error(e), PREGUNTA_GENERICA)
+
+    def test_literal_primero_y_value_error_despues_gana_el_propio(self):
+        e = self._error(schemas.Correccion, dias_laborables=["lunez"],
+                        lt_cp="1234", ia_completed="si")
+        tipos = [err["type"] for err in e.errors()]
+        self.assertEqual(tipos, ["literal_error", "value_error"])
+        self.assertEqual(repregunta_de_error(e),
+                         "El código postal son 5 dígitos. ¿Me lo repites?")
 
 
 @skipUnless(

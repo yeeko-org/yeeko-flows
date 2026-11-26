@@ -16,7 +16,7 @@ from pydantic import ValidationError
 from infrastructure.xtra.models import Extra
 from projects.caceh.behaviors.base import CacehBehaviorBase
 from projects.caceh.schemas import CORRECCION_PROMPT, Correccion
-from services.behavior.ia_extrae import repregunta_de_error
+from services.behavior.ia_extrae import PREGUNTA_GENERICA, repregunta_de_error
 from utilities.gemini_client import GeminiClient
 
 # Campos que Gemini puede reescribir (= campos del esquema Correccion).
@@ -36,7 +36,6 @@ _SOLO_ENTRADA_SALIDA = ("descanso_minutos", "comidas_incluidas")
 CONTEXTO = ("tipo_contrato", "salario_diario")
 
 _HIST = "_hist_correccion"
-_PREGUNTA_FALLBACK = "Perdón, no te entendí bien. ¿Me lo dices de otra forma?"
 _PREGUNTA_SIN_CAMBIO = (
     "No alcancé a ver qué cambiar. ¿Me dices qué dato está mal y cómo "
     "debe quedar?")
@@ -60,7 +59,7 @@ class CorrigePorIaBehavior(CacehBehaviorBase):
 
         data = client.extract(CORRECCION_PROMPT, user_text, Correccion)
         if data is None:
-            self._repregunta(_PREGUNTA_FALLBACK)
+            self._repregunta(PREGUNTA_GENERICA)
             return
 
         try:
@@ -76,7 +75,7 @@ class CorrigePorIaBehavior(CacehBehaviorBase):
                    if k in self._corregibles() and v is not None}
         actividades = data.get("cambiar_actividades") == "si"
         if data.get("ia_completed") != "si":
-            self._repregunta(data.get("ia_pregunta") or _PREGUNTA_FALLBACK)
+            self._repregunta(data.get("ia_pregunta") or PREGUNTA_GENERICA)
             return
         if not cambios and not actividades:
             # Gemini dijo «listo» sin cambiar nada: volver al resumen igual

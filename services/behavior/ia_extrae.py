@@ -14,7 +14,9 @@ from utilities.parameters import replace_parameter
 # el contenido de dominio se "enchufa" al cargar.
 SCHEMA_REGISTRY: dict[str, tuple[Type[BaseModel], str]] = {}
 
-PREGUNTA_GENERICA = "Perdón, no te entendí bien. ¿Me lo dices de otra forma?"
+PREGUNTA_GENERICA = (
+    "Disculpa, no te entendí bien. Por favor, ayúdame a escribir una nueva "
+    "respuesta.")
 
 
 def repregunta_de_error(e: ValidationError) -> str:

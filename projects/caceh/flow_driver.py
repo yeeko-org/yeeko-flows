@@ -186,6 +186,29 @@ class FlowDriver:
     # Botón = título como texto (lo resuelve check_buttons_text).
     tap = send
 
+    def press(self, title: str) -> list[dict]:
+        """Pulsa un botón del último turno como lo hace WhatsApp: un
+        `button_reply` con el payload del BuiltReply. A diferencia de `tap`,
+        resuelve también botones de una pieza que ya no es el contexto (el
+        saludo, cuando su embedded rindió después la pregunta de rol)."""
+        payload = next(
+            (b["payload"] for m in self.last_turn
+             for b in (m.get("_standard_message") or {}).get("buttons", [])
+             if b.get("title") == title), None)
+        if not payload:
+            raise AssertionError(f"No hay botón {title!r} en el último turno")
+        msg = {
+            "id": _wamid(),
+            "from": self.wa_id,
+            "timestamp": str(int(time.time())),
+            "type": "interactive",
+            "interactive": {
+                "type": "button_reply",
+                "button_reply": {"id": payload, "title": title},
+            },
+        }
+        return self._run(_envelope(self.pid, self.wa_id, msg))
+
     def submit_form(self, selection: list) -> list[dict]:
         """Simula el submit de un WhatsApp Flow (`nfm_reply`). Toma el
         `flow_token` del formulario que el bot acaba de enviar (lo que el Flow

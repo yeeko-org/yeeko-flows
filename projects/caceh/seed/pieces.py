@@ -87,6 +87,7 @@ PIECES = [
     ("e", "e_genera_pdf", "E5 ⚙️ genera_pdf", "content"),
     ("e", "e_registra", "E6 ⚙️ registra_contrato", "content"),
     ("e", "e_entrega_pdf", "E7 ⚙️ entrega_pdf", "content"),
+    ("e", "e_seguro_social", "E8 seguridad social (IMSS)", "content"),
     ("e", "e_despedida", "E9 despedida y botón de reinicio", "content"),
     ("e", "e_reinicia", "E10 ⚙️ reinicia_contrato y vuelve al saludo",
      "content"),

@@ -2,7 +2,9 @@
 
 Regla cerrada con CACEH (2026-07-08): el salario sugerido es el MÁXIMO de
 los items marcados en D1 y el aviso solo se dispara si el salario pactado
-queda debajo por más de MARGEN_MXN. La comparación numérica vive aquí
+queda debajo por más de MARGEN_MXN, con el salario mínimo como piso
+del umbral (también sin actividades reconocidas, donde lo sugerido es el
+mínimo). La comparación numérica vive aquí
 porque el motor solo bifurca por igualdad (ConditionRule): se escribe
 {{salario_bajo}} = "si"/"no" y D6 enruta por ese valor.
 
@@ -30,12 +32,7 @@ class CalculaTabuladorBehavior(CacehBehaviorBase):
         actividades = self._read("actividades") or []
         salarios = [tabulador.SALARIOS[a] for a in actividades
                     if a in tabulador.SALARIOS]
-        if not salarios:
-            # Sin actividades reconocidas: no hay referencia -> sin aviso.
-            self._write("salario_bajo", "no")
-            return
-
-        sugerido = max(salarios)
+        sugerido = max(salarios) if salarios else tabulador.SALARIO_MINIMO
         # :g evita el "904.0" en el copy de D7 y conserva el 342.47.
         self._write("salario_sugerido", f"{sugerido:g}")
 
@@ -48,7 +45,8 @@ class CalculaTabuladorBehavior(CacehBehaviorBase):
             self._write("salario_bajo", "no")
             return
 
-        bajo = diario < sugerido - tabulador.MARGEN_MXN
+        umbral = max(sugerido - tabulador.MARGEN_MXN, tabulador.SALARIO_MINIMO)
+        bajo = diario < umbral
         self._write("salario_bajo", "si" if bajo else "no")
         # silencioso="si" (E4 recálculo tras corregir): el veredicto se
         # reescribe pero el aviso no se muestra, y la imagen es parte de él.

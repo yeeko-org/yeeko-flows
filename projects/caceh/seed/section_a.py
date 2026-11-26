@@ -70,7 +70,7 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
     sdr.buttons(p["a_menor"], (
         "En el trabajo del hogar laboran muchas menores de edad como tú, "
         "pero se requiere una atención especial para crear un contrato "
-        "específico. Por favor escribe a CACEH para recibir atención "
+        "específico. Por favor, escribe a CACEH para recibir atención "
         "personal."), [
         ("Crear otro contrato", p["e_reinicia"], None),
     ])

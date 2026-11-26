@@ -22,6 +22,8 @@ Django engine for WhatsApp conversational flows. Flows are defined in the DB (`F
 
 - **WhatsApp Flows = `WaForm` namespace.** All Meta-Flows code is prefixed `WaForm` (`WaFormMessage`, `WaFormReplyProcessor`, `wa_form_to_data`) to avoid colliding with the conversational `Flow` model. Never name a new symbol `Flow*`. Author-facing behavior is named by function (`multiple_select`), not by transport. Adding a multiple-select question: see `docs/reference/2026-06-29-preguntas-de-seleccion-multiple-whatsapp-flows.md`.
 
+- **Names stored as rows are identifiers: English.** Behaviors, parameters and slots follow the code-naming rule even though they live in the DB (`esquema`, `entrada`, `silencioso` slipped in Spanish). The contract variables of a project (`monto_pago`, `fecha_inicio`) are domain vocabulary and stay as they are.
+
 ## Process docs and the CACEH product
 
 - `docs/` is a submodule of the **private** repo `yeeko-org/yeeko-flows-docs`: the engine's documenter graph, shared with the sibling worktree `../yeeko-chat-flow-rebuilding`. Every engine decision is documented there, whichever branch it is born on. Without access the folder stays empty and the code still works; with access: `git submodule update --init --checkout docs`, then `git -C docs checkout main`.
