@@ -97,3 +97,4 @@ class Parameter(models.Model):
         verbose_name = 'Parámetro'
         verbose_name_plural = 'Parámetros'
         ordering = ['order']
+        unique_together = ('behavior', 'name')
