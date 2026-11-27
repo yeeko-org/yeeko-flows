@@ -29,7 +29,7 @@ from django.utils import timezone
 
 from infrastructure.persistent_media.models import Media
 from infrastructure.service.models import ApiRecord
-from infrastructure.talk.models import Interaction
+from infrastructure.talk.models import BuiltReply, Interaction
 from interface.whatsapp.request import WhatsAppRequest
 from interface.whatsapp.response import WhatsAppResponse
 from services.manager_flow import ManagerFlow
@@ -136,6 +136,12 @@ _FAKE_EXTRACT = {
         "dias_laborables": ["lunes", "martes", "miércoles", "jueves",
                             "viernes"],
         "ia_completed": "si", "ia_pregunta": None},
+    "Descanso": {
+        "descanso_minutos": 60, "comidas_incluidas": ["comida"],
+        "ia_completed": "si", "ia_pregunta": None},
+    "Fecha": {
+        "fecha_dia": None, "fecha_mes": 5, "fecha_anio": 2015,
+        "ia_completed": "si", "ia_pregunta": None},
     "Pago": {
         "monto_pago": 2500, "pago_periodicidad": "semanal",
         "ia_completed": "si", "ia_pregunta": None},
@@ -146,20 +152,58 @@ _FAKE_EXTRACT = {
         "ciudad_firma": "Cuauhtémoc", "ia_completed": "si",
         "ia_pregunta": None},
 }
+# open_question pide la intención cuando la persona cita un recap.
+_QUOTE_SUFFIX = "Quote"
+
+
+def _fake_nombre(schema, user_text: str) -> dict:
+    """Parte la última línea: pila, y las dos últimas palabras como
+    apellidos («Juana Pérez López»)."""
+    campos = list(schema.model_fields)
+    prefijo = next(c for c in campos if c.endswith("_nombre_pila"))[
+        :-len("_nombre_pila")]
+    palabras = (user_text.strip().splitlines() or [""])[-1].split()
+    pila = palabras[:-2] if len(palabras) > 2 else palabras[:1]
+    apellidos = palabras[len(pila):] + [None, None]
+    return {f"{prefijo}_nombre_pila": " ".join(pila) or None,
+            f"{prefijo}_apellido_paterno": apellidos[0],
+            f"{prefijo}_apellido_materno": apellidos[1],
+            "ia_completed": "si", "ia_pregunta": None}
+
+
+class FakeGemini:
+    """Doble de `GeminiClient`: contesta primero lo que haya en `script`
+    (en orden, una respuesta por llamada) y, sin guion, los datos canónicos
+    del esquema recibido."""
+
+    def __init__(self):
+        self.script: list = []
+        self.errors: list = []
+        self.calls: list = []
+
+    def extract(self, system_prompt, user_text, schema):
+        self.calls.append((schema.__name__, user_text))
+        if self.script:
+            return self.script.pop(0)
+        name = schema.__name__
+        if name.endswith(_QUOTE_SUFFIX):
+            return {"intent": "confirm"}
+        if "Nombre" in name:
+            return _fake_nombre(schema, user_text)
+        return dict(_FAKE_EXTRACT.get(name, {}))
 
 
 @contextmanager
 def gemini_fake():
-    """Reemplaza `GeminiClient` por un doble que despacha datos canónicos según
-    la clase de esquema recibida en `extract(system_prompt, user_text, schema)`.
-    Solo para el stepper sin `GEMINI_API_KEY`."""
-    def _dispatch(system_prompt, user_text, schema):
-        return dict(_FAKE_EXTRACT.get(schema.__name__, {}))
-
-    with patch("services.behavior.ia_extrae.GeminiClient") as mock_g:
-        mock_g.return_value.extract.side_effect = _dispatch
-        mock_g.return_value.errors = []
-        yield
+    """Reemplaza `GeminiClient` (el de `ia_extrae` y el de la unidad
+    `open_question`) por un `FakeGemini`, que se entrega para guionizarlo.
+    Para el stepper sin `GEMINI_API_KEY` y las pruebas sin red."""
+    fake = FakeGemini()
+    with patch("services.behavior.ia_extrae.GeminiClient",
+               return_value=fake), \
+            patch("services.behavior.open_question.GeminiClient",
+                  return_value=fake):
+        yield fake
 
 
 # --- driver --------------------------------------------------------------
@@ -186,17 +230,27 @@ class FlowDriver:
     # Botón = título como texto (lo resuelve check_buttons_text).
     tap = send
 
-    def press(self, title: str) -> list[dict]:
-        """Pulsa un botón del último turno como lo hace WhatsApp: un
-        `button_reply` con el payload del BuiltReply. A diferencia de `tap`,
-        resuelve también botones de una pieza que ya no es el contexto (el
-        saludo, cuando su embedded rindió después la pregunta de rol)."""
-        payload = next(
-            (b["payload"] for m in self.last_turn
-             for b in (m.get("_standard_message") or {}).get("buttons", [])
-             if b.get("title") == title), None)
+    def press(self, title: str, piece: Optional[str] = None) -> list[dict]:
+        """Pulsa un botón como lo hace WhatsApp: un `button_reply` con el
+        payload del BuiltReply. A diferencia de `tap`, resuelve también
+        botones de una pieza que ya no es el contexto (el saludo, cuando su
+        embedded rindió después la pregunta de rol).
+
+        Busca primero en el último turno; si no está ahí (o se pide `piece`),
+        toma el botón más reciente con ese título entre las salidas ya
+        enviadas a esta persona, como cuando se pulsa un mensaje viejo."""
+        payload = None
+        if piece is None:
+            payload = next(
+                (b["payload"] for m in self.last_turn
+                 for b in (m.get("_standard_message") or {}).get(
+                     "buttons", [])
+                 if b.get("title") == title), None)
         if not payload:
-            raise AssertionError(f"No hay botón {title!r} en el último turno")
+            payload = self._sent_button_payload(title, piece)
+        if not payload:
+            where = f" de {piece}" if piece else ""
+            raise AssertionError(f"No hay botón {title!r}{where} enviado")
         msg = {
             "id": _wamid(),
             "from": self.wa_id,
@@ -208,6 +262,19 @@ class FlowDriver:
             },
         }
         return self._run(_envelope(self.pid, self.wa_id, msg))
+
+    def _sent_button_payload(self, title: str,
+                             piece: Optional[str]) -> Optional[str]:
+        if not self.member_account:
+            return None
+        qs = BuiltReply.objects.filter(
+            reply__title=title,
+            interaction__member_account=self.member_account,
+            interaction__is_incoming=False)
+        if piece:
+            qs = qs.filter(reply__fragment__piece__name=piece)
+        built = qs.order_by("interaction__created").last()
+        return str(built.uuid) if built else None
 
     def submit_form(self, selection: list) -> list[dict]:
         """Simula el submit de un WhatsApp Flow (`nfm_reply`). Toma el
@@ -285,6 +352,14 @@ class FlowDriver:
         `calculate_context_piece`): la última salida con fragmento."""
         last = self._last_out(with_fragment=True)
         return last.fragment.piece.name if last and last.fragment_id else None
+
+    def at_slot(self) -> Optional[str]:
+        """El papel del último mensaje con fragmento dentro de su unidad de
+        captura (question, reask, recap…), o None si no salió por un slot:
+        `at_piece()` da la misma pieza para todos."""
+        last = self._last_out(with_fragment=True)
+        slot = last.fragment.slot if last and last.fragment_id else None
+        return slot.name if slot else None
 
     def extras(self) -> dict:
         if not self.member_account:

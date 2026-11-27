@@ -11,6 +11,18 @@ from django.db.models import F, Q
 from utilities.parameters import update_parameters
 
 
+# What a behavior reports back by setting `result` on its instance. A
+# behavior that sets nothing is treated as before: the engine does not move.
+#   FINISHED: its work on the piece is done; the engine follows the piece's
+#     «next».
+#   HANDLED: it took care of the message and the piece stays where it is.
+#   NOT_MINE: the text it was offered is not for it; the engine goes on
+#     down its usual chain.
+FINISHED = "finished"
+HANDLED = "handled"
+NOT_MINE = "not_mine"
+
+
 class BehaviorNotFound(Exception):
     """No hay `ApplyBehavior` para ese nombre en el space (ni global). Se
     distingue de cualquier otro fallo para que un llamador pueda tratar
@@ -51,19 +63,21 @@ class BehaviorProcessor:
             apply_behavior.behavior, context_direct,
             interaction_in=interaction_in)
 
-    def process(self):
+    def process(self) -> Optional[str]:
         from services.processor.piece import PieceProcessor
         if not self.apply_behavior.main_piece:
-            self.process_behavior_code()
-            return
+            return self.process_behavior_code()
 
+        # A behavior backed by a piece shows it, and the piece follows its
+        # own «next»: nothing to report upwards.
         piece_processor = PieceProcessor(
             piece=self.apply_behavior.main_piece, response=self.response,
             parameters=self.parameters
         )
         piece_processor.process()
+        return None
 
-    def process_behavior_code(self):
+    def process_behavior_code(self) -> Optional[str]:
         behavior_class = self._resolve_behavior_class()
         if not behavior_class:
             raise Exception(
@@ -71,7 +85,8 @@ class BehaviorProcessor:
 
         self.parameters['response'] = self.response
 
-        _ = behavior_class(**self.parameters)
+        instance = behavior_class(**self.parameters)
+        return getattr(instance, "result", None)
 
     def _resolve_behavior_class(self):
         """Localiza la clase del behavior: primero entre los genéricos del

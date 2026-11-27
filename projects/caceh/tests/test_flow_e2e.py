@@ -83,39 +83,46 @@ class FlowE2ETest(TestCase):
         self.assertEqual(d.at_piece(), "a_nombre_contraparte")
         d.send("Marcela Ruiz Soto")      # dispara asigna_partes + bifurca
 
-    def _ia_capture(self, text, confirm_piece, repregunta_piece, aclara):
-        """Manda una captura que dispara ia_extrae con loop de repregunta. Con
-        Gemini real el modelo puede pedir un dato aunque la frase parezca
-        completa; se aclara hasta 2 veces antes de exigir la confirmación."""
+    def _unit_capture(self, text, next_piece, aclara):
+        """Contesta una unidad de captura. Con Gemini real el modelo puede
+        pedir un dato aunque la frase parezca completa; se aclara hasta 2
+        veces. Completa, la unidad manda su recap y la siguiente pregunta en
+        el mismo envío, así que la persona queda en `next_piece`."""
         d = self.d
         d.send(text)
         for _ in range(2):
-            if d.at_piece() == confirm_piece:
+            if d.at_piece() == next_piece:
                 return
-            if d.at_piece() == repregunta_piece:
+            if d.at_slot() == "reask":
                 d.send(aclara)
-        self.assertEqual(d.at_piece(), confirm_piece)
+        self.assertEqual(d.at_piece(), next_piece)
+
+    def _e4_capture(self, text, aclara):
+        """La corrección del resumen (E4) sigue siendo una captura con su
+        propia pieza de repregunta."""
+        d = self.d
+        d.send(text)
+        for _ in range(2):
+            if d.at_piece() == "e_resumen":
+                return
+            if d.at_piece() == "e_repregunta_correccion":
+                d.send(aclara)
+        self.assertEqual(d.at_piece(), "e_resumen")
 
     def _jornada_pago_lugar_hasta_resumen(self):
         """Desde b_jornada_abierta hasta e_resumen (3 llamadas a Gemini real)."""
         d = self.d
         self.assertEqual(d.at_piece(), "b_jornada_abierta")
-        self._ia_capture(JORNADA_OK, "b_confirma_jornada",
-                         "b_repregunta_jornada", JORNADA_ACLARA)
-        d.tap(title_of("b_confirma_jornada", "c_relacion_previa"))
-        self.assertEqual(d.at_piece(), "c_relacion_previa")
+        self._unit_capture(JORNADA_OK, "c_relacion_previa", JORNADA_ACLARA)
+        self.assertIn("La jornada laboral quedó así:",
+                      " ".join(d.bot_texts()))
         d.tap(title_of("c_relacion_previa", "c_pago_abierta"))
         self.assertEqual(d.at_piece(), "c_pago_abierta")
-        d.send(PAGO_OK)
-        self.assertEqual(d.at_piece(), "c_confirma_pago")
-        d.tap(title_of("c_confirma_pago", "c_modo_pago"))
+        self._unit_capture(PAGO_OK, "c_modo_pago", PAGO_OK)
         # calcula_salario_diario -> lugar
         d.tap(title_of("c_modo_pago", modo_pago="efectivo"))
         self.assertEqual(d.at_piece(), "c_lugar_abierta")
-        self._ia_capture(LUGAR_OK, "c_confirma_lugar",
-                         "c_repregunta_lugar", LUGAR_ACLARA)
-        d.tap(title_of("c_confirma_lugar", "d_actividades"))
-        self.assertEqual(d.at_piece(), "d_actividades")
+        self._unit_capture(LUGAR_OK, "d_actividades", LUGAR_ACLARA)
         # D1: FormWa multiselect (items del tabulador). El submit escribe
         # {{actividades}} y avanza a D4; con el tabulador encendido corre
         # calcula_tabulador: labor_1/labor_2 -> sugerido 450, y el pago del
@@ -218,11 +225,10 @@ class FlowE2ETest(TestCase):
         self.assertEqual(d.at_piece(), "b_jornada_abierta")
         self.assertEqual(d.extras().get("tipo_contrato"), "entrada_salida")
         # entrada_salida añade descanso: jornada cierra en b_descanso_abierta.
-        self._ia_capture(JORNADA_OK, "b_descanso_abierta",
-                         "b_repregunta_jornada", JORNADA_ACLARA)
-        d.send(DESCANSO_OK)              # B7 ia_extrae descanso -> confirma
-        self.assertEqual(d.at_piece(), "b_confirma_jornada")
+        self._unit_capture(JORNADA_OK, "b_descanso_abierta", JORNADA_ACLARA)
+        self._unit_capture(DESCANSO_OK, "c_relacion_previa", DESCANSO_OK)
         self.assertTrue(d.extras().get("descanso_minutos"))
+        self.assertTrue(d.extras().get("descanso_texto"))
 
     def test_p5_no_duerme_entrada_salida(self):
         d = self.d
@@ -246,8 +252,9 @@ class FlowE2ETest(TestCase):
         self.assertEqual(d.extras().get("tipo_contrato"), "entrada_salida")
 
     def test_p8_relacion_previa_retroactiva(self):
-        """Ya trabajábamos -> captura fecha; una no parseable reedita y una
-        fecha pasada válida sigue a pago (la consume la cláusula SEGUNDA)."""
+        """Ya trabajábamos -> unidad de la fecha; una relativa repregunta y
+        una fecha pasada válida sigue a pago (la consume la cláusula
+        SEGUNDA)."""
         d = self.d
         self._saludo_a_quien_eres()
         self._nombres("trabajadora")
@@ -255,15 +262,13 @@ class FlowE2ETest(TestCase):
         d.tap(title_of("a_num_empleadoras", "a_duerme"))
         d.tap(title_of("a_duerme", tipo_contrato="planta"))
         self.assertEqual(d.at_piece(), "b_jornada_abierta")
-        self._ia_capture(JORNADA_OK, "b_confirma_jornada",
-                         "b_repregunta_jornada", JORNADA_ACLARA)
-        d.tap(title_of("b_confirma_jornada", "c_relacion_previa"))
-        self.assertEqual(d.at_piece(), "c_relacion_previa")
+        self._unit_capture(JORNADA_OK, "c_relacion_previa", JORNADA_ACLARA)
         d.tap(title_of("c_relacion_previa", "c_fecha_inicio"))
         self.assertEqual(d.at_piece(), "c_fecha_inicio")
         self.assertEqual(d.extras().get("es_retroactivo"), "si")
-        d.send("el año pasado")          # no parseable -> reedita
-        self.assertEqual(d.at_piece(), "c_repregunta_fecha")
+        d.send("el año pasado")          # relativa -> repregunta
+        self.assertEqual(d.at_piece(), "c_fecha_inicio")
+        self.assertEqual(d.at_slot(), "reask")
         d.send("15/03/2023")             # válida -> normaliza y sigue a pago
         self.assertEqual(d.at_piece(), "c_pago_abierta")
         self.assertEqual(d.extras().get("fecha_inicio"), "15/03/2023")
@@ -280,16 +285,17 @@ class FlowE2ETest(TestCase):
         d.tap(title_of("e_resumen", "e_corrige"))
         self.assertEqual(d.at_piece(), "e_corrige")
         # 2,500 -> 3,000 a la semana, 5 días: 500 -> 600 al día.
-        self._ia_capture("el pago está mal, son 3,000 a la semana",
-                         "e_resumen", "e_repregunta_correccion",
+        self._e4_capture("el pago está mal, son 3,000 a la semana",
                          "el pago son 3000 pesos a la semana")
         extras = d.extras()
         self.assertEqual(extras.get("monto_pago"), 3000)
         self.assertEqual(extras.get("pago_periodicidad"), "semanal")
         self.assertEqual(extras.get("salario_diario"), "600.0")
         self.assertEqual(extras.get("correccion_destino"), "resumen")
-        self.assertTrue(any("600.0" in t for t in d.bot_texts()),
-                        d.bot_texts())
+        # El resumen re-pintado dice el pago pactado, no el diario.
+        self.assertTrue(
+            any("$3,000 a la semana" in t for t in d.bot_texts()),
+            d.bot_texts())
 
     def test_p7_loop_repregunta_jornada(self):
         d = self.d
@@ -301,7 +307,8 @@ class FlowE2ETest(TestCase):
         self.assertEqual(d.at_piece(), "b_jornada_abierta")
         # Frase sin horario: Gemini real debe pedir el dato que falta.
         d.send(JORNADA_INCOMPLETA)
-        self.assertEqual(d.at_piece(), "b_repregunta_jornada")
-        # Completa el horario: cierra y avanza a confirmar.
+        self.assertEqual(d.at_piece(), "b_jornada_abierta")
+        self.assertEqual(d.at_slot(), "reask")
+        # Completa el horario: cierra, recap y sigue a la relación previa.
         d.send("de 8 de la mañana a 4 de la tarde")
-        self.assertEqual(d.at_piece(), "b_confirma_jornada")
+        self.assertEqual(d.at_piece(), "c_relacion_previa")

@@ -79,7 +79,7 @@ class Parameter(models.Model):
     description = models.TextField(blank=True, null=True)
     is_required = models.BooleanField(default=False)
     # RICK 5: Aún no decido si quiero mantener esto:
-    default_value = models.CharField(max_length=255, blank=True, null=True)
+    default_value = models.TextField(blank=True, null=True)
     data_type = models.CharField(max_length=20, choices=DATA_TYPES)
     customizable_by_piece = models.BooleanField(default=False)
     addl_config = JSONField(blank=True, null=True)

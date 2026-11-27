@@ -21,6 +21,7 @@ from django.core.files.base import ContentFile
 from infrastructure.persistent_media.models import Media
 from projects.caceh import tabulador
 from projects.caceh.behaviors.base import CacehBehaviorBase
+from projects.caceh.derivados import veredicto_tabulador
 
 _ASSETS = Path(__file__).resolve().parents[1] / "assets" / "tablas"
 
@@ -29,24 +30,17 @@ class CalculaTabuladorBehavior(CacehBehaviorBase):
     behavior_name = "calcula_tabulador"
 
     def run(self) -> None:
-        actividades = self._read("actividades") or []
-        salarios = [tabulador.SALARIOS[a] for a in actividades
-                    if a in tabulador.SALARIOS]
-        sugerido = max(salarios) if salarios else tabulador.SALARIO_MINIMO
+        sugerido, bajo = veredicto_tabulador(
+            self._read("actividades") or [], self._read("salario_diario"))
         # :g evita el "904.0" en el copy de D7 y conserva el 342.47.
         self._write("salario_sugerido", f"{sugerido:g}")
-
-        try:
-            diario = float(self._read("salario_diario"))
-        except (TypeError, ValueError):
+        if bajo is None:
             self.response.add_error({
                 "behavior": self.behavior_name,
                 "message": "salario_diario ausente o no numérico"})
             self._write("salario_bajo", "no")
             return
 
-        umbral = max(sugerido - tabulador.MARGEN_MXN, tabulador.SALARIO_MINIMO)
-        bajo = diario < umbral
         self._write("salario_bajo", "si" if bajo else "no")
         # silencioso="si" (E4 recálculo tras corregir): el veredicto se
         # reescribe pero el aviso no se muestra, y la imagen es parte de él.

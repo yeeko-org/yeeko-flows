@@ -1,5 +1,6 @@
-"""Copy de §A por el motor, sin Gemini: la explicación de CACEH desde el
-saludo y la pregunta A8 con el nombre de la contraparte.
+"""Copy de §A por el motor, con Gemini fake (los nombres pasan por la unidad
+de captura): la explicación de CACEH desde el saludo y la pregunta A8 con el
+nombre de la contraparte.
 
 Correr:
     .venv/bin/python manage.py test \
@@ -13,7 +14,7 @@ from django.test import TestCase
 from infrastructure.box.models import Fragment
 from infrastructure.place.models import Space
 from infrastructure.xtra.models import Format
-from projects.caceh.flow_driver import FlowDriver
+from projects.caceh.flow_driver import FlowDriver, gemini_fake
 from projects.caceh.tests.seed_titles import title_of
 
 WA_ID = "5215500000031"
@@ -31,6 +32,9 @@ class SeccionATest(TestCase):
         call_command("seed_flow", space=cls.space.pk)
 
     def setUp(self):
+        cm = gemini_fake()
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
         self.d = FlowDriver(WA_ID)
 
     def tearDown(self):

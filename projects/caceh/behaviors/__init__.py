@@ -14,9 +14,6 @@ from projects.caceh.behaviors.calcula_salario_diario import (
 from projects.caceh.behaviors.calcula_tabulador import (
     CalculaTabuladorBehavior as calcula_tabulador,
 )
-from projects.caceh.behaviors.valida_fecha_pasada import (
-    ValidaFechaPasadaBehavior as valida_fecha_pasada,
-)
 from projects.caceh.behaviors.registra_contrato import (
     RegistraContratoBehavior as registra_contrato,
 )

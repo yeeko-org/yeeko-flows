@@ -47,13 +47,10 @@ def _drive_to_resumen(d: FlowDriver) -> None:
     d.tap(title_of("a_num_empleadoras", "a_duerme"))
     d.tap(title_of("a_duerme", tipo_contrato="planta"))
     d.send("jornada")            # gemini fake: contesta datos canónicos
-    d.tap(title_of("b_confirma_jornada", "c_relacion_previa"))
     d.tap(title_of("c_relacion_previa", "c_pago_abierta"))
     d.send("2500 a la semana")
-    d.tap(title_of("c_confirma_pago", "c_modo_pago"))
     d.tap(title_of("c_modo_pago", modo_pago="efectivo"))
     d.send("domicilio")
-    d.tap(title_of("c_confirma_lugar", "d_actividades"))
     d.submit_form(["labor_1", "labor_2"])
     assert d.at_piece() == "e_resumen", d.at_piece()
 

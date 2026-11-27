@@ -12,6 +12,15 @@ from num2words import num2words
 from weasyprint import HTML
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates" / "caceh"
+# Lo que se imprime en lugar de un dato obligatorio que el bot pidió y no
+# logró entender, para escribirlo a mano. Lo opcional que falta se omite.
+# Cada hueco mide según lo que se escribe ahí: un número de casa o un día
+# caben en uno corto; una calle o una colonia piden uno largo.
+HUECO_CORTO = "______"
+HUECO_MEDIO = "____________"
+HUECO_LARGO = "________________________"
+HUECOS = {"corto": HUECO_CORTO, "medio": HUECO_MEDIO, "largo": HUECO_LARGO}
+
 _TEMPLATES = {
     "planta": "contrato_planta.html",
     "entrada_salida": "contrato_entrada_salida.html",
@@ -65,7 +74,7 @@ def build_html(datos: dict, tipo_contrato: str = "planta") -> str:
     tpl = (_TEMPLATES_DIR / name).read_text(encoding="utf-8")
     # El monto en letras se deriva aquí y no en genera_pdf para que valga
     # igual en cualquier ruta de render (incluidas las pruebas del HTML).
-    datos = {**datos,
+    datos = {**datos, "hueco": HUECOS,
              "salario_monto": monto_formateado(datos.get("salario_diario")),
              "salario_letras": monto_en_letras(datos.get("salario_diario"))}
     return Template(tpl).render(**datos)

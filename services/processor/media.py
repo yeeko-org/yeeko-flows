@@ -7,6 +7,10 @@ from services.processor.written import WrittenProcessorFull
 from services.request.message_model import MediaMessage
 from services.response import ResponseAbc
 
+MEDIA_DURING_CAPTURE_TEXT = (
+    "Por ahora solo puedo leer mensajes escritos. ✍️ Por favor, escribe tu "
+    "respuesta.")
+
 
 class MediaProcessor(ContextMixing):
     message: MediaMessage
@@ -47,7 +51,29 @@ class MediaProcessor(ContextMixing):
         written_processor.process()
         return True
 
+    def is_during_capture(self) -> bool:
+        for interaction in (self.quoted_interaction, self.active_interaction):
+            if interaction and interaction.fragment \
+                    and interaction.fragment.slot_id:
+                return True
+        return any(piece and piece.written_id
+                   for piece in (self.context_piece, self.active_piece))
+
+    def reply_during_capture(self) -> bool:
+        """An audio or a photo is never an answer to a written question:
+        say so and repeat what is pending, instead of storing its URL."""
+        from services.processor.piece import PieceProcessor
+
+        if not self.is_during_capture():
+            return False
+        self.response.message_text(MEDIA_DURING_CAPTURE_TEXT)
+        if self.active_piece:
+            PieceProcessor(self.active_piece, self.response).process()
+        return True
+
     def process(self):
+        if self.reply_during_capture():
+            return
 
         if self.process_written():
             return

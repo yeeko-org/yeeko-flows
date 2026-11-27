@@ -1,7 +1,29 @@
-import re
-
 from django.db.models import QuerySet
 from infrastructure.assign.models import ParamValue
+
+
+TRUE_TEXTS = ("true", "1", "yes", "si", "sí")
+FALSE_TEXTS = ("false", "0", "no")
+
+
+def typed_value(value, data_type: str):
+    """`ParamValue.value` is a string column: a `boolean` or `integer`
+    parameter is handed over as a real bool or int. Every other type, and a
+    text that does not parse, travels as stored."""
+    if not isinstance(value, str):
+        return value
+    text = value.strip().lower()
+    if data_type == "boolean":
+        if text in TRUE_TEXTS:
+            return True
+        if text in FALSE_TEXTS:
+            return False
+    elif data_type == "integer":
+        try:
+            return int(text)
+        except ValueError:
+            pass
+    return value
 
 
 def update_parameters(
@@ -9,25 +31,12 @@ def update_parameters(
     parameters_dict: dict = {}
 ) -> dict:
     local_parameters = parameters_dict.copy()
-    for param_value in query_param_value.values("parameter__name", "value"):
+    rows = query_param_value.values(
+        "parameter__name", "parameter__data_type", "value")
+    for param_value in rows:
         param_name = param_value["parameter__name"]
-        local_parameters[param_name] = param_value["value"]
+        local_parameters[param_name] = typed_value(
+            param_value["value"], param_value["parameter__data_type"])
 
     return local_parameters
 
-
-def replace_parameter(parameters_dict: dict, text: str, default: str = ""):
-    pattern = r"\{\{(\w+)\}\}"
-
-    def replace_match(match):
-        key = match.group(1)
-        if key in parameters_dict:
-            return parameters_dict[key]
-        else:
-            return default
-
-    result = re.sub(pattern, replace_match, text)
-
-    # Gemela de replacer_from_data: `[^\S\n]` colapsa espacios horizontales
-    # pero conserva `\n`, para no aplanar los saltos que van al mensaje final.
-    return re.sub(r'[^\S\n]+', ' ', result.strip())

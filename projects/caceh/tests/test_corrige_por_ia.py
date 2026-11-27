@@ -11,6 +11,7 @@ from projects.caceh.behaviors.calcula_salario_diario import (
 from projects.caceh.behaviors.corrige_por_ia import (
     CORREGIBLES, CorrigePorIaBehavior,
 )
+from projects.caceh.schemas import FECHA_FUTURA
 from projects.caceh.tests.test_behaviors import CacehBehaviorTestBase
 from projects.caceh.tests.test_ia_extrae import FakeGemini
 
@@ -24,12 +25,15 @@ class CorrigePorIaTestCase(CacehBehaviorTestBase):
         # Mismos formatos que seed/extras.py: sin ellos el int/json vuelve str.
         fmt = {"monto_pago": self.fmt_int, "descanso_minutos": self.fmt_int,
                "dias_laborables": self.fmt_json,
-               "comidas_incluidas": self.fmt_json}
+               "comidas_incluidas": self.fmt_json,
+               "fecha_dia": self.fmt_int, "fecha_mes": self.fmt_int,
+               "fecha_anio": self.fmt_int}
         for name in CORREGIBLES:
             self._extra(name, fmt.get(name))
         for name in ("tipo_contrato", "salario_diario", "ia_completed",
                      "ia_pregunta", "respuesta_correccion",
-                     "correccion_destino"):
+                     "correccion_destino", "es_retroactivo",
+                     "fecha_inicio", "fecha_inicio_texto"):
             self._extra(name)
         self._extra("_hist_correccion", self.fmt_json)
         self.member.user.phone = "5215551234567"
@@ -119,3 +123,25 @@ class CorrigePorIaTestCase(CacehBehaviorTestBase):
         self.assertIn("5 dígitos", data["ia_pregunta"])
         self.assertNotIn("lt_calle", data)
         self.assertNotIn("lt_cp", data)
+
+    def test_fecha_corregida_y_futura_repregunta(self):
+        self._set("es_retroactivo", "si")
+        self._set("fecha_mes", 5)
+        self._set("fecha_anio", 2015)
+        self._set("fecha_inicio", "01/05/2015")
+        self._set("fecha_inicio_texto", "1 de mayo de 2015")
+        self._run({**_NADA, "fecha_mes": 3, "fecha_anio": 2016},
+                  "empezó en marzo de 2016")
+        data = self._data()
+        self.assertEqual(data["fecha_inicio"], "01/03/2016")
+        self.assertEqual(data["fecha_inicio_texto"], "1 de marzo de 2016")
+        self.assertEqual((data["fecha_mes"], data["fecha_anio"]), (3, 2016))
+        self.assertEqual(data["correccion_destino"], "resumen")
+        # Al futuro: la repregunta del esquema Fecha, y nada se pisa.
+        self._run({**_NADA, "fecha_anio": 2999}, "el año es 2999")
+        data = self._data()
+        self.assertEqual(data["ia_completed"], "no")
+        self.assertEqual(data["ia_pregunta"], FECHA_FUTURA)
+        self.assertEqual(data["fecha_anio"], 2016)
+        self.assertEqual(data["fecha_inicio"], "01/03/2016")
+        self.assertEqual(data["fecha_inicio_texto"], "1 de marzo de 2016")

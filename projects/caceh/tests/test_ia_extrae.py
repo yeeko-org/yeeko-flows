@@ -246,7 +246,7 @@ class RepreguntaDeErrorTestCase(SimpleTestCase):
         raise AssertionError("el esquema debía rechazar los datos")
 
     def test_cp_de_cuatro_digitos_sin_prefijo_value_error(self):
-        e = self._error(schemas.Domicilio, lt_cp="1234",
+        e = self._error(schemas.Correccion, lt_cp="1234",
                         ia_completed="si", ia_pregunta=None)
         self.assertEqual(repregunta_de_error(e),
                          "El código postal son 5 dígitos. ¿Me lo repites?")

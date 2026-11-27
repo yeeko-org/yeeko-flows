@@ -1,5 +1,5 @@
+import gc
 
-import json
 from django.test import TestCase
 from infrastructure.service.models import ApiRecord, Platform
 
@@ -14,7 +14,7 @@ class RequestBase(RequestAbc):
         pass
 
 
-class RequestAbcTest(TestCase):  # replace with your actual class name
+class RequestAbcTest(TestCase):
     def setUp(self):
         self.raw_data = {
             "entry": [
@@ -62,26 +62,33 @@ class RequestAbcTest(TestCase):  # replace with your actual class name
         _ = Platform.objects.create(name=self.platform)
         self.set_messages = False
 
+    def tearDown(self):
+        # ApiRecord.__del__ saves on GC; collect while this test's
+        # transaction is still open.
+        gc.collect()
+
     def test_init(self):
         instance = RequestBase(
             self.raw_data, self.platform, self.set_messages)
 
         self.assertEqual(instance.raw_data, self.raw_data)
-        self.assertEqual(instance.platform, self.platform)
-        self.assertEqual(instance.data, {})
+        self.assertEqual(instance.platform_name, self.platform)
         self.assertEqual(instance.input_accounts, [])
-        self.assertEqual(instance.errors, [])
+        # set_messages=False must defer recording to the caller.
+        self.assertFalse(hasattr(instance, "api_record"))
+        self.assertFalse(ApiRecord.objects.exists())
 
     def test_record_request(self):
         instance = RequestBase(
             self.raw_data, self.platform, self.set_messages)
         instance.record_request()
         self.assertTrue(instance.timestamp_server)
-        self.assertTrue(instance.api_request)
+        self.assertTrue(instance.api_record)
 
-        self.assertEqual(instance.api_request.platform.name, self.platform)
-        self.assertEqual(instance.api_request.body, self.raw_data)
+        self.assertEqual(instance.api_record.platform.name, self.platform)
+        self.assertEqual(instance.api_record.body, self.raw_data)
+        self.assertTrue(instance.api_record.is_incoming)
 
         self.assertTrue(ApiRecord.objects.filter(
-            pk=instance.api_request.pk).exists()
+            pk=instance.api_record.pk).exists()
         )

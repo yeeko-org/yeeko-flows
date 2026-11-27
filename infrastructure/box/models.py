@@ -6,7 +6,7 @@ from infrastructure.flow.models import Crate
 from infrastructure.member.models.member import Member
 from infrastructure.notification.models import Notification
 from infrastructure.persistent_media.models import Media as PersistentMedia
-from infrastructure.tool.models import Behavior, Collection
+from infrastructure.tool.models import Behavior, Collection, Parameter
 from infrastructure.xtra.models import Extra
 from infrastructure.place.models import Account
 
@@ -142,6 +142,12 @@ class Fragment(models.Model):
     embedded_piece = models.ForeignKey(
         Piece, on_delete=models.CASCADE, blank=True, null=True,
         verbose_name='Pieza embebida')
+    # A fragment with a slot is one of the messages a behavior of its piece
+    # sends on demand: showing the piece skips it, and the slot names the
+    # message's role so it can be read back from the outgoing history.
+    slot = models.ForeignKey(
+        Parameter, on_delete=models.PROTECT, blank=True, null=True,
+        related_name='slot_fragments', verbose_name='Slot')
 
     replies: models.QuerySet["Reply"]
 

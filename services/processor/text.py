@@ -3,7 +3,8 @@ from typing import Optional
 
 from infrastructure.box.models import Piece, Reply
 from infrastructure.talk.models import BuiltReply, Interaction
-from services.processor.behavior import BehaviorNotFound, BehaviorProcessor
+from services.processor.behavior import (
+    FINISHED, NOT_MINE, BehaviorNotFound, BehaviorProcessor)
 from services.processor.context_mixin import ContextMixing
 from services.processor.interactive import ReplyProcessor
 from services.processor.written import WrittenProcessorFull
@@ -39,7 +40,14 @@ class TextProcessor(ContextMixing):
         if self.command_handler():
             return True
 
-        if self.context_direct and self.process_written():
+        if self.dispatch_to_slot_behavior():
+            return True
+
+        # A quote of a capture that is no longer the active one is loose
+        # text: answering it again would rewrite the datum and send the
+        # flow back there.
+        if (self.context_direct and self.quote_is_active()
+                and self.process_written()):
             return True
 
         if self.intent_to_contact_administrator():
@@ -62,6 +70,60 @@ class TextProcessor(ContextMixing):
         if self.text.startswith("/"):
             self.call_behavior(self.text[1:])
             return True
+
+    def quote_is_active(self) -> bool:
+        active = self.active_piece
+        return bool(active and self.context_piece
+                    and active.pk == self.context_piece.pk)
+
+    def dispatch_to_slot_behavior(self) -> bool:
+        """The single door through which typed text reaches a behavior that
+        sends its messages through slot fragments. The quoted message wins
+        over the active one; the behavior may answer NOT_MINE and the text
+        goes on down the usual chain."""
+        from services.processor.fragment import fragment_parameters
+        from services.processor.piece import PieceProcessor
+
+        slot_fragment = next(
+            (i.fragment for i in (
+                self.quoted_interaction, self.active_interaction)
+             if i and i.fragment and i.fragment.slot_id), None)
+        if not slot_fragment:
+            return False
+
+        piece = slot_fragment.piece
+        behavior = slot_fragment.slot.behavior  # type: ignore
+        owner = piece.fragments.filter(
+            slot__isnull=True, fragment_type="behavior",
+            behavior=behavior).order_by("order").first()
+        if not owner:
+            return False
+
+        parameters = fragment_parameters(owner, {
+            "fragment_id": owner.pk,
+            "text": self.text,
+            "slot_fragment": slot_fragment,
+            "quoted_interaction": self.quoted_interaction,
+            "active_interaction": self.active_interaction,
+            "interaction_in": self.interaction_in,
+        })
+        try:
+            processor = BehaviorProcessor(
+                behavior.name, self.response, parameters=parameters,
+                context_direct=self.context_direct,
+                interaction_in=self.interaction_in)
+        except BehaviorNotFound as e:
+            self.response.add_error(
+                {"method": "dispatch_to_slot_behavior",
+                 "behavior": behavior.name}, e=e)
+            return False
+
+        result = processor.process()
+        if result == NOT_MINE:
+            return False
+        if result == FINISHED:
+            PieceProcessor(piece, self.response).follow_next()
+        return True
 
     def intent_to_contact_administrator(self) -> bool:
         if not bool(re.search(r"admin", self.text, re.IGNORECASE)):

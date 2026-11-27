@@ -3,47 +3,15 @@ from typing import Optional, Type
 from pydantic import BaseModel, ValidationError
 
 from infrastructure.xtra.models import Extra
+from services.behavior.extraction import (  # noqa: F401 — re-exported
+    ExtrasMixin, PREGUNTA_GENERICA, SCHEMA_REGISTRY, generic_reask_text,
+    register_schema, repregunta_de_error)
 from services.response.abstract import ResponseAbc
 from utilities.gemini_client import GeminiClient
-from utilities.parameters import replace_parameter
+from utilities.replacer_from_data import replace_parameter
 
 
-# Registro nombre_de_esquema -> (clase Pydantic, system prompt). Lo pueblan los
-# proyectos (p. ej. projects/caceh/schemas.py) con @register_schema,
-# autodescubierto en su AppConfig.ready(). El motor no importa los proyectos:
-# el contenido de dominio se "enchufa" al cargar.
-SCHEMA_REGISTRY: dict[str, tuple[Type[BaseModel], str]] = {}
-
-PREGUNTA_GENERICA = (
-    "Disculpa, no te entendí bien. Por favor, ayúdame a escribir una nueva "
-    "respuesta.")
-
-
-def repregunta_de_error(e: ValidationError) -> str:
-    """Texto que la persona recibe cuando la validación Pydantic falla.
-
-    Solo un `value_error` lo redactamos nosotros (un ValueError de un
-    validador del proyecto); se toma de `ctx` porque `msg` le antepone
-    «Value error, ». Cualquier otro tipo trae el mensaje de Pydantic en
-    inglés, así que va la pregunta genérica.
-    """
-    for err in e.errors():
-        if err.get("type") == "value_error":
-            propio = str(err.get("ctx", {}).get("error", "")).strip()
-            if propio:
-                return propio
-    return PREGUNTA_GENERICA
-
-
-def register_schema(name: str, system_prompt: str):
-    """Decorador para registrar un esquema de extracción bajo `name`."""
-    def deco(cls: Type[BaseModel]) -> Type[BaseModel]:
-        SCHEMA_REGISTRY[name] = (cls, system_prompt)
-        return cls
-    return deco
-
-
-class IaExtraeBehavior:
+class IaExtraeBehavior(ExtrasMixin):
     """Behavior genérico de extracción por IA.
 
     Recibe (esquema, entrada) por ParamValue. Acumula las respuestas del
@@ -55,6 +23,8 @@ class IaExtraeBehavior:
     Es un paso de cómputo dentro de una pieza: no procesa destinos. El avance
     del flujo (hacia la bifurcación que lee `ia_completed`) lo arma el seed.
     """
+    behavior_name = "ia_extrae"
+    extra_origin = "ia_extrae"
 
     def __init__(
             self, response: ResponseAbc, esquema: Optional[str] = None,
@@ -88,7 +58,7 @@ class IaExtraeBehavior:
             system_prompt, "\n".join(historial), schema_cls)
         if data is None:
             self._write("ia_completed", "no")
-            self._write("ia_pregunta", PREGUNTA_GENERICA)
+            self._write("ia_pregunta", generic_reask_text())
             return
 
         data = self._validate(schema_cls, data)
@@ -105,7 +75,8 @@ class IaExtraeBehavior:
         except ValidationError as e:
             data["ia_completed"] = "no"
             if not data.get("ia_pregunta"):
-                data["ia_pregunta"] = repregunta_de_error(e)
+                data["ia_pregunta"] = repregunta_de_error(
+                    e, generic_reask_text())
             return data
 
     def _persist(self, data: dict):
@@ -114,22 +85,7 @@ class IaExtraeBehavior:
                 continue  # no sobreescribir el extra con "None"
             self._write(name, value)
 
-    def _write(self, name: str, value, required: bool = True):
-        extra = Extra.objects.filter(
-            name=name, space=self.space, deleted=False).first()
-        if not extra:
-            if required:
-                self.response.add_error({
-                    "behavior": "ia_extrae", "extra": name,
-                    "message": "extra no encontrado"})
-            return
-        self.response.add_extra_value(extra, value, origin="ia_extrae")
-
     # --- historial transitorio por esquema -------------------------------
-
-    @staticmethod
-    def _hist_name(esquema: str) -> str:
-        return f"_hist_{esquema}"
 
     def _append_historial(self, esquema: str, entrada_text: str) -> list:
         data = self.member.get_extra_values_data()

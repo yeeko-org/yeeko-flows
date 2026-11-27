@@ -1,16 +1,14 @@
 """Arnés del cableado de WP6B: siembra el flujo y confirma que un paso ⚙️
 dispara su behavior por el MOTOR REAL (FragmentProcessor -> BehaviorProcessor),
-no llamando la clase a mano. Así se ejercita lo que WP6B agrega: la resolución
-del behavior (genérica para ia_extrae; por app_label para los de proyecto) y la
-inyección de esquema/entrada por ParamValue de fragmento.
+no llamando la clase a mano, y que cada captura de texto libre quedó como
+unidad de `open_question` con su esquema por ParamValue de fragmento.
 
-Sin WhatsApp real, sin Gemini real (mockeado como en test_ia_extrae).
+Sin WhatsApp real ni Gemini.
 
 Correr: .venv/bin/python manage.py test projects.caceh
 """
 
 from types import SimpleNamespace
-from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -98,32 +96,38 @@ class SeedFlowBehaviorHarness(TestCase):
         self.assertEqual(data["telefono_operador"], "5215551234567")
         self.assertEqual(self.response.errors, [])
 
-    @patch("services.behavior.ia_extrae.GeminiClient")
-    def test_b2_ia_extrae_se_dispara_con_esquema_de_paramvalue(self, MockG):
-        # Behavior genérico reusado: el esquema correcto ("jornada") y la
-        # entrada ({{respuesta_jornada}}) llegan por ParamValue de ESTE
-        # fragmento, no del ApplyBehavior (compartido por B2/C5/C10).
-        MockG.return_value.extract.return_value = {
-            "hora_entrada": "8:00", "hora_salida": "16:00",
-            "dias_laborables": ["lunes", "martes", "miércoles", "jueves",
-                                "viernes"],
-            "ia_completed": "si", "ia_pregunta": None}
-        self._set("respuesta_jornada", "de lunes a viernes de 8 a 4")
-
-        FragmentProcessor(
-            self._behavior_fragment("b_ia_jornada"), self.response).process()
-
-        data = self._data()
-        self.assertEqual(data["hora_entrada"], "8:00")
-        self.assertEqual(data["hora_salida"], "16:00")
-        self.assertEqual(data["dias_laborables"][0], "lunes")
-        self.assertEqual(data["ia_completed"], "si")
-        self.assertEqual(self.response.errors, [])
-
-        # el esquema jornada y la entrada resuelta llegaron a Gemini
-        args = MockG.return_value.extract.call_args.args
-        self.assertEqual(args[2].__name__, "Jornada")          # schema
-        self.assertIn("de lunes a viernes de 8 a 4", args[1])  # entrada
+    def test_capturas_son_unidades_de_open_question(self):
+        # Cada captura de texto libre es una pieza de unidad: su behavior
+        # con el esquema por ParamValue de su fragmento y sin Written; las
+        # piezas de extraer, bifurcar, repreguntar y confirmar ya no existen.
+        unidades = {
+            "a_nombre_operador": "nombre_operador",
+            "a_nombre_contraparte": "nombre_contraparte",
+            "b_jornada_abierta": "jornada",
+            "b_descanso_abierta": "descanso",
+            "c_fecha_inicio": "fecha",
+            "c_pago_abierta": "pago",
+            "c_lugar_abierta": "domicilio",
+        }
+        for name, schema in unidades.items():
+            with self.subTest(pieza=name):
+                piece = Piece.objects.get(
+                    crate__flow__space=self.space, name=name)
+                self.assertIsNone(piece.written_id)
+                frag = self._behavior_fragment(name)
+                self.assertEqual(frag.behavior.name, "open_question")
+                values = dict(frag.values.values_list(
+                    "parameter__name", "value"))
+                self.assertEqual(values["schema"], schema)
+                question = piece.fragments.get(slot__name="question")
+                self.assertEqual(question.order, 0)
+        retiradas = Piece.objects.filter(
+            crate__flow__space=self.space,
+            name__in=("b_ia_jornada", "b_confirma_jornada",
+                      "c_valida_fecha", "c_confirma_pago",
+                      "c_confirma_lugar", "c_repregunta_lugar",
+                      "c_checa_estado", "c_estado"))
+        self.assertFalse(retiradas.exists())
 
 
 class SeedIdempotencyTests(TestCase):

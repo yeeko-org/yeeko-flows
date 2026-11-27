@@ -24,7 +24,6 @@ class DestinationProcessorMixin:
         raise NotImplementedError
 
     def process_destination(self):
-        from services.processor.piece import PieceProcessor
         from services.processor.behavior import BehaviorProcessor
 
         self.get_destination()
@@ -33,6 +32,15 @@ class DestinationProcessorMixin:
             BehaviorProcessor(
                 behavior="destination_fail", response=self.response,
                 parameters=self.parameters).process()
+            return
+
+        self._go_to_destination()
+
+    def _go_to_destination(self):
+        from services.processor.piece import PieceProcessor
+        from services.processor.behavior import BehaviorProcessor
+
+        if not self.destination:
             return
 
         self.parameters = update_parameters(

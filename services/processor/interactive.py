@@ -117,7 +117,7 @@ class InteractiveProcessor(ReplyProcessor, ContextMixing):
             return None
 
         self.interaction_origin = self.message.built_reply.interaction
-        super().get_piece()
+        return super().get_piece()
 
     def process_if_not_built_reply(self):
         if self.message.built_reply:

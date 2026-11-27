@@ -1,17 +1,21 @@
 """Esquemas Pydantic de extracción del bot CACEH (slice del demo).
 
 Cada esquema declara los datos a extraer + los campos de control del loop
-(`ia_completed`, `ia_pregunta`) y se registra con @register_schema para que el
-behavior genérico `ia_extrae` lo encuentre por nombre. Los nombres de los
+(`ia_completed`, `ia_pregunta`) y se registra con @register_schema para que la
+unidad de captura `open_question` lo encuentre por nombre. Los nombres de los
 campos coinciden 1:1 con las claves de los `Extra` del flujo (ver
-flows/variables_v3.md).
+flows/variables_v3.md). Un `ValueError` de un validador es la repregunta que
+la persona lee, tal cual.
 """
 
-from typing import Literal, Optional
+from datetime import date
+from typing import ClassVar, Literal, Optional
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from services.behavior.ia_extrae import register_schema
+from projects.caceh.derivados import (
+    frase_periodicidad, hoy_mexico, lista_natural)
+from services.behavior.extraction import register_schema
 
 
 _PREAMBULO = (
@@ -71,14 +75,6 @@ PAGO_PROMPT = _PREAMBULO + (
 )
 
 
-_FRASE_PERIODICIDAD = {
-    "diaria": "al día",
-    "semanal": "a la semana",
-    "quincenal": "a la quincena",
-    "mensual": "al mes",
-}
-
-
 @register_schema("pago", PAGO_PROMPT)
 class Pago(BaseModel):
     monto_pago: Optional[int] = None
@@ -93,21 +89,47 @@ class Pago(BaseModel):
     @model_validator(mode="after")
     def set_frase_periodicidad(self):
         if self.pago_periodicidad:
-            self.frase_periodicidad = _FRASE_PERIODICIDAD[
-                self.pago_periodicidad]
+            self.frase_periodicidad = frase_periodicidad(
+                self.pago_periodicidad)
         return self
 
 
 DOMICILIO_PROMPT = _PREAMBULO + (
     "Esquema domicilio: dirección del lugar de trabajo en México.\n"
-    "- Campos: lt_calle, lt_ext (número exterior), lt_int (interior, "
-    "OPCIONAL), lt_colonia, lt_cp (5 dígitos), lt_municipio (alcaldía o "
-    "municipio), lt_estado.\n"
-    "- Todos son obligatorios MENOS lt_int. Si falta el código postal, la "
-    "colonia o el municipio, pregúntalo.\n"
+    "- Campos: lt_calle, lt_ext (número exterior), lt_int (interior), "
+    "lt_colonia, lt_cp (5 dígitos), lt_municipio (alcaldía o municipio), "
+    "lt_estado.\n"
+    "- lt_ext acepta lo que la persona diga: un número, manzana y lote "
+    "('Mz 3 Lt 12') o, si dice que no tiene número ('sin número', 's/n'), "
+    "'S/N'.\n"
+    "- Si algo no viene, déjalo en null; no lo inventes.\n"
+    "- lt_estado: si no viene, dedúcelo de la alcaldía, el municipio o la "
+    "colonia SOLO si estás seguro (p. ej. Iztacalco -> 'Ciudad de "
+    "México'); si no estás seguro, déjalo en null.\n"
+    "- ia_pregunta: déjalo vacío; la pregunta de lo que falta la arma el "
+    "sistema.\n"
     "- ciudad_firma: derivado, NO lo preguntes. Cópialo de lt_municipio "
     "(donde se trabaja se firma); el usuario lo corrige luego en el resumen.\n"
 )
+
+# Lo que una repregunta lista, en el orden de la pregunta. El código postal
+# entra en la lista cuando falta otra cosa, pero nunca la dispara solo; el
+# número y el estado sí, aunque sean lo único que falte.
+_DOMICILIO_ETIQUETAS = (
+    ("lt_calle", "calle"), ("lt_ext", "número"), ("lt_colonia", "colonia"),
+    ("lt_municipio", "municipio o alcaldía"), ("lt_estado", "estado"),
+    ("lt_cp", "código postal"))
+_DOMICILIO_ESENCIALES = (
+    "lt_calle", "lt_ext", "lt_colonia", "lt_municipio", "lt_estado")
+REPREGUNTA_DOMICILIO = (
+    "Para poder continuar, ayúdame con estos otros datos de la dirección: "
+    "{faltan}")
+
+
+def _cp_valido(v):
+    if v and (not v.isdigit() or len(v) != 5):
+        raise ValueError("El código postal son 5 dígitos. ¿Me lo repites?")
+    return v
 
 
 @register_schema("domicilio", DOMICILIO_PROMPT)
@@ -129,9 +151,27 @@ class Domicilio(BaseModel):
     @field_validator("lt_cp")
     @classmethod
     def cp_cinco_digitos(cls, v):
-        if v and (not v.isdigit() or len(v) != 5):
-            raise ValueError("El código postal son 5 dígitos. ¿Me lo repites?")
-        return v
+        # El código postal no se repregunta: uno mal escrito se descarta en
+        # lugar de detener la dirección entera.
+        try:
+            return _cp_valido(v)
+        except ValueError:
+            return None
+
+    @model_validator(mode="after")
+    def completitud_determinista(self):
+        # Qué es obligatorio lo decide CACEH, no el modelo: el veredicto de
+        # Gemini se reemplaza y la repregunta se arma aquí.
+        if all(getattr(self, k) for k in _DOMICILIO_ESENCIALES):
+            self.ia_completed = "si"
+            self.ia_pregunta = None
+            return self
+        faltan = [label for key, label in _DOMICILIO_ETIQUETAS
+                  if not getattr(self, key)]
+        self.ia_completed = "no"
+        self.ia_pregunta = REPREGUNTA_DOMICILIO.format(
+            faltan=lista_natural(faltan))
+        return self
 
 
 DESCANSO_PROMPT = _PREAMBULO + (
@@ -141,8 +181,13 @@ DESCANSO_PROMPT = _PREAMBULO + (
     "('1 hora' -> 60, 'media hora' -> 30, 'hora y media' -> 90). La ley "
     "exige al menos 30 minutos.\n"
     "- comidas_incluidas: lista entre 'desayuno','comida','cena' (vacía si no "
-    "se incluye ninguna).\n"
+    "se incluye ninguna). Si no dice nada de los alimentos, déjalo en null "
+    "y pregunta si se incluye alguno.\n"
 )
+
+DESCANSO_MINIMO = (
+    "La ley pide que el descanso dure al menos 30 minutos. Por favor, "
+    "escribe cuánto tiempo de descanso habrá.")
 
 
 # La OCTAVA de entrada por salida marca las casillas comparando estos tres
@@ -162,10 +207,148 @@ class Descanso(BaseModel):
     def minimo_treinta(cls, v):
         # LFT art. 63: media hora mínima de reposo en jornada continua.
         if v is not None and v < 30:
-            raise ValueError(
-                "Por ley el descanso debe ser de al menos 30 minutos. "
-                "¿Cuánto tiempo de descanso tendrá?")
+            raise ValueError(DESCANSO_MINIMO)
         return v
+
+
+FECHA_PROMPT = _PREAMBULO + (
+    "Esquema fecha: la fecha en que empezó este trabajo (inicio de la "
+    "relación de trabajo).\n"
+    "- fecha_dia (opcional), fecha_mes (1 a 12) y fecha_anio (cuatro "
+    "dígitos). Acepta cualquier forma: 'mayo de 2015', '05 2015', "
+    "'15/03/23' (año de dos dígitos: 23 -> 2023). Las fechas con números "
+    "van en orden día/mes/año, como en México; dos números sin día son mes "
+    "y año ('05 2015' = mayo de 2015).\n"
+    "- Si no da el día, deja fecha_dia en null: con mes y año basta.\n"
+    "- Si la fecha es clara, no pidas confirmación.\n"
+    "- Si falta el mes o el año, o la fecha es relativa ('hace dos años', "
+    "'el año pasado'), pon ia_completed='no' y pregunta el mes y el año.\n"
+    "- No juzgues si la fecha ya pasó ni si existe: eso lo revisa el "
+    "sistema. Copia los números tal como los entiendas.\n"
+    "- fecha_inicio: déjalo vacío; lo arma el sistema.\n"
+)
+
+# Las dos únicas repreguntas propias de la fecha.
+FECHA_FUTURA = (
+    "La fecha que escribiste es posterior al día de hoy. Por favor, escribe "
+    "la fecha en que empezó este trabajo.")
+FECHA_INEXISTENTE = (
+    "No encontré esa fecha en el calendario. Por favor, escríbela de nuevo.")
+# Un año de dos dígitos que se cuele (23) sería el año 0023: no es una fecha
+# del calendario de nadie que trabaje hoy.
+_ANIO_MINIMO = 1900
+
+
+@register_schema("fecha", FECHA_PROMPT)
+class Fecha(BaseModel):
+    fecha_dia: Optional[int] = None
+    fecha_mes: Optional[int] = None
+    fecha_anio: Optional[int] = None
+    # 'dd/mm/YYYY', con el día 1 si solo hay mes y año: la forma que
+    # genera_pdf y el recap saben leer.
+    fecha_inicio: Optional[str] = None
+    ia_completed: Literal["si", "no"]
+    ia_pregunta: Optional[str] = None
+
+    @field_validator("fecha_anio")
+    @classmethod
+    def anio_completo(cls, v):
+        if v is not None and v < _ANIO_MINIMO:
+            raise ValueError(FECHA_INEXISTENTE)
+        return v
+
+    @field_validator("fecha_mes")
+    @classmethod
+    def mes_valido(cls, v):
+        if v is not None and not 1 <= v <= 12:
+            raise ValueError(FECHA_INEXISTENTE)
+        return v
+
+    @model_validator(mode="after")
+    def compone(self):
+        if not (self.fecha_mes and self.fecha_anio):
+            self.fecha_inicio = None
+            if self.ia_completed == "si":
+                self.ia_completed = "no"
+            return self
+        try:
+            inicio = date(self.fecha_anio, self.fecha_mes,
+                          self.fecha_dia or 1)
+        except ValueError:
+            raise ValueError(FECHA_INEXISTENTE)
+        if inicio > hoy_mexico():
+            raise ValueError(FECHA_FUTURA)
+        self.fecha_inicio = inicio.strftime("%d/%m/%Y")
+        return self
+
+
+def _nombre_prompt(quien: str) -> str:
+    return _PREAMBULO + (
+        f"Esquema nombre: el nombre completo de {quien}.\n"
+        "- Separa el nombre de pila (puede ser compuesto: 'María José') del "
+        "apellido paterno y el materno. Respeta mayúsculas y acentos tal "
+        "como los escriba.\n"
+        "- Si solo escribe un apellido, deja el otro en null; no lo "
+        "inventes.\n"
+        "- ia_pregunta: déjalo vacío; la pregunta la arma el sistema.\n"
+    )
+
+
+def _completitud_nombre(modelo, prefijo: str, repregunta: str):
+    """Pide los dos apellidos cuando falta alguno. La unidad insiste una
+    sola vez (max_reasks=1) y, por `never_drop`, acepta lo que haya a la
+    segunda: hay personas con un solo apellido."""
+    pila = getattr(modelo, f"{prefijo}_nombre_pila")
+    paterno = getattr(modelo, f"{prefijo}_apellido_paterno")
+    materno = getattr(modelo, f"{prefijo}_apellido_materno")
+    if pila and paterno and materno:
+        modelo.ia_completed = "si"
+        modelo.ia_pregunta = None
+    elif pila:
+        modelo.ia_completed = "no"
+        modelo.ia_pregunta = repregunta
+    else:
+        modelo.ia_completed = "no"
+        modelo.ia_pregunta = None
+    return modelo
+
+
+APELLIDOS_OPERADOR = "Por favor, escribe también tus dos apellidos."
+# {{etiqueta_contraparte}} lo rinde el motor al mandar el mensaje.
+APELLIDOS_CONTRAPARTE = (
+    "Por favor, escribe también los dos apellidos de la persona "
+    "{{etiqueta_contraparte}}.")
+
+
+@register_schema("nombre_operador",
+                 _nombre_prompt("la persona que escribe"))
+class NombreOperador(BaseModel):
+    never_drop: ClassVar[bool] = True
+    operador_nombre_pila: Optional[str] = None
+    operador_apellido_paterno: Optional[str] = None
+    operador_apellido_materno: Optional[str] = None
+    ia_completed: Literal["si", "no"]
+    ia_pregunta: Optional[str] = None
+
+    @model_validator(mode="after")
+    def completitud(self):
+        return _completitud_nombre(self, "operador", APELLIDOS_OPERADOR)
+
+
+@register_schema("nombre_contraparte",
+                 _nombre_prompt("la otra persona del contrato"))
+class NombreContraparte(BaseModel):
+    never_drop: ClassVar[bool] = True
+    contraparte_nombre_pila: Optional[str] = None
+    contraparte_apellido_paterno: Optional[str] = None
+    contraparte_apellido_materno: Optional[str] = None
+    ia_completed: Literal["si", "no"]
+    ia_pregunta: Optional[str] = None
+
+    @model_validator(mode="after")
+    def completitud(self):
+        return _completitud_nombre(
+            self, "contraparte", APELLIDOS_CONTRAPARTE)
 
 
 CORRECCION_PROMPT = (
@@ -201,10 +384,16 @@ CORRECCION_PROMPT = (
     "- Si la persona quiere cambiar las actividades o tareas del trabajo, "
     "pon cambiar_actividades='si' (no las escribas tú: se le vuelve a "
     "mandar la lista) e ia_completed='si'.\n"
-    "- tipo_contrato y la fecha de inicio NO se corrigen aquí: si es lo "
-    "único que pide, pon ia_completed='no' y explica en ia_pregunta que eso "
-    "se cambia con «Crear otro contrato» al final, y pregunta si hay algo "
-    "más que corregir.\n"
+    "- Fecha en que empezó el trabajo: fecha_dia (opcional), fecha_mes (1 a "
+    "12) y fecha_anio (cuatro dígitos; 23 -> 2023), solo si es_retroactivo "
+    "es 'si'. Pon solo las partes que la persona cambia. Las fechas con "
+    "números van en orden día/mes/año, como en México. No juzgues si la "
+    "fecha ya pasó ni si existe: eso lo revisa el sistema.\n"
+    "- tipo_contrato NO se corrige aquí, ni la fecha de inicio si "
+    "es_retroactivo no es 'si': si es lo único que pide, pon "
+    "ia_completed='no' y explica en ia_pregunta que eso se cambia con "
+    "«Crear otro contrato» al final, y pregunta si hay algo más que "
+    "corregir.\n"
 )
 
 
@@ -213,7 +402,9 @@ class Correccion(BaseModel):
     """Todos los corregibles del resumen (E4), opcionales: None = «no cambia»
     y el behavior lo salta. Los Literal/validadores son los mismos de los
     esquemas de origen para que una corrección no pueda meter un valor que la
-    captura original hubiera rechazado."""
+    captura original hubiera rechazado. La fecha se valida aparte, con el
+    esquema Fecha, porque una parte corregida solo se juzga junto con las
+    guardadas."""
     trab_nombre_completo: Optional[str] = None
     empl_nombre_completo: Optional[str] = None
     hora_entrada: Optional[str] = None
@@ -233,6 +424,9 @@ class Correccion(BaseModel):
     modo_pago: Optional[Literal["efectivo", "transferencia"]] = None
     descanso_minutos: Optional[int] = None
     comidas_incluidas: Optional[list[Comida]] = None
+    fecha_dia: Optional[int] = None
+    fecha_mes: Optional[int] = None
+    fecha_anio: Optional[int] = None
     # Las actividades no se corrigen por texto: «si» reabre el Flow (D1).
     cambiar_actividades: Literal["si", "no"] = "no"
     ia_completed: Literal["si", "no"]
@@ -247,7 +441,8 @@ class Correccion(BaseModel):
     @field_validator("lt_cp")
     @classmethod
     def cp_cinco_digitos(cls, v):
-        return Domicilio.cp_cinco_digitos(v)
+        # Aquí sí se repregunta: es una corrección pedida por la persona.
+        return _cp_valido(v)
 
     @field_validator("descanso_minutos")
     @classmethod

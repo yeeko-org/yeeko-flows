@@ -39,16 +39,23 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
             "etiqueta_contraparte": "trabajadora"}),
     ])
 
-    sdr.capture(
-        p["a_nombre_operador"],
-        "¿Cuál es tu nombre completo? (Tu nombre y tus dos apellidos)",
-        "operador_nombre", p["a_nombre_contraparte"])
+    # Los nombres nunca se sueltan: el esquema (never_drop) insiste una vez
+    # por los apellidos y la unidad acepta lo que haya a la segunda. Sin
+    # recap: el nombre completo se revisa en el resumen final.
+    sdr.unit(p["a_nombre_operador"], "open_question", slots={
+        "question": (
+            "¿Cuál es tu nombre completo? (Tu nombre y tus dos apellidos)"),
+    }, params={"schema": "nombre_operador", "with_confirmation": False,
+               "max_reasks": 1})
+    sdr.link(p["a_nombre_operador"], p["a_nombre_contraparte"])
 
-    sdr.capture(
-        p["a_nombre_contraparte"],
-        "Gracias {{operador_nombre}} \n Ahora ayúdame escribiendo "
-        "el nombre completo de la persona {{etiqueta_contraparte}}",
-        "contraparte_nombre", p["a_asigna_partes"])
+    sdr.unit(p["a_nombre_contraparte"], "open_question", slots={
+        "question": (
+            "Gracias, {{operador_nombre_pila}}. Ahora escríbeme el nombre "
+            "completo de la persona {{etiqueta_contraparte}}."),
+    }, params={"schema": "nombre_contraparte", "with_confirmation": False,
+               "max_reasks": 1})
+    sdr.link(p["a_nombre_contraparte"], p["a_asigna_partes"])
 
     sdr.bifurcation(
         p["a_bifurca_operador"], "operador",
@@ -75,7 +82,10 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
 
     # tipo_contrato es la clave que leen templates y bifurcaciones;
     # modalidad_texto es la misma modalidad dicha a la persona (resumen).
-    planta = {"tipo_contrato": "planta", "modalidad_texto": "de planta"}
+    # Planta borra el descanso: un botón viejo pulsado tras capturarlo en
+    # entrada por salida lo dejaría en el resumen.
+    planta = {"tipo_contrato": "planta", "modalidad_texto": "de planta",
+              "descanso_texto": None}
     entrada_salida = {"tipo_contrato": "entrada_salida",
                       "modalidad_texto": "de entrada por salida"}
 

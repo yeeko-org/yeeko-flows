@@ -50,17 +50,16 @@ class DefaultTextTest(TestCase):
     def _empleadora_hasta_resumen(d: FlowDriver) -> None:
         d.send("hola")
         d.tap("Empleadora")
-        d.send("Marcela Ruiz Soto")
+        d.send("Marcela Ruiz Soto")     # gemini fake: datos canónicos
         d.send("Juana Pérez López")
         d.tap("De planta")
-        d.send("jornada")               # gemini fake: datos canónicos
-        d.tap("Sí, así es")
+        # Cada captura responde con su recap y la siguiente pregunta en el
+        # mismo envío: no hay botón de confirmar.
+        d.send("jornada")
         d.tap("Empieza ahora")
         d.send("2500 a la semana")
-        d.tap("Sí, así es")
         d.tap("En efectivo")
         d.send("domicilio")
-        d.tap("Sí, es correcta")
         d.submit_form(["limpieza_general", "lavado"])
         assert d.at_piece() == "e_resumen", d.at_piece()
 
@@ -79,28 +78,31 @@ class DefaultTextTest(TestCase):
         self.assertEqual(d.at_piece(), "a_nombre_operador")
 
     def test_una_captura_de_texto_libre_no_llega_al_default_text(self):
-        """Sobre una pieza de captura, `process_written` corre antes: el texto
-        se guarda como respuesta (aunque sea «Hola»), que es el comportamiento
-        del motor, no algo que introduzca `default_text`."""
+        """Sobre una unidad de captura el texto es suyo aunque sea «Hola»:
+        la unidad repregunta en vez de dejarlo caer a `default_text`."""
         d = self.d
-        d.send("hola")
-        d.tap("Trabajadora")
-        self.assertEqual(d.at_piece(), "a_nombre_operador")
+        with gemini_fake():
+            d.send("hola")
+            d.tap("Trabajadora")
+            self.assertEqual(d.at_piece(), "a_nombre_operador")
 
-        d.send("Hola")
+            d.send("Hola")
         self.assertNotIn("No entendí", " ".join(d.bot_texts()))
-        self.assertEqual(d.extras().get("operador_nombre"), "Hola")
-        self.assertEqual(d.at_piece(), "a_nombre_contraparte")
+        self.assertEqual(d.bot_texts(),
+                         ["Por favor, escribe también tus dos apellidos."])
+        self.assertEqual(d.at_piece(), "a_nombre_operador")
+        self.assertEqual(d.at_slot(), "reask")
 
     def test_texto_sin_context_id_sigue_capturando(self):
         """WhatsApp solo manda `context` si la persona cita el mensaje del bot;
         lo normal es escribir sin citar. La captura debe funcionar igual."""
         d = self.d
-        d.send("hola")
-        d.tap("Trabajadora")
-        self.assertEqual(d.at_piece(), "a_nombre_operador")
+        with gemini_fake():
+            d.send("hola")
+            d.tap("Trabajadora")
+            self.assertEqual(d.at_piece(), "a_nombre_operador")
 
-        d.send("Juana Pérez López", with_context=False)
+            d.send("Juana Pérez López", with_context=False)
         self.assertNotIn("No entendí", " ".join(d.bot_texts()))
         self.assertEqual(d.extras().get("operador_nombre"),
                          "Juana Pérez López")
@@ -137,6 +139,7 @@ class DefaultTextTest(TestCase):
         self.assertEqual(self._piezas(d.last_turn)[-1], "e_resumen")
         self.assertIn("Contrato de planta", resumen)
         self.assertNotIn("Contrato planta", resumen)
+        self.assertIn("💵 $2,500 a la semana, pago en efectivo", resumen)
         self.assertNotIn("{{", resumen)
 
     def test_cierre_seguro_social_antes_de_la_despedida(self):

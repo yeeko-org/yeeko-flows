@@ -43,6 +43,9 @@ class ResponseAbc(ABC, BaseModel):
     message_list: List[dict] = []
     platform_name: str
     trigger: Trigger | None = None
+    # How many pieces' «next» this response has followed: a «next» that
+    # leads back to its own piece would otherwise recurse forever.
+    next_hops: int = 0
 
     errors: List[dict] = []
 

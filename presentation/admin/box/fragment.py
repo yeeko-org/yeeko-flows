@@ -29,12 +29,12 @@ class FragmentAdmin(admin.ModelAdmin):
     list_display = ('piece', 'behavior', 'order', 'deleted')
     search_fields = ('piece__name', 'behavior__name')
     list_filter = ('behavior', 'deleted')
-    raw_id_fields = ('piece', 'behavior',  'embedded_piece')
+    raw_id_fields = ('piece', 'behavior',  'embedded_piece', 'slot')
     inlines = [ReplyInline, ParamValueInline, ConditionRuleFragmentInline]
 
     fieldsets = (
         ('General', {
-            'fields': ('piece',  'order', 'deleted')
+            'fields': ('piece',  'order', 'slot', 'deleted')
         }),
 
         ('Message', {

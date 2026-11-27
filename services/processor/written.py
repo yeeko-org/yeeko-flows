@@ -9,7 +9,7 @@ from services.response.abstract import ResponseAbc
 
 
 class WrittenProcessorFull(DestinationProcessorMixin):
-    context_piece: Piece
+    context_piece: Optional[Piece] = None
     response: ResponseAbc
     message: str
     written: Written
@@ -26,6 +26,7 @@ class WrittenProcessorFull(DestinationProcessorMixin):
 
         self.response = response
         self.message = message
+        self.context_piece = context_piece
         self.written = context_piece.written
         self.interaction_in = interaction_in
 
@@ -49,6 +50,14 @@ class WrittenProcessorFull(DestinationProcessorMixin):
     def get_destination(self) -> None:
         self.destination = destination_find(
             self.written.get_destinations(), self.response.sender.member,
+            self.response.platform_name, raise_exception=False)
+        if self.destination or not self.context_piece:
+            return
+        # A capture with no destination of its own goes on to its piece's
+        # «next», the same cascade a button without destination follows.
+        self.destination = destination_find(
+            self.context_piece.get_destinations(),
+            self.response.sender.member,
             self.response.platform_name, raise_exception=False)
 
 

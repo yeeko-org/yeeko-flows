@@ -16,6 +16,7 @@ Reply (fragment, order), Destination (reply | written | piece+order).
 Assign, ConditionRule y ParamValue se recrean por dueño: nada de runtime los
 referencia y no tienen clave natural clara.
 """
+from importlib import import_module
 from typing import Callable, Optional
 
 from django.db.models import Model, Q
@@ -34,6 +35,15 @@ from infrastructure.xtra.models import ClassifyExtra, Extra, Format
 # se caza al sembrar en vez de en runtime.
 BUTTON_TITLE_LIMIT = 20
 ROW_TITLE_LIMIT = 24
+# A unit piece's behavior fragment sits after its slots (orders 0..).
+UNIT_BEHAVIOR_ORDER = 20
+
+
+def _param_text(value) -> str:
+    # ParamValue.value is a string column: booleans travel as true/false.
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
 
 
 class FlowSeeder:
@@ -132,12 +142,45 @@ class FlowSeeder:
         ApplyBehavior.objects.get_or_create(
             behavior=behavior, space=self.space,
             defaults={"main_piece": None})
+        self.ensure_contract(behavior)
         return behavior
 
-    def ensure_param(self, behavior: Behavior, name: str) -> Parameter:
+    @staticmethod
+    def behavior_class(behavior: Behavior) -> Optional[type]:
+        import services.behavior as generic_behaviors
+
+        found = getattr(generic_behaviors, behavior.name, None)
+        if found or not behavior.collection or \
+                not behavior.collection.app_label:
+            return found
+        module = import_module(f"{behavior.collection.app_label}.behaviors")
+        return getattr(module, behavior.name, None)
+
+    def ensure_contract(self, behavior: Behavior) -> None:
+        """Materializes the parameters and slots its class declares
+        (`PARAMETERS`, `SLOTS`, `SLOT_RULES`)."""
+        cls = self.behavior_class(behavior)
+        for name, (data_type, default) in getattr(
+                cls, "PARAMETERS", {}).items():
+            self.ensure_param(behavior, name, data_type=data_type,
+                              default_value=default)
+        rules = getattr(cls, "SLOT_RULES", {})
+        for name, default in getattr(cls, "SLOTS", {}).items():
+            self.ensure_param(
+                behavior, name, data_type="foreign_key", model="fragment",
+                default_value=default, rules=rules.get(name))
+
+    def ensure_param(self, behavior: Behavior, name: str, *,
+                     data_type: str = "string", model: Optional[str] = None,
+                     default_value: Optional[str] = None,
+                     rules: Optional[dict] = None) -> Parameter:
+        # Everything but the name goes only in `defaults`: the code makes
+        # sure the row exists, but its content belongs to the DB once
+        # created, so a reseed never overwrites what was edited there.
         param, _ = Parameter.objects.get_or_create(
             behavior=behavior, name=name,
-            defaults={"data_type": "string"})
+            defaults={"data_type": data_type, "model": model,
+                      "default_value": default_value, "rules": rules})
         return param
 
     # --------------------------------------------------------------- piezas
@@ -158,7 +201,7 @@ class FlowSeeder:
         # corridas (mensaje -> behavior), no quedan restos del tipo anterior.
         defaults = {"fragment_type": "message", "body": None, "header": None,
                     "footer": None, "behavior": None, "embedded_piece": None,
-                    "addl_params": None}
+                    "addl_params": None, "slot": None}
         defaults.update(fields)
         frag, created = Fragment.objects.update_or_create(
             piece=piece, order=order, defaults=defaults)
@@ -170,6 +213,71 @@ class FlowSeeder:
         # el motor conserva los `\n` (replacer_from_data).
         return self._fragment(piece, order, body=body, header=header,
                               footer=footer)
+
+    def slot(self, piece: Piece, behavior: Behavior, slot_name: str,
+             body: Optional[str] = None, *, order: int) -> Fragment:
+        """A message the piece's behavior sends on demand: showing the piece
+        skips it. `order` is the natural key, so each slot keeps a fixed
+        order across runs."""
+        param = self.ensure_param(
+            behavior, slot_name, data_type="foreign_key", model="fragment")
+        return self._fragment(piece, order, body=body, slot=param)
+
+    def unit(self, piece: Piece, behavior_name: str, *,
+             slots: dict[str, Optional[str]],
+             params: Optional[dict] = None, generic: bool = True
+             ) -> Fragment:
+        """A piece run by one slot-based behavior (e.g. `open_question`), in
+        one call: its behavior fragment with `params`, one fragment per slot
+        its class declares (`slots` gives the bodies; a missing or None
+        body falls back to the slot's default), and the replies the class
+        declares on a slot, each pointing back at this piece.
+
+        Slots take orders 0.. in the class's order, so `question` keeps the
+        PK of the order-0 message a plain capture piece had: whoever was at
+        that question when the seed changed answers into the unit."""
+        behavior = self.ensure_behavior(behavior_name, generic=generic)
+        cls = self.behavior_class(behavior)
+        declared = list(getattr(cls, "SLOTS", {}))
+        unknown = set(slots) - set(declared)
+        if unknown:
+            raise ValueError(
+                f"{behavior_name} no declara los slots {sorted(unknown)}")
+        for order, name in enumerate(declared):
+            frag = self.slot(piece, behavior, name, slots.get(name),
+                             order=order)
+            self._slot_replies(piece, behavior, frag, getattr(
+                cls, "SLOT_REPLIES", {}).get(name, []))
+
+        frag = self._fragment(piece, UNIT_BEHAVIOR_ORDER,
+                              fragment_type="behavior", behavior=behavior)
+        frag.values.all().delete()
+        for pname, pvalue in (params or {}).items():
+            ParamValue.objects.create(
+                parameter=self.ensure_param(behavior, pname),
+                fragment=frag, value=_param_text(pvalue))
+        return frag
+
+    def _slot_replies(self, piece: Piece, behavior: Behavior,
+                      frag: Fragment,
+                      replies: list[tuple[str, dict]]) -> None:
+        for order, (title, values) in enumerate(replies):
+            if len(title) > BUTTON_TITLE_LIMIT:
+                raise ValueError(
+                    f"Título '{title}' excede {BUTTON_TITLE_LIMIT} "
+                    "caracteres (límite WhatsApp)")
+            reply, created = Reply.objects.update_or_create(
+                fragment=frag, order=order,
+                defaults={"reply_type": "quick_reply", "title": title})
+            self._track(reply, created)
+            # Its own destination, always: without one the tap would fall
+            # to the piece's «next» and skip ahead.
+            d = self._dest(piece, reply=reply)
+            d.values.all().delete()
+            for pname, pvalue in values.items():
+                ParamValue.objects.create(
+                    parameter=self.ensure_param(behavior, pname),
+                    destination=d, value=_param_text(pvalue))
 
     def embedded(self, piece: Piece, dest: Piece, order: int = 1) -> Fragment:
         # 🧩 Auto-avance entre mensajes del bot: renderiza `dest` en línea.
@@ -214,10 +322,11 @@ class FlowSeeder:
             self._dest(dest, reply=reply)
             # Sin clave natural: se recrean por dueño (borra las obsoletas).
             reply.assignments.all().delete()
+            # Un valor None borra el extra al pulsar (Assign.is_remove).
             for ex_name, value in (assigns or {}).items():
                 Assign.objects.create(
                     reply=reply, extra=self.extras[ex_name],
-                    extra_value=value)
+                    extra_value=value, is_remove=value is None)
         return frag
 
     def capture(self, piece: Piece, prompt: str, extra_name: str,
@@ -256,8 +365,11 @@ class FlowSeeder:
         d.rules.all().delete()
 
     def link(self, origin: Piece, dest: Piece) -> Destination:
-        # Paso de largo de una pieza 'destinations' (placeholder ⚙️) al
-        # siguiente, sin correr behavior.
+        # The piece's «next». A 'destinations' piece or a content piece that
+        # expects nothing (no buttons, capture or behavior) follows it as
+        # soon as it is shown; a piece that does expect something follows it
+        # when the button, capture or behavior has no destination of its
+        # own.
         return self._dest(dest, piece=origin)
 
     def behavior_step(self, piece: Piece, behavior_name: str, dest: Piece,

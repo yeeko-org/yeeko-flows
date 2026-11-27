@@ -3,7 +3,7 @@ from infrastructure.box.models import Fragment, Reply
 from infrastructure.talk.models import BuiltReply
 from services.response.abstract import ResponseAbc
 from services.response.models import Button, Header, ReplyMessage, SectionHeader
-from utilities.parameters import replace_parameter, update_parameters
+from utilities.parameters import update_parameters
 
 
 def fragment_reply(
@@ -26,6 +26,15 @@ def fragment_reply(
     )
 
 
+def fragment_parameters(fragment: Fragment, parameters: dict = {}) -> dict:
+    # addl_params (JSON) is the lowest-priority layer so behaviors can
+    # receive rich values (e.g. an options list) that don't fit the
+    # 255-char ParamValue string column.
+    merged = dict(fragment.addl_params or {})
+    merged.update(parameters)
+    return update_parameters(fragment.values, merged)  # type: ignore
+
+
 class FragmentProcessor:
     fragment: Fragment
     response: ResponseAbc
@@ -38,13 +47,7 @@ class FragmentProcessor:
     ) -> None:
         self.response = response
         self.fragment = fragment
-        # addl_params (JSON) is the lowest-priority layer so behaviors can
-        # receive rich values (e.g. an options list) that don't fit the
-        # 255-char ParamValue string column.
-        merged = dict(fragment.addl_params or {})
-        merged.update(parameters)
-        self.parameters = update_parameters(
-            fragment.values, merged)  # type: ignore
+        self.parameters = fragment_parameters(fragment, parameters)
         self.reply_message = list(fragment.replies.order_by("order"))
 
     def _header_from_fragment(self) -> Optional[Header | str]:
@@ -97,10 +100,11 @@ class FragmentProcessor:
             media_type=self.fragment.media_type or "image",
             fragment_id=self.fragment.pk)
 
-    def process(self):
+    def process(self) -> Optional[str]:
+        """Returns the result a behavior fragment reported (see
+        `services.processor.behavior`); None for any other fragment."""
         if not self.fragment.fragment_type == "message":
-            self._process_other_type()
-            return
+            return self._process_other_type()
 
         if self.reply_message and self.fragment.body:
             self._process_reply_message()
@@ -112,7 +116,7 @@ class FragmentProcessor:
             self.response.message_text(
                 self.fragment.body, fragment_id=self.fragment.pk)
 
-    def _process_other_type(self):
+    def _process_other_type(self) -> Optional[str]:
         from services.processor.behavior import BehaviorProcessor
         from services.processor.piece import PieceProcessor
 
@@ -128,7 +132,7 @@ class FragmentProcessor:
             behavior_processor = BehaviorProcessor(
                 self.fragment.behavior_id, self.response,  # type: ignore
                 {**self.parameters, "fragment_id": self.fragment.pk})
-            behavior_processor.process()
+            return behavior_processor.process()
 
         elif self.fragment.fragment_type == "embedded":
             if not self.fragment.embedded_piece:

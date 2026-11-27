@@ -76,14 +76,17 @@ def wire(sdr: FlowSeeder, p: dict[str, Piece]) -> None:
         "vivienda. También cubre a la familia de la persona trabajadora."))
     sdr.embedded(p["e_seguro_social"], p["e_despedida"])
 
+    # La fecha y el descanso salen solo cuando aplican: sus derivados se
+    # borran si no, y el motor omite el renglón con sus variables vacías.
     sdr.buttons(p["e_resumen"], (
         "Esto es lo que tengo. Échale un último ojo 👀\n"
         "👥 {{trab_nombre_completo}} y {{empl_nombre_completo}}\n"
         "📄 Contrato {{modalidad_texto}}\n"
-        "🗓️ {{dias_laborables}}, de {{hora_entrada}} a {{hora_salida}}\n"
-        "🏠 {{lt_calle}} {{lt_ext}}, col. {{lt_colonia}}, "
-        "{{lt_municipio}}, {{lt_estado}}\n"
-        "💵 ${{salario_diario}} al día, pago en {{modo_pago}}\n"
+        "📅 El trabajo empezó el {{fecha_inicio_texto}}\n"
+        "🗓️ {{jornada_texto}}\n"
+        "☕ Descanso de {{descanso_texto}}\n"
+        "🏠 {{lt_texto}}\n"
+        "💵 ${{monto_texto}} {{frase_periodicidad}}, pago en {{modo_pago}}\n"
         "🖊️ Se firma en {{ciudad_firma}}, con fecha de hoy"), [
         ("Todo correcto", p["e_genera_pdf"], None),
         ("Corregir algo", p["e_corrige"], None),

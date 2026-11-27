@@ -5,3 +5,6 @@ from services.behavior.ia_extrae import IaExtraeBehavior as ia_extrae
 from services.behavior.multiple_select import (
     MultipleSelectBehavior as multiple_select
 )
+from services.behavior.open_question import (
+    OpenQuestionBehavior as open_question
+)

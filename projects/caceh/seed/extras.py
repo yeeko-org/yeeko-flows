@@ -10,24 +10,31 @@ escribe round(diario, 2) (float) y get_value haría int("350.0") -> 0.
 EXTRAS = [
     # --- enrutamiento + captura conversacional (WP6)
     ("operador", None),
-    ("operador_nombre", None),
-    ("contraparte_nombre", None),
+    ("operador_nombre", None),         # derivado: pila + dos apellidos
+    ("operador_nombre_pila", None),    # unidad nombre_operador (A3)
+    ("operador_apellido_paterno", None),
+    ("operador_apellido_materno", None),
+    ("_hist_nombre_operador", "json"),
+    ("contraparte_nombre", None),      # derivado: pila + dos apellidos
+    ("contraparte_nombre_pila", None),  # unidad nombre_contraparte (A4)
+    ("contraparte_apellido_paterno", None),
+    ("contraparte_apellido_materno", None),
+    ("_hist_nombre_contraparte", "json"),
     ("etiqueta_contraparte", None),
     ("pregunta_mayor_edad", None),
     ("mayor_edad", None),
     ("tipo_contrato", None),
     ("modalidad_texto", None),        # tipo_contrato en palabras (resumen)
-    ("respuesta_jornada", None),
-    ("respuesta_descanso", None),
     ("ia_completed", None),
     ("ia_pregunta", None),
     ("es_retroactivo", None),
-    ("fecha_inicio", None),           # captura C2 / normalizada por C3
-    ("fecha_valida", None),           # valida_fecha_pasada (C3) -> "si"/"no"
-    ("fecha_error", None),            # valida_fecha_pasada (C3) -> reedición
-    ("respuesta_pago", None),
+    ("fecha_dia", "int"),             # unidad fecha (C2)
+    ("fecha_mes", "int"),
+    ("fecha_anio", "int"),
+    ("fecha_inicio", None),           # unidad fecha: 'dd/mm/YYYY', día 1
+    ("fecha_inicio_texto", None),     # derivado -> recap ('1 de mayo de…')
+    ("_hist_fecha", "json"),
     ("modo_pago", None),
-    ("respuesta_lugar", None),
     ("actividades", "json"),
     ("tabulador_activo", None),
     ("salario_sugerido", None),       # calcula_tabulador (D5): max de items
@@ -44,14 +51,17 @@ EXTRAS = [
     ("hora_entrada", None),           # ia_extrae jornada (B2)
     ("hora_salida", None),            # ia_extrae jornada (B2)
     ("dias_laborables", "json"),      # ia_extrae jornada (B2)
-    ("_hist_jornada", "json"),        # historial transitorio de B2
+    ("_hist_jornada", "json"),        # historial transitorio de B1
+    ("jornada_texto", None),          # derivado -> recap de la jornada
     ("descanso_minutos", "int"),      # ia_extrae descanso (B7)
     ("comidas_incluidas", "json"),    # ia_extrae descanso (B7)
-    ("_hist_descanso", "json"),       # historial transitorio de B7
+    ("_hist_descanso", "json"),       # historial transitorio de B6
+    ("descanso_texto", None),         # derivado -> recap ('1 hora, con…')
     ("monto_pago", "int"),            # ia_extrae pago (C5)
     ("pago_periodicidad", None),      # ia_extrae pago (C5)
-    ("frase_periodicidad", None),     # derivado en el esquema Pago (C6)
-    ("_hist_pago", "json"),           # historial transitorio de C5
+    ("frase_periodicidad", None),     # esquema Pago / derivado del pago
+    ("monto_texto", None),            # derivado -> recap ('2,500')
+    ("_hist_pago", "json"),           # historial transitorio de C4
     ("lt_calle", None),               # ia_extrae domicilio (C10)
     ("lt_ext", None),
     ("lt_int", None),
@@ -59,10 +69,14 @@ EXTRAS = [
     ("lt_cp", None),
     ("lt_municipio", None),
     ("lt_estado", None),
-    ("ciudad_firma", None),           # derivado en la misma llamada de C10
-    ("_hist_domicilio", "json"),      # historial transitorio de C10
+    ("ciudad_firma", None),           # derivado en la misma llamada de C9
+    ("_hist_domicilio", "json"),      # historial transitorio de C9
+    ("lt_texto", None),               # derivado -> recap y resumen
     ("salario_diario", None),         # calcula_salario_diario (C8)
     ("pdf_contrato", None),           # genera_pdf (E5) -> pk del Media
     ("registro_id", None),            # registra_contrato (E6) -> folio
     ("flujo_completado", None),       # registra_contrato (E6) -> "completo"
+    # open_question: ya salió el primer recap (la frase del botón va solo
+    # en ese); el reinicio del contrato lo borra.
+    ("_first_recap_sent", None),
 ]

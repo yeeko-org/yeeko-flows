@@ -70,9 +70,10 @@ empl_correo %}, correo electrónico {{ empl_correo }}{% endif %} y que cuenta co
 capacidad legal para celebrar el presente contrato.</p>
 
 <p><strong>B)</strong> Que su domicilio se encuentra ubicado en calle
-{{ lt_calle }} número exterior {{ lt_ext }}{% if lt_int %} número interior
-{{ lt_int }}{% endif %} colonia {{ lt_colonia }} C.P. {{ lt_cp }}
-alcaldía/municipio {{ lt_municipio }} Estado {{ lt_estado }}.</p>
+{{ lt_calle or hueco.largo }} número exterior {{ lt_ext or hueco.corto }}{% if lt_int %}
+número interior {{ lt_int }}{% endif %} colonia {{ lt_colonia or hueco.largo }}{% if
+lt_cp %} C.P. {{ lt_cp }}{% endif %} alcaldía/municipio
+{{ lt_municipio or hueco.largo }} Estado {{ lt_estado or hueco.largo }}.</p>
 
 <p><strong>C)</strong> Que requiere de los servicios de «LA PERSONA TRABAJADORA
 DEL HOGAR», de la cual reconoce que es apta para el desarrollo de las actividades del
@@ -90,7 +91,8 @@ e internacional en materia de derecho del trabajo.</p>
 
 <p class="clausula"><strong>SEGUNDA. DE LA DURACIÓN.</strong> «LAS PARTES»
 acuerdan que será por tiempo indefinido, teniendo como fecha de inicio de la
-relación de trabajo el {{ inicio_dia }} de {{ inicio_mes }} del {{ inicio_anio }}.</p>
+relación de trabajo el {{ inicio_dia or hueco.corto }} de {{ inicio_mes or hueco.medio }} del
+{{ inicio_anio or hueco.medio }}.</p>
 
 <p class="clausula"><strong>TERCERA. DEL LUGAR DE PRESTACIÓN DE SERVICIOS.</strong>
 «LAS PARTES» acuerdan que «LA PERSONA TRABAJADORA DEL HOGAR» prestará sus
@@ -132,7 +134,7 @@ en que el pago de los salarios deberá retribuirse de forma:
 diaria ( {% if periodicidad == 'diaria' %}X{% endif %} ),
 semanal ( {% if periodicidad == 'semanal' %}X{% endif %} ) o
 quincenal ( {% if periodicidad == 'quincenal' %}X{% endif %} ), pactando un
-SALARIO DIARIO de {% if salario_monto %}${{ salario_monto }}{% endif %}{% if salario_letras %}
+SALARIO DIARIO de {% if salario_monto %}${{ salario_monto }}{% else %}${{ hueco.medio }}{% endif %}{% if salario_letras %}
 ({{ salario_letras }}){% endif %}, el cual se compromete «LA
 PERSONA EMPLEADORA» a garantizarlo y pagarlo de manera puntual e inmediata, en su
 totalidad y no fraccionado, sin ningún descuento o embargo por concepto de
@@ -146,7 +148,7 @@ cheque ( ) o por depósito o transferencia a la cuenta bancaria
 la «PERSONA TRABAJADORA DEL HOGAR».</p>
 
 <p class="clausula"><strong>SÉPTIMA. JORNADA Y HORARIO.</strong> «LAS PARTES»
-acuerdan que la jornada será de las {{ hora_entrada }} a las {{ hora_salida }}
+acuerdan que la jornada será de las {{ hora_entrada or hueco.medio }} a las {{ hora_salida or hueco.medio }}
 horas los días lunes ( {% if 'lunes' in dias %}X{% endif %} ),
 martes ( {% if 'martes' in dias %}X{% endif %} ),
 miércoles ( {% if 'miércoles' in dias %}X{% endif %} ),
@@ -163,7 +165,7 @@ salario ordinario, así como el tiempo extra que llegue a laborar de conformidad
 con la LFT.</p>
 
 <p class="clausula"><strong>OCTAVA. DEL DESCANSO.</strong> «LA PERSONA EMPLEADORA»
-acuerda otorgar como tiempo de descanso de {{ descanso_texto }}<sup>3</sup>, y
+acuerda otorgar como tiempo de descanso de {{ descanso_texto or hueco.medio }}<sup>3</sup>, y
 proporcionar a «LA PERSONA TRABAJADORA DEL HOGAR» durante ese periodo un
 desayuno ( {% if 'desayuno' in comidas_incluidas %}X{% endif %} ),
 comida ( {% if 'comida' in comidas_incluidas %}X{% endif %} ) o
@@ -263,7 +265,7 @@ partes podrán acudir ante el Centro de Conciliación/Tribunal Laboral competent
 
 <p class="firma">Leído el presente contrato por «LAS PARTES» y sabedoras de su
 alcance y consecuencias jurídicas, lo ratifican y firman al margen y al calce, por
-duplicado, en la ciudad de {{ ciudad_firma }} a los {{ firma_dia }} días del mes
+duplicado, en la ciudad de {{ ciudad_firma or hueco.largo }} a los {{ firma_dia }} días del mes
 de {{ firma_mes }} del año {{ firma_anio }}.</p>
 
 <table class="firmas-tabla">
