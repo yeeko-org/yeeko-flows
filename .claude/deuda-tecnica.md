@@ -5,21 +5,6 @@ comentarios de código) para no perderlos entre sesiones.
 
 ## Abierto
 
-### `default_text` no está sembrado
-
-`TextProcessor` invoca el behavior `default_text` cuando un texto no
-corresponde a nada (ni comando, ni botón, ni captura escrita). No existe
-ningún `ApplyBehavior` con ese nombre, ni una clase en
-`services/behavior/`.
-
-Desde el 14/07/2026 la llamada es tolerante (`call_behavior(...,
-optional=True)`, que atrapa solo `BehaviorNotFound`): el bot **calla** y
-deja constancia en el `ApiRecord`, en lugar de reventar el webhook.
-
-Pendiente: sembrar un `ApplyBehavior` llamado `default_text` en CACEH con
-una pieza tipo «no te entendí». No requiere tocar código: en cuanto exista
-el registro, empieza a responder solo.
-
 ### El trabajo pesado bloquea la respuesta del webhook
 
 `ManagerFlow.__call__` hace `response.send_messages()` **dentro** del ciclo
@@ -46,6 +31,7 @@ aceptable.
 
 ## Resuelto
 
+- **19/08/2026 — `default_text` sembrado.** `projects/caceh/behaviors/default_text.py` avisa y vuelve a rendir la pieza pendiente; el seed lo registra con `ensure_behavior("default_text")` (task-20 de bot_caceh).
 - **14/07/2026 — Fall-through a `default_text`.**
   `TextProcessor.process()` no devolvía nada y `TextMessageProcessor`
   ignoraba el resultado, así que tras atender un `/reset` o un `Hola`

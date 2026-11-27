@@ -240,10 +240,7 @@ def textos_descanso(extras: dict) -> dict:
 
 
 def textos_domicilio(extras: dict) -> dict:
-    # La ciudad de firma cae al municipio, igual que en el PDF: sin esto el
-    # resumen perdería su renglón cuando Gemini la deja vacía.
-    ciudad = extras.get("ciudad_firma") or extras.get("lt_municipio")
-    return {"lt_texto": texto_domicilio(extras), "ciudad_firma": ciudad}
+    return {"lt_texto": texto_domicilio(extras)}
 
 
 def textos_fecha(extras: dict) -> dict:

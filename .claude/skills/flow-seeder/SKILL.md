@@ -10,8 +10,9 @@ description: Sembrar (seed) un flujo conversacional en la BD del motor
 
 # flow-seeder
 
-Guía para **traducir un flujo diseñado en .md** (notación del skill
-`flow-builder`) **a la BD del motor** con `services.seeder.FlowSeeder`.
+Guía para **llevar un flujo a la BD del motor** con
+`services.seeder.FlowSeeder`, se haya diseñado en .md (notación del skill
+`flow-builder`) o directamente en el seed.
 El diseño (piezas, íconos, límites de WhatsApp) vive en `flow-builder`;
 este skill es el lado de inserción: API, idempotencia y receta para un
 proyecto nuevo. Referencia viva: `projects/caceh/` (primer consumidor).
@@ -50,6 +51,7 @@ botones o destinos conserva el PK.
 | 🔘 botones / 📋 lista | `buttons(piece, question, options)` | valida 20/24 chars al sembrar (si se pasa, Meta rechaza TODO el mensaje: 400 131009) |
 | 📝 captura | `capture(piece, prompt, extra, dest)` | crea/actualiza la `Written` |
 | ◆ bifurcación | `bifurcation(piece, extra, branches, default)` | pieza `destinations`; el default es fallback, no se evalúa |
+| ❓ captura con unidad | `unit(piece, "open_question", slots={...}, params={...})` | slots en orders 0.. en el orden en que la clase los declara (`slot()` siembra uno suelto); el fragment behavior va en `UNIT_BEHAVIOR_ORDER`; los replies que la clase declara en un slot (`SLOT_REPLIES`: «Corregir») salen solos, con destino propio; `ensure_behavior` materializa `PARAMETERS`/`SLOTS` de la clase (`ensure_contract`): el seeder crea las filas `Parameter` y nunca las sobrescribe |
 | ⚙️ mini-función | `behavior_step(piece, behavior, dest, generic=, params=)` | pieza `content`: fragment behavior (order 0) + embedded de auto-avance (order 1) |
 | ☑️ FormWa | `wa_form_step(piece, dest, options=, flow_id=, …)` | SIN auto-avance: espera el submit; avanza por `dest_piece_pk`. Publicación del Flow: skill `whatsapp-flows` |
 | 🧩 sub-flujo / auto-avance | `embedded(piece, dest)` | renderiza `dest` en línea |
@@ -77,8 +79,9 @@ El command (ver `projects/caceh/management/commands/seed_flow.py`):
 crear todas las `piece()` (para poder apuntar destinos hacia adelante) →
 `wire()` por sección → `wire_global_start` → `finalize()` + reporte.
 
-El copy (textos) va **inline en el cableado**: el canónico vive en el .md
-de diseño del flujo; no crear un `copy.py` (tercera copia).
+El copy (textos) va **inline en el cableado**: el seed es la fuente
+canónica; el .md de diseño, si existe, lo describe. No crear un `copy.py`
+(otra copia).
 
 ## Gotchas
 

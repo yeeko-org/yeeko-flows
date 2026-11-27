@@ -48,4 +48,4 @@ Solo `GEMINI_API_KEY` en `config/.env`. WhatsApp siempre va mockeado (`media_off
 
 ## Pruebas del motor fuera de `projects/caceh`
 
-Viven en `test/` (modelos de `infrastructure`, `interface/whatsapp`, `presentation/views`, `services/request`, `test/services/behavior/test_multiple_select.py` y `test/utilities/test_replacer_from_data.py`). Se corren con `.venv/bin/python manage.py test --noinput` (toda la suite) o `.venv/bin/python manage.py test test.interface.whatsapp --noinput` por paquete. Son flaky por diseño previo (ver «Gotchas» en `CLAUDE.md`): confirmar el estado real corriendo módulos aislados.
+Viven en `test/` (modelos de `infrastructure`, `interface/whatsapp`, `presentation/views`, `services/request`, `test/services/processor/` (la unidad `open_question` y el «next» de la pieza), `test/services/behavior/test_multiple_select.py` y `test/utilities/test_replacer_from_data.py`). Se corren con `.venv/bin/python manage.py test --noinput` (toda la suite) o `.venv/bin/python manage.py test test.interface.whatsapp --noinput` por paquete. Son flaky por diseño previo (ver «Gotchas» en `CLAUDE.md`): confirmar el estado real corriendo módulos aislados.
